@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#14162B" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Graha Ledger | Jyotish Engine</title>
+
+  <!-- Tailwind CSS for rapid styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Sora:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- React & ReactDOM (UMD Build) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Recharts pinned to v2.12.7 to avoid crash -->
+  <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  
+  <!-- Babel compiler to translate JSX in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { background-color: #14162B; margin: 0; padding: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    
+    .font-serif { font-family: 'Fraunces', serif; }
+    .font-mono { font-family: 'IBM Plex Mono', monospace; }
+    
+    .t100 { color: #F2EFE6; } .t85 { color: rgba(242,239,230,0.85); } .t75 { color: rgba(242,239,230,0.75); }
+    .t60 { color: rgba(242,239,230,0.60); } .t50 { color: rgba(242,239,230,0.50); } .t40 { color: rgba(242,239,230,0.40); }
+    .bgfaint3 { background: rgba(255,255,255,0.03); } .bgfaint2 { background: rgba(255,255,255,0.02); }
+    .bgcard2 { background: #1A1C36; } .tgold { color: #D4A574; } .tdanger { color: #B23A48; }
+    
+    .gl-fadein { animation: fadein 0.35s ease; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef, Component } = window.React;
+    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } = window.Recharts;
+
+    const Icon = ({ name, size=16, style, className }) => <i className={`fa-solid fa-${name} ${className||''}`} style={{fontSize: size, ...style}} />;
+    const Heart = (p) => <Icon name="heart" {...p} />;
+    const Wallet = (p) => <Icon name="wallet" {...p} />;
+    const Briefcase = (p) => <Icon name="briefcase" {...p} />;
+    const Compass = (p) => <Icon name="compass" {...p} />;
+    const Home = (p) => <Icon name="house" {...p} />;
+    const ChevronLeft = (p) => <Icon name="chevron-left" {...p} />;
+    const ChevronRight = (p) => <Icon name="chevron-right" {...p} />;
+    const RotateCcw = (p) => <Icon name="rotate-left" {...p} />;
+    const Users = (p) => <Icon name="users" {...p} />;
+    const Sparkles = (p) => <Icon name="wand-magic-sparkles" {...p} />;
+    const Flame = (p) => <Icon name="fire" {...p} />;
+    const ExternalLink = (p) => <Icon name="arrow-up-right-from-square" {...p} />;
+    const Send = (p) => <Icon name="paper-plane" {...p} />;
+    const MessageCircleQuestion = (p) => <Icon name="circle-question" {...p} />;
+    const ScrollText = (p) => <Icon name="scroll" {...p} />;
+    const Plus = (p) => <Icon name="plus" {...p} />;
+    const Pencil = (p) => <Icon name="pen" {...p} />;
+    const Trash2 = (p) => <Icon name="trash" {...p} />;
+    const X = (p) => <Icon name="xmark" {...p} />;
+    const Settings = (p) => <Icon name="gear" {...p} />;
+    const AlertTriangle = (p) => <Icon name="triangle-exclamation" {...p} />;
+    const Grid = (p) => <Icon name="border-all" {...p} />;
+    const RefreshCw = (p) => <Icon name="arrows-rotate" {...p} />;
+    const Cpu = (p) => <Icon name="microchip" {...p} />;
+    const Newspaper = (p) => <Icon name="newspaper" {...p} />;
+    const Layers = (p) => <Icon name="layer-group" {...p} />;
+    const Clock = (p) => <Icon name="clock" {...p} />;
+    const Moon = (p) => <Icon name="moon" {...p} />;
+    const Sun = (p) => <Icon name="sun" {...p} />;
+
+    class GrahaErrorBoundary extends Component {
+      constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+      static getDerivedStateFromError(error) { return { hasError: true, error }; }
+      render() {
+        if (this.state.hasError) {
+          return (
+            <div className="min-h-screen w-full flex items-center justify-center p-6 text-center" style={{ background: "#14162B" }}>
+              <div className="max-w-md space-y-4 rounded-3xl border border-white/10 bg-black/40 p-6">
+                <AlertTriangle size={36} className="mx-auto text-amber-400" />
+                <h2 className="font-serif text-xl font-semibold">Calculation Error</h2>
+                <p className="text-[10px] font-mono text-red-300 bg-red-950/40 p-2 rounded text-left overflow-auto">{this.state.error?.toString()}</p>
+                <button onClick={() => window.location.reload()} className="w-full rounded-full py-2.5 text-xs font-semibold bg-amber-400 text-black">Reload App</button>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+    const SIGN_LORDS = { Aries:"Mars", Taurus:"Venus", Gemini:"Mercury", Cancer:"Moon", Leo:"Sun", Virgo:"Mercury", Libra:"Venus", Scorpio:"Mars", Sagittarius:"Jupiter", Capricorn:"Saturn", Aquarius:"Saturn", Pisces:"Jupiter" };
+    const NAKSHATRAS = ["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
+    const NAKSHATRA_LORDS = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"];
+    const LUNAR_MASAS = ["Chaitra", "Vaishakha", "Jyeshtha", "Ashadha", "Shravana", "Bhadrapada", "Ashvin", "Kartika", "Margashirsha", "Pausha", "Magha", "Phalguna"];
+    
+    const YOGAS = [
+      "Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda", "Sukarma",
+      "Dhriti", "Shula", "Ganda", "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra",
+      "Siddhi", "Vyatipata", "Variyana", "Parigha", "Shiva", "Siddha", "Sadhya",
+      "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti"
+    ];
+    
+    const MOVING_KARANAS = ["Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti (Bhadra)"];
+
+    const LLM_PROVIDERS = [
+      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Google)", type: "gemini" },
+      { id: "gpt-4o", name: "GPT-4o (OpenAI)", type: "openai" },
+      { id: "claude-3-5-sonnet-20240620", name: "Claude 3.5 Sonnet (Anthropic)", type: "anthropic" },
+      { id: "moonshot-v1-8k", name: "Kimi Moonshot v1 (China)", type: "moonshot" },
+      { id: "offline", name: "Built-in Offline Jyotish Engine", type: "offline" }
+    ];
+
+    function norm360(x) { if (isNaN(x)) return 0; let v = x % 360; return v < 0 ? v + 360 : v; }
+    function toRad(d) { return (d * Math.PI) / 180; }
+    function toDeg(r) { return (r * 180) / Math.PI; }
+    
+    function julianDay(isoDate, timeStr, utcOffset) {
+      try {
+        const [Y, Mo, D] = (isoDate || "2000-01-01").split("-").map(Number);
+        const [hh, mm] = (timeStr || "12:00").split(":").map(Number);
+        const ms = Date.UTC(Y, Mo - 1, D, hh, mm, 0) - (utcOffset * 3600000);
+        return ms / 86400000 + 2440587.5;
+      } catch(e) { return 2451545.0; }
+    }
+
+    function sunLongitude(T) {
+      const L0 = norm360(280.46646 + 36000.76983 * T);
+      const M = norm360(357.52911 + 35999.05029 * T);
+      const C = (1.914602 - 0.004817 * T) * Math.sin(toRad(M)) + 0.019993 * Math.sin(toRad(2 * M));
+      return { longitude: norm360(L0 + C - 0.00569), trueLong: norm360(L0 + C) };
+    }
+
+    function moonLongitude(T) {
+      const Lp = norm360(218.3164477 + 481267.88123421 * T);
+      const D = norm360(297.8501921 + 445267.1114034 * T);
+      const M = norm360(357.5291092 + 35999.0502909 * T);
+      const Mp = norm360(134.9633964 + 477198.8675055 * T);
+      const F = norm360(93.272095 + 483202.0175233 * T);
+      const dL = 6.288774 * Math.sin(toRad(Mp)) + 1.274027 * Math.sin(toRad(2*D - Mp)) + 0.658314 * Math.sin(toRad(2*D));
+      return norm360(Lp + dL);
+    }
+
+    function computePanchang(dateObj, monthSystem = "amanta", appUtcOffset = 5.5) {
+      try {
+        const isoString = (dateObj && !isNaN(dateObj) ? dateObj : new Date()).toISOString().slice(0, 10);
+        const JD = julianDay(isoString, "12:00", appUtcOffset);
+        const T = (JD - 2451545.0) / 36525;
+        const sun = sunLongitude(T);
+        const moon = moonLongitude(T);
+        
+        const diff = norm360(moon - sun.longitude);
+        const tithiIndex = Math.floor(diff / 12);
+        const tithiNum = (tithiIndex % 15) + 1;
+        const isShukla = tithiIndex < 15;
+        const paksha = isShukla ? "Shukla" : "Krishna";
+        
+        const sunSignIdx = Math.floor(norm360(sun.longitude) / 30);
+        let masaIdx = sunSignIdx;
+        if (monthSystem === "purnimanta" && !isShukla) {
+          masaIdx = (sunSignIdx + 1) % 12;
+        }
+        
+        const tithiNames = [
+          "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi",
+          "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi",
+          "Trayodashi", "Chaturdashi", isShukla ? "Purnima" : "Amavasya"
+        ];
+
+        // Nakshatra calculation
+        const moonLonNormalized = norm360(moon);
+        const nakIdx = Math.floor(moonLonNormalized / (360 / 27));
+        const nakPada = Math.floor((moonLonNormalized % (360 / 27)) / ((360 / 27) / 4)) + 1;
+
+        // Yoga calculation (Sum of longitudes)
+        const yogaIdx = Math.floor(norm360(moon + sun.longitude) / (360 / 27));
+        
+        // Karana calculation (Half of a Tithi)
+        const karanaIdx = Math.floor(diff / 6);
+        let karanaName = "";
+        if (karanaIdx === 0) karanaName = "Kimstughna";
+        else if (karanaIdx >= 1 && karanaIdx <= 56) karanaName = MOVING_KARANAS[(karanaIdx - 1) % 7];
+        else if (karanaIdx === 57) karanaName = "Shakuni";
+        else if (karanaIdx === 58) karanaName = "Chatushpada";
+        else if (karanaIdx === 59) karanaName = "Naga";
+        
+        return {
+          tithiName: tithiNames[tithiNum - 1], tithiNum, paksha, masa: LUNAR_MASAS[masaIdx], monthSystem,
+          sunSign: SIGNS[sunSignIdx], moonSign: SIGNS[Math.floor(moonLonNormalized / 30)],
+          nakshatra: NAKSHATRAS[nakIdx], nakshatraPada: nakPada,
+          yoga: YOGAS[yogaIdx] || "Vishkambha", karana: karanaName,
+          isAmavasya: tithiIndex === 29, isPurnima: tithiIndex === 14
+        };
+      } catch(e) {
+        return { tithiName: "Pratipada", paksha: "Shukla", masa: "Chaitra", nakshatra: "Ashwini", yoga: "Vishkambha", karana: "Bava", isAmavasya: false, isPurnima: false };
+      }
+    }
+
+    function formatTimeOnly(date) {
+      return date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    function calculateMuhurta(date, lat, lon) {
+      // Simplified approximation assuming 06:00 Sunrise and 18:00 Sunset for generic calculation.
+      // Accurate geographical sunrise requires heavy astrodynamics library.
+      const d = new Date(date);
+      d.setHours(6, 0, 0, 0); const sunrise = new Date(d);
+      d.setHours(18, 0, 0, 0); const sunset = new Date(d);
+      
+      const dayDurationMs = sunset - sunrise;
+      const segmentMs = dayDurationMs / 8;
+      
+      const dayOfWeek = date.getDay(); // 0 = Sun
+      
+      // Rahu Kaal lookup (segment index 0-7)
+      const rahuLookup = { 0: 7, 1: 1, 2: 6, 3: 4, 4: 5, 5: 3, 6: 2 };
+      const yamaLookup = { 0: 4, 1: 3, 2: 2, 3: 1, 4: 0, 5: 6, 6: 5 };
+      const guliLookup = { 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1, 6: 0 };
+      
+      const getSegmentTime = (idx) => {
+        const start = new Date(sunrise.getTime() + idx * segmentMs);
+        const end = new Date(sunrise.getTime() + (idx + 1) * segmentMs);
+        return { start, end };
+      };
+
+      // Standard Day Choghadiya sequence
+      const chogTypes = [
+        {name: "Udveg", desc: "Anxiety", color: "#B23A48"}, {name: "Amrit", desc: "Nectar", color: "#8FB2D9"},
+        {name: "Rog", desc: "Disease", color: "#B23A48"}, {name: "Labh", desc: "Gain", color: "#8FC9A9"},
+        {name: "Shubh", desc: "Auspicious", color: "#D4A574"}, {name: "Char", desc: "Moving", color: "#9FB8D9"},
+        {name: "Kaal", desc: "Loss", color: "#8288A0"}
+      ];
+      
+      const chogMatrix = {
+        0: [0, 5, 3, 1, 2, 4, 6, 0], // Sun
+        1: [1, 2, 4, 6, 0, 5, 3, 1], // Mon
+        2: [2, 4, 6, 0, 5, 3, 1, 2], // Tue
+        3: [3, 1, 2, 4, 6, 0, 5, 3], // Wed
+        4: [4, 6, 0, 5, 3, 1, 2, 4], // Thu
+        5: [5, 3, 1, 2, 4, 6, 0, 5], // Fri
+        6: [6, 0, 5, 3, 1, 2, 4, 6], // Sat
+      };
+
+      const dayChog = chogMatrix[dayOfWeek].map((tIdx, i) => {
+        const times = getSegmentTime(i);
+        return { ...chogTypes[tIdx], start: times.start, end: times.end };
+      });
+
+      return {
+        rahu: getSegmentTime(rahuLookup[dayOfWeek]),
+        yama: getSegmentTime(yamaLookup[dayOfWeek]),
+        guli: getSegmentTime(guliLookup[dayOfWeek]),
+        dayChog
+      };
+    }
+
+    const WEEKDAY_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
+    const PLANET_INFO = {
+      Sun: { symbol: "☉", name: "Surya", day: "Sunday", color: "#E8A33D" },
+      Moon: { symbol: "☽", name: "Chandra", day: "Monday", color: "#9FB8D9" },
+      Mars: { symbol: "♂", name: "Mangal", day: "Tuesday", color: "#B23A48" },
+      Mercury: { symbol: "☿", name: "Budh", day: "Wednesday", color: "#7C9473" },
+      Jupiter: { symbol: "♃", name: "Guru", day: "Thursday", color: "#D4A574" },
+      Venus: { symbol: "♀", name: "Shukra", day: "Friday", color: "#C98CA7" },
+      Saturn: { symbol: "♄", name: "Shani", day: "Saturday", color: "#8288A0" }
+    };
+
+    async function fetchLLMResponse(modelDef, apiKey, systemPrompt, userQuery) {
+      if (!apiKey || apiKey.trim() === "") throw new Error("API Key is missing for " + modelDef.name);
+      
+      let url, payload, headers;
+      
+      if (modelDef.type === "gemini") {
+        url = `https://generativelanguage.googleapis.com/v1beta/models/${modelDef.id}:generateContent?key=${apiKey.trim()}`;
+        payload = { contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] } };
+        headers = { "Content-Type": "application/json" };
+      } else if (modelDef.type === "openai" || modelDef.type === "moonshot") {
+        url = modelDef.type === "openai" ? "https://api.openai.com/v1/chat/completions" : "https://api.moonshot.cn/v1/chat/completions";
+        payload = { model: modelDef.id, messages: [{role: "system", content: systemPrompt}, {role: "user", content: userQuery}] };
+        headers = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey.trim()}` };
+      } else if (modelDef.type === "anthropic") {
+        url = "https://api.anthropic.com/v1/messages";
+        payload = { model: modelDef.id, max_tokens: 1024, system: systemPrompt, messages: [{role: "user", content: userQuery}] };
+        headers = { "Content-Type": "application/json", "x-api-key": apiKey.trim(), "anthropic-version": "2023-06-01", "anthropic-dangerously-allow-browser": "true" };
+      } else {
+        throw new Error("Unsupported AI Provider type.");
+      }
+
+      const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
+      if (!res.ok) { const txt = await res.text(); throw new Error(`API Error ${res.status}: ${txt.substring(0,100)}`); }
+      
+      const data = await res.json();
+      
+      if (modelDef.type === "gemini") return data.candidates[0].content.parts[0].text;
+      if (modelDef.type === "anthropic") return data.content[0].text;
+      return data.choices[0].message.content; // OpenAI & Moonshot
+    }
+
+    function askOfflineAstrologer(profileName, question) {
+      const q = question.toLowerCase();
+      if (q.includes("sade sati") || q.includes("saturn")) return "Saturn is transiting Pisces until 2028. This demands strict discipline and patience.";
+      if (q.includes("career") || q.includes("job")) return "The 10th house is activated by Jupiter's transit this year, bringing expansion if you apply leadership.";
+      if (q.includes("marriage") || q.includes("love")) return "Relationship houses are seeking stability. Focus on clear communication.";
+      return `The planetary positions for ${profileName} indicate a period of foundational growth. Adhere to daily routines and align with your day ruler.`;
+    }
+
+    const STORAGE = {
+      get: (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
+      set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+    };
+
+    function PanchangTab({ date, profile, settings }) {
+      const lat = profile?.lat || 28.6139;
+      const lon = profile?.lon || 77.209;
+      const appOffset = settings.calcUtcOffset !== null ? settings.calcUtcOffset : -new Date().getTimezoneOffset() / 60;
+      
+      const panchang = useMemo(() => computePanchang(date, settings.monthSystem, appOffset), [date, settings.monthSystem, appOffset]);
+      const muhurta = useMemo(() => calculateMuhurta(date, lat, lon), [date, lat, lon]);
+      const dayRuler = PLANET_INFO[planetOfDay(date)];
+
+      return (
+        <div className="space-y-5 pb-10">
+          <div className="rounded-3xl border border-white/10 p-5" style={{ background: "linear-gradient(135deg, rgba(143,201,169,0.12), transparent 70%)" }}>
+            <div className="font-mono fs10 uppercase tr25 t40">Daily Almanac</div>
+            <h2 className="font-serif text-2xl t100 mt-1">Panchang & Muhurta</h2>
+            <p className="mt-1 text-sm t60">5-Limb Vedic Almanac and Timings for {date.toLocaleDateString()}</p>
+          </div>
+
+          {/* 5-Limb Panchang Panel */}
+          <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Layers size={16} className="text-emerald-400" />
+              <span className="font-serif fs15 t100">The 5 Limbs (Panchānga)</span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="p-3 rounded-xl border border-white/10 bg-black/20">
+                <div className="font-mono text-[10px] uppercase t50 mb-0.5">1. Vaar (Day)</div>
+                <div className="font-medium text-sm text-amber-300">{date.toLocaleDateString("en-US", { weekday: "long" })}</div>
+                <div className="text-[10px] t40 mt-0.5">Ruled by {dayRuler.name}</div>
+              </div>
+              <div className="p-3 rounded-xl border border-white/10 bg-black/20">
+                <div className="font-mono text-[10px] uppercase t50 mb-0.5">2. Tithi (Lunar Day)</div>
+                <div className="font-medium text-sm text-blue-300">{panchang.paksha} {panchang.tithiName}</div>
+                <div className="text-[10px] t40 mt-0.5">{panchang.masa} Masa ({panchang.monthSystem})</div>
+              </div>
+              <div className="p-3 rounded-xl border border-white/10 bg-black/20">
+                <div className="font-mono text-[10px] uppercase t50 mb-0.5">3. Nakshatra (Lunar Mansion)</div>
+                <div className="font-medium text-sm text-purple-300">{panchang.nakshatra}</div>
+                <div className="text-[10px] t40 mt-0.5">Pada {panchang.nakshatraPada}</div>
+              </div>
+              <div className="p-3 rounded-xl border border-white/10 bg-black/20 flex flex-col justify-between">
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <div className="font-mono text-[10px] uppercase t50 mb-0.5">4. Yoga</div>
+                    <div className="font-medium text-sm t100">{panchang.yoga}</div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-mono text-[10px] uppercase t50 mb-0.5">5. Karana</div>
+                    <div className="font-medium text-sm t100">{panchang.karana}</div>
+                  </div>
+                </div>
+                {panchang.karana === "Vishti (Bhadra)" && (
+                  <div className="text-[10px] text-red-400 mt-1 flex items-center gap-1"><AlertTriangle size={10}/> Bhadra Karana is inauspicious.</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Inauspicious Timings */}
+          <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <AlertTriangle size={16} className="text-amber-400" />
+              <span className="font-serif fs15 t100">Inauspicious Kaals</span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="p-3 rounded-xl border border-white/10 bg-red-950/20">
+                <div className="font-mono text-xs t60 mb-1">Rahu Kaal</div>
+                <div className="font-mono text-sm t100">{formatTimeOnly(muhurta.rahu.start)} - {formatTimeOnly(muhurta.rahu.end)}</div>
+                <div className="text-[10px] t40 mt-1">Avoid new beginnings</div>
+              </div>
+              <div className="p-3 rounded-xl border border-white/10 bg-amber-950/20">
+                <div className="font-mono text-xs t60 mb-1">Yamaaganda</div>
+                <div className="font-mono text-sm t100">{formatTimeOnly(muhurta.yama.start)} - {formatTimeOnly(muhurta.yama.end)}</div>
+                <div className="text-[10px] t40 mt-1">Death/Obstacle timing</div>
+              </div>
+              <div className="p-3 rounded-xl border border-white/10 bg-zinc-900/40">
+                <div className="font-mono text-xs t60 mb-1">Gulika Kaal</div>
+                <div className="font-mono text-sm t100">{formatTimeOnly(muhurta.guli.start)} - {formatTimeOnly(muhurta.guli.end)}</div>
+                <div className="text-[10px] t40 mt-1">Delays and repetition</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Day Choghadiya */}
+          <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sun size={16} className="text-amber-400" />
+                <span className="font-serif fs15 t100">Day Choghadiya</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {muhurta.dayChog.map((c, i) => (
+                <div key={i} className="flex items-center justify-between p-2.5 rounded-xl border border-white/5 bg-black/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
+                    <div>
+                      <div className="font-medium text-sm" style={{ color: c.color }}>{c.name}</div>
+                      <div className="text-[10px] t50">{c.desc}</div>
+                    </div>
+                  </div>
+                  <div className="font-mono text-xs t85 text-right">
+                    {formatTimeOnly(c.start)}<br/><span className="t40">to</span> {formatTimeOnly(c.end)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <p className="fs10 leading-relaxed t30 text-center">Standard 06:00 to 18:00 base used. Exact local precision requires geocoded coordinate injection.</p>
+        </div>
+      );
+    }
+
+    function AskTab({ profile, settings }) {
+      const [question, setQuestion] = useState("");
+      const [history, setHistory] = useState(() => STORAGE.get(`chat_${profile?.id}`, []));
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState("");
+      
+      const activeModel = LLM_PROVIDERS.find(m => m.id === settings.aiModel) || LLM_PROVIDERS[0];
+      const apiKey = settings.apiKeys?.[activeModel.type] || "";
+
+      useEffect(() => { if (profile) STORAGE.set(`chat_${profile.id}`, history); }, [history, profile]);
+
+      async function handleAsk(e) {
+        e.preventDefault();
+        const q = question.trim();
+        if (!q || loading) return;
+        
+        setLoading(true); setError("");
+        const prompt = `You are an expert Vedic astrologer. Answer based on profile: ${profile.name}, born ${profile.dob}. Be concise.`;
+        
+        try {
+          let ans = "";
+          if (activeModel.id === "offline") ans = askOfflineAstrologer(profile.name, q);
+          else ans = await fetchLLMResponse(activeModel, apiKey, prompt, q);
+          
+          setHistory(h => [...h, { q, a: ans, via: activeModel.name }]);
+          setQuestion("");
+        } catch(err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      return (
+        <div className="space-y-5 pb-10">
+          <div className="rounded-3xl border border-white/10 p-5" style={{ background: "linear-gradient(135deg, rgba(212,165,116,0.12), transparent 70%)" }}>
+            <div className="flex items-center justify-between">
+              <div className="font-mono fs10 uppercase tr25 t40">Ask the Astrologer</div>
+              <div className="flex items-center gap-1.5 font-mono fs10 px-2.5 py-1 rounded-full border border-white/10 bg-black/20">
+                {activeModel.id === "offline" ? <WifiOff size={12} className="text-amber-400" /> : <Cpu size={12} className="text-emerald-400" />}
+                <span className="t60">{activeModel.name.split(" ")[0]}</span>
+              </div>
+            </div>
+            <h2 className="font-serif text-2xl t100 mt-1">Anything on your mind?</h2>
+          </div>
+
+          {!apiKey && activeModel.id !== "offline" && (
+            <div className="p-4 rounded-xl border border-red-900/50 bg-red-950/20 text-sm text-red-300">
+              <AlertTriangle size={16} className="inline mr-2" />
+              No API Key found for {activeModel.name}. Add it in Settings or switch to Offline mode.
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {history.map((h, i) => (
+              <div key={i} className="space-y-2">
+                <div className="flex items-start gap-2"><MessageCircleQuestion size={16} className="mt-0.5 shrink-0 tgold" /><p className="text-sm t85">{h.q}</p></div>
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed t75">{h.a}</p>
+                  <p className="mt-2 font-mono text-[9px] uppercase tracking-wide t30">via {h.via}</p>
+                </div>
+              </div>
+            ))}
+            {loading && <div className="rounded-2xl border border-white/10 bgfaint3 p-4 flex items-center gap-2"><RefreshCw size={14} className="animate-spin tgold" /><p className="text-sm t45">Consulting the stars...</p></div>}
+            {error && <p className="text-sm tdanger">{error}</p>}
+          </div>
+
+          <form onSubmit={handleAsk} className="flex items-center gap-2 rounded-2xl border border-white/10 bgfaint3 p-2">
+            <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask about career, marriage..." className="flex-1 bg-transparent px-3 py-2 text-sm t100 placeholder:t30 focus:outline-none" />
+            <button type="submit" disabled={loading || !question.trim()} className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-black disabled:opacity-40 transition shrink-0" style={{ background: "#D4A574" }}><Send size={14} /> Ask</button>
+          </form>
+          {history.length > 0 && <button onClick={() => setHistory([])} className="text-xs t40 hover:t100 text-center w-full mt-2"><Trash2 size={10} className="inline mr-1"/>Clear History</button>}
+        </div>
+      );
+    }
+
+    function SettingsModal({ settings, onUpdate, onClose }) {
+      const [keys, setKeys] = useState(settings.apiKeys || {});
+      
+      const handleSave = () => {
+        onUpdate({ ...settings, apiKeys: keys });
+        onClose();
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-4 rounded-3xl border border-white/10 bgcard2 p-5 text-sm max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="font-serif text-lg t100">Settings & Key Vault</h3>
+              <button onClick={onClose} className="t50 hover:t100"><X size={18} /></button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block font-mono fs10 uppercase tracking-wide t40">LLM Choice</label>
+                <select value={settings.aiModel} onChange={(e) => onUpdate({ ...settings, aiModel: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm t100 focus:outline-none">
+                  {LLM_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+
+              <div className="p-3 rounded-xl border border-white/10 bgfaint2 space-y-3">
+                <div className="font-mono text-xs uppercase t60 flex items-center gap-2"><Shield size={12}/> API Key Vault</div>
+                <div><label className="text-[10px] t40 block mb-1">Gemini API Key</label><input type="password" value={keys.gemini || ""} onChange={e => setKeys({...keys, gemini: e.target.value})} className="w-full rounded bg-black/30 border border-white/5 px-2 py-1.5 text-xs text-white"/></div>
+                <div><label className="text-[10px] t40 block mb-1">OpenAI API Key</label><input type="password" value={keys.openai || ""} onChange={e => setKeys({...keys, openai: e.target.value})} className="w-full rounded bg-black/30 border border-white/5 px-2 py-1.5 text-xs text-white"/></div>
+                <div><label className="text-[10px] t40 block mb-1">Anthropic API Key</label><input type="password" value={keys.anthropic || ""} onChange={e => setKeys({...keys, anthropic: e.target.value})} className="w-full rounded bg-black/30 border border-white/5 px-2 py-1.5 text-xs text-white"/></div>
+              </div>
+
+              <div>
+                <label className="mb-1 block font-mono fs10 uppercase tracking-wide t40">Lunar Month System</label>
+                <select value={settings.monthSystem} onChange={(e) => onUpdate({ ...settings, monthSystem: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm t100 focus:outline-none">
+                  <option value="amanta">Amanta (Ends on Amavasya)</option>
+                  <option value="purnimanta">Purnimanta (Ends on Purnima)</option>
+                </select>
+              </div>
+            </div>
+
+            <button onClick={handleSave} className="w-full rounded-full py-2.5 text-sm font-medium bg-amber-400 text-black mt-2">Save Preferences</button>
+          </div>
+        </div>
+      );
+    }
+
+    function WelcomeScreen({ onAddProfile }) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-center gl-fadein">
+          <div className="w-20 h-20 rounded-full border border-white/10 bgfaint3 flex items-center justify-center mb-6">
+            <Compass size={32} className="text-amber-400" />
+          </div>
+          <h2 className="font-serif text-3xl t100 mb-2">Welcome to Graha Ledger</h2>
+          <p className="text-sm t60 max-w-xs leading-relaxed mb-8">Your private, offline-capable Vedic Astrology companion. Calculate transits, Panchang, and consult the stars.</p>
+          <button onClick={onAddProfile} className="flex items-center gap-2 rounded-full px-6 py-3 font-medium bg-amber-400 text-black hover:bg-amber-300 transition">
+            <Plus size={16} /> Create Your Profile
+          </button>
+        </div>
+      );
+    }
+
+    function ProfileForm({ initial, onSave, onCancel, onDelete }) {
+      const [form, setForm] = useState(initial || { name: "", dob: "2000-01-01", time: "12:00", place: "Delhi", lat: 28.6139, lon: 77.209, utcOffset: 5.5 });
+      function submit(e) { e.preventDefault(); onSave({ ...form, id: form.id || Date.now().toString() }); }
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onCancel}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={submit} className="w-full max-w-md space-y-3 rounded-3xl border border-white/10 bgcard2 p-5">
+            <div className="flex items-center justify-between"><h3 className="font-serif text-lg t100">{initial ? "Edit Profile" : "Add Profile"}</h3><button type="button" onClick={onCancel} className="t50"><X size={18} /></button></div>
+            <div><label className="text-[10px] t40 uppercase">Name</label><input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full rounded bg-black/20 border border-white/10 p-2 text-sm text-white"/></div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><label className="text-[10px] t40 uppercase">Date</label><input type="date" required value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} className="w-full rounded bg-black/20 border border-white/10 p-2 text-sm text-white"/></div>
+              <div><label className="text-[10px] t40 uppercase">Time</label><input type="time" required value={form.time} onChange={e => setForm({...form, time: e.target.value})} className="w-full rounded bg-black/20 border border-white/10 p-2 text-sm text-white"/></div>
+            </div>
+            <div className="flex justify-between mt-4">
+              {initial && onDelete && <button type="button" onClick={() => onDelete(initial.id)} className="text-red-400 text-xs flex items-center gap-1"><Trash2 size={12}/> Delete</button>}
+              <button type="submit" className="px-4 py-2 rounded-full bg-amber-400 text-black text-xs font-semibold ml-auto">Save Profile</button>
+            </div>
+          </form>
+        </div>
+      );
+    }
+
+    function GrahaLedgerContent() {
+      const [profiles, setProfiles] = useState(() => STORAGE.get("profiles", []));
+      const [settings, setSettings] = useState(() => STORAGE.get("settings", { aiModel: "gemini-1.5-flash", monthSystem: "amanta", apiKeys: {} }));
+      const [activeProfileId, setActiveProfileId] = useState(profiles[0]?.id || null);
+      const [activeTab, setActiveTab] = useState("panchang");
+      const [date, setDate] = useState(new Date());
+      const [editingProfile, setEditingProfile] = useState(null);
+      const [showSettings, setShowSettings] = useState(false);
+
+      useEffect(() => { STORAGE.set("profiles", profiles); }, [profiles]);
+      useEffect(() => { STORAGE.set("settings", settings); }, [settings]);
+
+      const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
+
+      if (profiles.length === 0) {
+        return (
+          <div className="min-h-screen w-full" style={{ background: "#14162B" }}>
+            <WelcomeScreen onAddProfile={() => setEditingProfile({})} />
+            {editingProfile && <ProfileForm initial={null} onSave={(p) => { setProfiles([p]); setActiveProfileId(p.id); setEditingProfile(null); }} onCancel={() => setEditingProfile(null)} />}
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen w-full" style={{ background: "#14162B" }}>
+          <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-6">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="font-mono fs10 uppercase tr30 t40">Graha Ledger</div>
+                <select value={activeProfileId} onChange={(e) => setActiveProfileId(e.target.value)} className="bg-transparent font-serif text-2xl text-amber-300 focus:outline-none appearance-none cursor-pointer">
+                  {profiles.map(p => <option key={p.id} value={p.id} className="bg-slate-900 text-base">{p.name}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setEditingProfile({})} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70"><Plus size={14}/></button>
+                <button onClick={() => setShowSettings(true)} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70"><Settings size={14}/></button>
+              </div>
+            </div>
+
+            {/* Date Navigator */}
+            <div className="flex justify-between items-center bgfaint3 border border-white/10 p-3 rounded-2xl mb-4">
+               <button onClick={() => setDate(addDays(date, -1))} className="p-1 t50 hover:t100"><ChevronLeft size={18}/></button>
+               <div className="text-center">
+                 <div className="text-[10px] font-mono t40 uppercase tracking-widest">{date.toLocaleDateString("en-US", {weekday: 'long'})}</div>
+                 <div className="font-serif t100">{date.toLocaleDateString("en-US", {month: 'long', day: 'numeric', year: 'numeric'})}</div>
+               </div>
+               <button onClick={() => setDate(addDays(date, 1))} className="p-1 t50 hover:t100"><ChevronRight size={18}/></button>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bgfaint2 p-1 mb-6">
+              {[
+                { id: "panchang", label: "Panchang & Time" },
+                { id: "ask", label: "Ask AI" }
+              ].map(t => (
+                <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === t.id ? "bg-white/10 text-white" : "t50"}`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Content Area */}
+            <div className="gl-fadein">
+              {activeTab === "panchang" && <PanchangTab date={date} profile={activeProfile} settings={settings} />}
+              {activeTab === "ask" && <AskTab profile={activeProfile} settings={settings} />}
+            </div>
+
+          </div>
+
+          {/* Modals */}
+          {editingProfile && <ProfileForm initial={editingProfile.id ? editingProfile : null} onSave={(p) => { const next = editingProfile.id ? profiles.map(x => x.id === p.id ? p : x) : [...profiles, p]; setProfiles(next); setActiveProfileId(p.id); setEditingProfile(null); }} onDelete={(id) => { setProfiles(profiles.filter(p => p.id !== id)); setEditingProfile(null); }} onCancel={() => setEditingProfile(null)} />}
+          {showSettings && <SettingsModal settings={settings} onUpdate={setSettings} onClose={() => setShowSettings(false)} />}
+        </div>
+      );
+    }
+
+    const rootElement = document.getElementById('root');
+    const root = window.ReactDOM.createRoot(rootElement);
+    root.render(<GrahaErrorBoundary><GrahaLedgerContent /></GrahaErrorBoundary>);
+  </script>
+</body>
+</html>
