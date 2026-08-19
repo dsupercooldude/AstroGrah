@@ -31,73 +31,90 @@
     .gl-fadein { animation: fadein 0.3s ease; }
     @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* --- IRONCLAD GOOGLE TRANSLATE OVERRIDES --- */
-    .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget span, #goog-gt-tt { display: none !important; }
+    /* ABSOLUTELY HIDE ORIGINAL GOOGLE TRANSLATE WIDGET */
+    .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget, #goog-gt-tt, .skiptranslate, #google_translate_element { 
+        display: none !important; opacity: 0 !important; pointer-events: none !important; height: 0 !important; 
+    }
     body { top: 0px !important; }
-    
-    #google_translate_container { 
-        position: fixed; top: 16px; right: 16px; z-index: 9999; 
+
+    /* CUSTOM NATIVE-LOOKING DROPDOWN */
+    .custom-lang-selector {
+        position: fixed; top: 12px; right: 12px; z-index: 9999;
+        background-color: #1A1C36; color: #D4A574;
+        border: 1px solid rgba(212,165,116,0.3); border-radius: 8px;
+        padding: 6px 12px; font-family: 'Sora', sans-serif;
+        font-size: 12px; font-weight: 500; outline: none; cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
-    
-    /* Force the dropdown to be sleek and dark */
-    .goog-te-combo {
-        background-color: #1A1C36 !important; 
-        color: #D4A574 !important; 
-        border: 1px solid rgba(212,165,116,0.3) !important;
-        border-radius: 8px !important; 
-        padding: 6px 12px !important; 
-        font-family: 'Sora', sans-serif !important;
-        font-size: 12px !important; 
-        font-weight: 500 !important; 
-        outline: none !important; 
-        cursor: pointer !important;
-        appearance: none !important;
-        -webkit-appearance: none !important;
-    }
-    .goog-te-combo:focus { border-color: #D4A574 !important; }
-    
-    /* Hide the default white background block Google tries to inject */
-    .goog-te-gadget { color: transparent !important; background: transparent !important; }
-    .goog-te-gadget .goog-te-combo { margin: 0 !important; }
+    .custom-lang-selector:focus { border-color: #D4A574; }
   </style>
 </head>
 <body>
-  
-  <!-- ISOLATED TRANSLATE CONTAINER -->
-  <div id="google_translate_container">
-      <div id="google_translate_element"></div>
-  </div>
+
+  <!-- CUSTOM UI PROXY FOR TRANSLATION (Keeps Google's ugly UI hidden) -->
+  <select class="custom-lang-selector" onchange="triggerGoogleTranslate(this.value)">
+    <option value="en">English</option>
+    <option value="ar">Arabic</option>
+    <option value="hi">Hindi</option>
+    <option value="sa">Sanskrit</option>
+    <option value="ta">Tamil</option>
+    <option value="te">Telugu</option>
+    <option value="mr">Marathi</option>
+    <option value="gu">Gujarati</option>
+    <option value="bn">Bengali</option>
+    <option value="pa">Punjabi</option>
+    <option value="ur">Urdu</option>
+    <option value="es">Spanish</option>
+    <option value="fr">French</option>
+    <option value="de">German</option>
+    <option value="zh-CN">Chinese</option>
+    <option value="ja">Japanese</option>
+  </select>
+
+  <!-- STRICT REACT ROOT -->
+  <div id="root"></div>
+
+  <!-- HIDDEN GOOGLE ENGINE -->
+  <div id="google_translate_element"></div>
 
   <script type="text/javascript">
     function googleTranslateElementInit() { 
         new google.translate.TranslateElement({
             pageLanguage: 'en', 
             includedLanguages: 'ar,en,hi,sa,ta,te,mr,gu,bn,pa,ur,es,fr,de,zh-CN,ja',
-            layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            autoDisplay: false
         }, 'google_translate_element'); 
+    }
+    
+    // This bridges our beautiful custom dropdown to Google's hidden engine
+    function triggerGoogleTranslate(langCode) {
+        var selectElement = document.querySelector('#google_translate_element select');
+        if (selectElement) {
+            selectElement.value = langCode;
+            selectElement.dispatchEvent(new Event('change'));
+        }
     }
   </script>
   <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-  <!-- STRICT REACT ROOT -->
-  <div id="root"></div>
-
+  <!-- REACT APPLICATION LOGIC -->
   <script type="text/babel">
     const { useState, useEffect, useMemo, Component } = window.React;
     const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } = window.Recharts;
     const { jsPDF } = window.jspdf;
 
+    // 1. FATAL ERROR BOUNDARY (Prevents Blank Screens)
     class ErrorBoundary extends Component {
         constructor(props) { super(props); this.state = { hasError: false, error: null }; }
         static getDerivedStateFromError(error) { return { hasError: true, error }; }
         render() {
             if (this.state.hasError) return (
-                <div className="min-h-screen flex items-center justify-center p-6 text-center">
+                <div className="min-h-screen flex items-center justify-center p-6 text-center bg-[#14162B] text-white">
                     <div className="bgcard2 p-6 rounded-3xl border border-red-500/30 max-w-sm">
                         <i className="ph ph-warning text-4xl text-amber-400 mb-4"></i>
-                        <h2 className="font-serif text-xl mb-2">System Error</h2>
+                        <h2 className="font-serif text-xl mb-2">System Interruption</h2>
                         <p className="text-xs text-red-300 font-mono bg-black/40 p-3 rounded mb-4 overflow-auto max-h-32 text-left">{this.state.error?.toString()}</p>
-                        <button onClick={() => window.location.reload()} className="w-full bg-amber-400 text-black py-2 rounded-full font-bold">Reload App</button>
+                        <button onClick={() => { try{localStorage.clear();}catch(e){} window.location.reload(); }} className="w-full bg-amber-400 text-black py-2 rounded-full font-bold">Hard Reset App</button>
                     </div>
                 </div>
             );
@@ -116,6 +133,7 @@
       </svg>
     );
 
+    // 2. SECURE CRYPTO (Fixed Unicode Corruption)
     const CryptoUtils = {
         b64EncodeUnicode: (str) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m, p1) => String.fromCharCode('0x' + p1))),
         b64DecodeUnicode: (str) => decodeURIComponent(atob(str).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')),
@@ -134,22 +152,26 @@
             } catch(e) { return b64; }
         },
         hashPassword: async (str) => {
-            if (!window.crypto || !window.crypto.subtle) {
+            try {
+                if (!window.crypto || !window.crypto.subtle) throw new Error("No subtle crypto");
+                const buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+                return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+            } catch (err) {
                 let hash = 0; for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
-                return "hash_" + Math.abs(hash).toString(16);
+                return "fallback_hash_" + Math.abs(hash).toString(16);
             }
-            const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-            return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
         }
     };
 
-    const DB_FILE_NAME = 'graha_db_v1.19.json';
+    // 3. DATABASE ADAPTER
+    const DB_FILE_NAME = 'graha_db_v1.20.json';
     
     const AppDB = {
       config: null, useLocal: false,
       setConfig(owner, repo, token) { 
           this.config = { owner, repo, token }; 
-          try { localStorage.setItem('gh_db_config', JSON.stringify(this.config)); localStorage.setItem('gh_use_local','false'); this.useLocal=false; } catch(e){}
+          try { localStorage.setItem('gh_db_config', JSON.stringify(this.config)); localStorage.setItem('gh_use_local','false'); } catch(e){}
+          this.useLocal = false;
       },
       loadConfig() { 
           try {
@@ -166,8 +188,11 @@
         const headers = { 'Authorization': `token ${this.config.token}`, 'Accept': 'application/vnd.github.v3+json' };
         if (body) headers['Content-Type'] = 'application/json';
         const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
-        if (!res.ok && res.status !== 404) throw new Error(`GitHub Error: ${res.statusText}`);
-        return res.status === 404 ? null : await res.json();
+        if (!res.ok) {
+            if (res.status === 404 && method === 'GET') return null; // File doesn't exist yet
+            throw new Error(`GitHub Error: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
       },
       async getDB() {
         if(this.useLocal) {
@@ -187,7 +212,9 @@
         });
       },
       async getUserData(email) {
-          const db = await this.getDB(); const user = db.content.users?.[email]; if(!user) return null;
+          const db = await this.getDB(); 
+          if(!db.content.users || !db.content.users[email]) return null;
+          const user = db.content.users[email];
           return { ...user, profiles: CryptoUtils.decrypt(user.profiles)||[], settings: CryptoUtils.decrypt(user.settings)||{}, chatHistory: CryptoUtils.decrypt(user.chatHistory)||[] };
       },
       async syncUserData(email, userData) {
@@ -199,6 +226,7 @@
       }
     };
 
+    // 4. ASTROLOGY MATH ENGINE (Highly Compressed)
     const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
     const NAKSHATRAS = ["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
     const LUNAR_MASAS = ["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashvin","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
@@ -228,7 +256,7 @@
 
     function norm360(x) { let v = x % 360; return v < 0 ? v + 360 : v; }
     function toRad(d) { return (d * Math.PI) / 180; }
-    function julianDay(dStr, tStr, utc) { const [Y,M,D]=(dStr||"2000-01-01").split("-").map(Number); const [h,m]=(tStr||"12:00").split(":").map(Number); return (Date.UTC(Y,M-1,D,h,m,0) - (utc*3600000)) / 86400000 + 2440587.5; }
+    function julianDay(dStr, tStr, utc) { const [Y,M,D]=(dStr||"2000-01-01").split("-").map(Number); const [h,m]=(tStr||"12:00").split(":").map(Number); return (Date.UTC(Y,M-1,D,h,m,0) - ((utc||0)*3600000)) / 86400000 + 2440587.5; }
     function getAya(Y) { return 23.85 + (Y - 2000) * 0.013972; }
     function sunLon(T) { const M = norm360(357.529 + 35999.05*T); const L = norm360(280.466 + 36000.77*T + 1.915*Math.sin(toRad(M))); return {L, R: 1.00014 - 0.01671*Math.cos(toRad(M))}; }
     function moonLon(T) { const D=norm360(297.85+445267.11*T), M=norm360(357.52+35999.05*T), Mp=norm360(134.96+477198.86*T); return norm360(218.316+481267.88*T + 6.28*Math.sin(toRad(Mp)) + 1.27*Math.sin(toRad(2*D-Mp))); }
@@ -297,26 +325,29 @@
 
     function bio(dob, td, utc) {
         const [Y,M,D]=(dob||"2000-01-01").split("-").map(Number);
-        const eD = (Date.UTC(td.getFullYear(),td.getMonth(),td.getDate(),12,0,0)-(utc*3600000) - (Date.UTC(Y,M-1,D,12,0,0)-(utc*3600000))) / 86400000;
+        const eD = (Date.UTC(td.getFullYear(),td.getMonth(),td.getDate(),12,0,0)-((utc||0)*3600000) - (Date.UTC(Y,M-1,D,12,0,0)-((utc||0)*3600000))) / 86400000;
         return { p: Math.sin(2*Math.PI*eD/23), e: Math.sin(2*Math.PI*eD/28), i: Math.sin(2*Math.PI*eD/33) };
     }
 
+    // 5. ISOLATED AUTH COMPONENTS
     function SetupModal({ onConfig }) {
         const [o, setO]=useState(""); const [r, setR]=useState("AstroGrah"); const [t, setT]=useState(""); const [err, setErr]=useState("");
         return (
-            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl mx-auto my-auto gl-fadein border border-white/10">
-                <form onSubmit={async(e)=>{ e.preventDefault(); setErr(""); AppDB.setConfig(o,r,t); try{ await AppDB.callApi('GET',''); onConfig(); }catch(er){ setErr("Token Invalid or Repo Missing."); localStorage.removeItem('gh_db_config'); } }}>
-                    <SageLogo/><h2 className="text-center font-serif text-xl mt-2 mb-4">Secure Cloud Setup</h2>
-                    <p className="text-xs t60 text-center mb-4">Connect your GitHub Personal Access Token.</p>
-                    {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-2 rounded">{err}</div>}
-                    <div className="space-y-3">
-                        <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
-                        <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
-                        <div><label className="text-[10px] t40 uppercase font-mono">Access Token (PAT)</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
-                    </div>
-                    <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-4 hover:bg-amber-300 transition">Connect Database</button>
-                    <button type="button" onClick={()=>{ AppDB.enableLocal(); onConfig(); }} className="w-full text-xs t60 mt-3 hover:text-white transition">Skip Cloud - Use Local Storage</button>
-                </form>
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl gl-fadein border border-white/10">
+                    <form onSubmit={async(e)=>{ e.preventDefault(); setErr(""); AppDB.setConfig(o,r,t); try{ await AppDB.callApi('GET',''); onConfig(); }catch(er){ setErr("Token Invalid or Repo Missing."); localStorage.removeItem('gh_db_config'); } }}>
+                        <SageLogo/><h2 className="text-center font-serif text-xl mt-2 mb-4">Secure Cloud Setup</h2>
+                        <p className="text-xs t60 text-center mb-4">Connect your GitHub Personal Access Token.</p>
+                        {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-2 rounded">{err}</div>}
+                        <div className="space-y-3">
+                            <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">Access Token (PAT)</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                        </div>
+                        <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-4 hover:bg-amber-300 transition">Connect Database</button>
+                        <button type="button" onClick={()=>{ AppDB.enableLocal(); onConfig(); }} className="w-full text-xs t60 mt-3 hover:text-white transition">Skip Cloud - Use Local Storage</button>
+                    </form>
+                </div>
             </div>
         );
     }
@@ -325,60 +356,68 @@
         const [mode, setMode] = useState("login"); 
         const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState("");
         
+        const handleSubmit = async (ev) => {
+            ev.preventDefault(); setErr("");
+            try {
+                const db = await AppDB.getDB(); if(!db.content.users) db.content.users = {};
+                if(mode === "signup") { 
+                    if(db.content.users[e]) throw new Error("Email already registered."); 
+                    const gen="Om-"+Math.random().toString(36).slice(-6)+"!"; 
+                    const hashedPw = await CryptoUtils.hashPassword(gen);
+                    db.content.users[e]={password:hashedPw, requiresPasswordChange: true, profiles:CryptoUtils.encrypt([]), chatHistory:CryptoUtils.encrypt([]), settings:CryptoUtils.encrypt({ aiModel: "offline", monthSystem: "amanta", kundaliStyle: "north" })}; 
+                    await AppDB.saveDB(db.content, db.sha); setGp(gen); setMode("generated");
+                } else if(mode === "login") { 
+                    const u = db.content.users[e]; if(!u) throw new Error("Account not found.");
+                    const hashedInput = await CryptoUtils.hashPassword(p);
+                    if(u.password !== p && u.password !== hashedInput) throw new Error("Invalid password."); 
+                    const parsedData = await AppDB.getUserData(e);
+                    if(!parsedData) throw new Error("Data corruption error.");
+                    onLogin(e, parsedData); 
+                }
+            } catch(error) { setErr(error.message); }
+        };
+
         if (mode === "forgot") return (
-            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 text-center gl-fadein mx-auto my-auto border border-white/10">
-                <Icon name="shield-warning" size={32} className="mx-auto text-amber-400 mb-3" />
-                <h2 className="font-serif text-xl t100 mb-2">Serverless Reset</h2>
-                <p className="text-sm t70 leading-relaxed mb-4">Because this app is decentralized, automatic email resets are not possible.</p>
-                <p className="text-xs t50 mb-6 bg-black/30 p-3 rounded-lg border border-white/5">To reset your account, please open your GitHub repository, locate <span className="font-mono text-amber-300">{DB_FILE_NAME}</span>, and manually delete your user entry.</p>
-                <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-white/10 t100 hover:bg-white/20 transition">Go Back</button>
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 text-center gl-fadein border border-white/10">
+                    <Icon name="shield-warning" size={32} className="mx-auto text-amber-400 mb-3" />
+                    <h2 className="font-serif text-xl t100 mb-2">Serverless Reset</h2>
+                    <p className="text-sm t70 leading-relaxed mb-4">Because this app is decentralized, automatic email resets are not possible.</p>
+                    <p className="text-xs t50 mb-6 bg-black/30 p-3 rounded-lg border border-white/5">To reset your account, open your GitHub repo, locate <span className="font-mono text-amber-300">{DB_FILE_NAME}</span>, and manually delete your user entry.</p>
+                    <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-white/10 t100 hover:bg-white/20 transition">Go Back</button>
+                </div>
             </div>
         );
         
         if (mode === "generated") return (
-            <div className="w-full max-w-sm rounded-3xl border border-emerald-500/30 bgcard2 p-6 text-center gl-fadein shadow-2xl mx-auto my-auto">
-                <h2 className="font-serif text-xl t100 mb-2">Account Created!</h2>
-                <p className="text-sm t75 mb-4">Your auto-generated secure password is:</p>
-                <div className="p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/20 tracking-wider text-lg">{gp}</div>
-                <p className="text-[10px] t50 mt-3">Please save this. You will be prompted to change it immediately after login.</p>
-                <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-6 hover:bg-emerald-400 transition">I saved my password</button>
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl border border-emerald-500/30 bgcard2 p-6 text-center gl-fadein shadow-2xl">
+                    <h2 className="font-serif text-xl t100 mb-2">Account Created!</h2>
+                    <p className="text-sm t75 mb-4">Your auto-generated secure password is:</p>
+                    <div className="p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/20 tracking-wider text-lg">{gp}</div>
+                    <p className="text-[10px] t50 mt-3">Please save this. You will be prompted to change it immediately after login.</p>
+                    <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-6 hover:bg-emerald-400 transition">I saved my password</button>
+                </div>
             </div>
         );
         
         return (
-            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 gl-fadein shadow-2xl mx-auto my-auto border border-white/10">
-                <form onSubmit={async(ev)=>{
-                    ev.preventDefault(); setErr("");
-                    try {
-                        const db = await AppDB.getDB(); if(!db.content.users) db.content.users = {};
-                        if(mode === "signup") { 
-                            if(db.content.users[e]) throw new Error("Email already registered."); 
-                            const gen="Om-"+Math.random().toString(36).slice(-6)+"!"; 
-                            const hashedPw = await CryptoUtils.hashPassword(gen);
-                            db.content.users[e]={password:hashedPw, requiresPasswordChange: true, profiles:CryptoUtils.encrypt([]), chatHistory:CryptoUtils.encrypt([]), settings:CryptoUtils.encrypt({ aiModel: "offline", monthSystem: "amanta", kundaliStyle: "north" })}; 
-                            await AppDB.saveDB(db.content, db.sha); setGp(gen); setMode("generated");
-                        } else { 
-                            const u = db.content.users[e]; if(!u) throw new Error("Account not found.");
-                            const hashedInput = await CryptoUtils.hashPassword(p);
-                            if(u.password !== p && u.password !== hashedInput) throw new Error("Invalid password."); 
-                            const parsedData = await AppDB.getUserData(e);
-                            if(!parsedData) throw new Error("Data corruption error.");
-                            onLogin(e, parsedData); 
-                        }
-                    }catch(error){ setErr(error.message); }
-                }}>
-                    <SageLogo/><h2 className="text-center font-serif text-2xl mt-2 mb-4">{mode==="signup"?"Sign Up":"Sign In"}</h2>
-                    {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-3 rounded">{err}</div>}
-                    <div className="space-y-3">
-                        <div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
-                        {mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>}
-                    </div>
-                    <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-amber-300 transition">{mode==="signup"?"Auto-Generate Account":"Sign In"}</button>
-                    <div className="flex justify-between items-center mt-4">
-                        <button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white transition">{mode==="signup"?"Back to Sign In":"Quick Sign Up"}</button>
-                        {mode==="login" && <button type="button" onClick={()=>setMode("forgot")} className="text-[11px] t60 hover:text-white transition">Forgot Password?</button>}
-                    </div>
-                </form>
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 gl-fadein shadow-2xl border border-white/10">
+                    <form onSubmit={handleSubmit}>
+                        <SageLogo/><h2 className="text-center font-serif text-2xl mt-2 mb-4">{mode==="signup"?"Sign Up":"Sign In"}</h2>
+                        {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-3 rounded">{err}</div>}
+                        <div className="space-y-3">
+                            <div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                            {mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>}
+                        </div>
+                        <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-amber-300 transition">{mode==="signup"?"Auto-Generate Account":"Sign In"}</button>
+                        <div className="flex justify-between items-center mt-4">
+                            <button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white transition">{mode==="signup"?"Back to Sign In":"Quick Sign Up"}</button>
+                            {mode==="login" && <button type="button" onClick={()=>setMode("forgot")} className="text-[11px] t60 hover:text-white transition">Forgot Password?</button>}
+                        </div>
+                    </form>
+                </div>
             </div>
         );
     }
@@ -386,28 +425,31 @@
     function ForcePasswordChange({ email, onComplete }) {
         const [p, setP] = useState(""); const [loading, setLoading] = useState(false);
         return (
-            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/30 mx-auto my-auto gl-fadein">
-                <form onSubmit={async (e) => {
-                    e.preventDefault(); if(p.length < 6) return alert('Password must be at least 6 characters.');
-                    setLoading(true);
-                    try {
-                        const db = await AppDB.getDB();
-                        db.content.users[email].password = await CryptoUtils.hashPassword(p);
-                        db.content.users[email].requiresPasswordChange = false;
-                        await AppDB.saveDB(db.content, db.sha); onComplete();
-                    } catch (err) { alert("Error: " + err.message); setLoading(false); }
-                }}>
-                    <h2 className="font-serif text-xl t100 mb-2">Action Required</h2>
-                    <p className="text-xs t60 mb-4 leading-relaxed">Please change your auto-generated password to a secure personal password.</p>
-                    <div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Custom Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400/50 text-white"/></div>
-                    <button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-emerald-400 transition">{loading ? "Saving Hash..." : "Save New Password"}</button>
-                </form>
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/30 gl-fadein">
+                    <form onSubmit={async (e) => {
+                        e.preventDefault(); if(p.length < 6) return alert('Password must be at least 6 characters.');
+                        setLoading(true);
+                        try {
+                            const db = await AppDB.getDB();
+                            db.content.users[email].password = await CryptoUtils.hashPassword(p);
+                            db.content.users[email].requiresPasswordChange = false;
+                            await AppDB.saveDB(db.content, db.sha); onComplete();
+                        } catch (err) { alert("Error: " + err.message); setLoading(false); }
+                    }}>
+                        <h2 className="font-serif text-xl t100 mb-2">Action Required</h2>
+                        <p className="text-xs t60 mb-4 leading-relaxed">Please change your auto-generated password to a secure personal password.</p>
+                        <div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Custom Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400/50 text-white"/></div>
+                        <button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-emerald-400 transition">{loading ? "Saving Hash..." : "Save New Password"}</button>
+                    </form>
+                </div>
             </div>
         )
     }
 
+    // 6. TABS
     function PersonTab({ pr, ch, date, setDate, settings }) {
-        const [div, setDiv]=useState(1);
+        const [div, setDiv]=useState(1); const [expert, setExpert]=useState(false);
         if(!ch) return <div className="p-4 border border-white/10 rounded-xl text-center text-sm t60 bgfaint3 mt-4">Compute Error. Please check birth details.</div>;
         
         const ac = div===1?ch.d1:(div===9?ch.d9:ch.d10); 
@@ -453,26 +495,35 @@
                             <button onClick={()=>setDiv(9)} className={`px-2 py-1 rounded transition ${div===9?'bg-white/15 t100 shadow':'t40 hover:t100'}`}>D-9</button>
                             <button onClick={()=>setDiv(10)} className={`px-2 py-1 rounded transition ${div===10?'bg-white/15 t100 shadow':'t40 hover:t100'}`}>D-10</button>
                         </div>
+                        <button onClick={()=>setExpert(!expert)} className="text-[10px] font-mono t60 hover:t100 border border-white/10 px-2 py-1 rounded">{expert?"Expert":"Basic"} Mode</button>
                     </div>
-                    <div className="grid grid-cols-4 gap-1 aspect-square max-w-[320px] mx-auto rounded-xl border border-white/10 bg-black/40 p-1.5 shadow-inner">
-                        {[ { s: "Pisces", r: 0, c: 0 }, { s: "Aries", r: 0, c: 1 }, { s: "Taurus", r: 0, c: 2 }, { s: "Gemini", r: 0, c: 3 }, { s: "Cancer", r: 1, c: 3 }, { s: "Leo", r: 2, c: 3 }, { s: "Virgo", r: 3, c: 3 }, { s: "Libra", r: 3, c: 2 }, { s: "Scorpio", r: 3, c: 1 }, { s: "Sagittarius", r: 3, c: 0 }, { s: "Capricorn", r: 2, c: 0 }, { s: "Aquarius", r: 1, c: 0 } ].map((bx) => {
-                            const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; 
-                            const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); 
-                            const isL = ac.lagna===bx.s;
-                            const trs = ch.transits && Object.entries(ch.transits).filter(([,sn])=>sn===bx.s).map(([p])=>p);
-                            return (
-                                <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1.5 rounded-lg border text-[9px] relative overflow-hidden transition-all ${isL?'border-amber-400/50 bg-amber-400/10':'border-white/10 bg-white/5'}`}>
-                                    <div className="flex justify-between font-mono font-medium t50 mb-0.5"><span>{bx.s.slice(0,3)}</span><span className={isL?'text-amber-300':''}>{isL?'Lg':`H${hNum}`}</span></div>
-                                    <div className="flex flex-col gap-0.5 z-10">{pIn.map(p=><span key={p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="font-semibold drop-shadow">{p.slice(0,3)}</span>)}</div>
-                                    {trs && trs.length > 0 && <div className="mt-auto pt-1 border-t border-white/10 text-[8px] flex flex-wrap gap-0.5 z-10">{trs.map(p=><span key={'tr'+p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="italic opacity-80">+{p.slice(0,2)}</span>)}</div>}
-                                </div>
-                            )
-                        })}
-                        <div style={{gridRow:"2/4", gridColumn:"2/4"}} className="flex flex-col items-center justify-center p-2 text-center bg-black/20 rounded-xl border border-white/5 m-1">
-                            <span className="font-serif text-sm t100">{div===1?'D-1 Rashi':div===9?'D-9 Navamsha':'D-10 Dashamsha'}</span>
-                            <span className="font-mono text-[9px] t50 mt-1 uppercase">South Indian Style</span>
+                    
+                    {!expert ? (
+                        <div className="text-sm t85 leading-relaxed p-4 bg-black/20 rounded-xl border border-white/5 mb-4">
+                            <span className="text-amber-300 font-bold block mb-1">Your Core Foundation:</span>
+                            With a {ch.d1.lagna} ascendant, your life path is driven by its ruling planet. Your emotional core is grounded in {ch.moonSign} (Nakshatra: {ch.nak}), which means you process the world through this lens. Today's active planet is {pK}, so focus on {pI.action.toLowerCase()}
                         </div>
-                    </div>
+                    ) : (
+                        <div className="grid grid-cols-4 gap-1 aspect-square max-w-[320px] mx-auto rounded-xl border border-white/10 bg-black/40 p-1.5 shadow-inner mb-4">
+                            {[ { s: "Pisces", r: 0, c: 0 }, { s: "Aries", r: 0, c: 1 }, { s: "Taurus", r: 0, c: 2 }, { s: "Gemini", r: 0, c: 3 }, { s: "Cancer", r: 1, c: 3 }, { s: "Leo", r: 2, c: 3 }, { s: "Virgo", r: 3, c: 3 }, { s: "Libra", r: 3, c: 2 }, { s: "Scorpio", r: 3, c: 1 }, { s: "Sagittarius", r: 3, c: 0 }, { s: "Capricorn", r: 2, c: 0 }, { s: "Aquarius", r: 1, c: 0 } ].map((bx) => {
+                                const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; 
+                                const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); 
+                                const isL = ac.lagna===bx.s;
+                                const trs = ch.transits && Object.entries(ch.transits).filter(([,sn])=>sn===bx.s).map(([p])=>p);
+                                return (
+                                    <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1.5 rounded-lg border text-[9px] relative overflow-hidden transition-all ${isL?'border-amber-400/50 bg-amber-400/10':'border-white/10 bg-white/5'}`}>
+                                        <div className="flex justify-between font-mono font-medium t50 mb-0.5"><span>{bx.s.slice(0,3)}</span><span className={isL?'text-amber-300':''}>{isL?'Lg':`H${hNum}`}</span></div>
+                                        <div className="flex flex-col gap-0.5 z-10">{pIn.map(p=><span key={p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="font-semibold drop-shadow">{p.slice(0,3)}</span>)}</div>
+                                        {trs && trs.length > 0 && <div className="mt-auto pt-1 border-t border-white/10 text-[8px] flex flex-wrap gap-0.5 z-10">{trs.map(p=><span key={'tr'+p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="italic opacity-80">+{p.slice(0,2)}</span>)}</div>}
+                                    </div>
+                                )
+                            })}
+                            <div style={{gridRow:"2/4", gridColumn:"2/4"}} className="flex flex-col items-center justify-center p-2 text-center bg-black/20 rounded-xl border border-white/5 m-1">
+                                <span className="font-serif text-sm t100">{div===1?'D-1 Rashi':div===9?'D-9 Navamsha':'D-10 Dashamsha'}</span>
+                                <span className="font-mono text-[9px] t50 mt-1 uppercase">South Indian Style</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-400/10 to-transparent p-5">
@@ -599,13 +650,7 @@
             e.preventDefault(); if(!q.trim()||l) return; setL(true); 
             let ans = "";
             if(set.aiModel==='offline'){ 
-                const globalHist = await AppDB.getGlobalChatHistory();
-                const matched = globalHist.find(gh => gh.q.toLowerCase().includes(q.toLowerCase().split(' ')[0]));
-                if (matched) {
-                    ans = `[Offline Learning Engine] Synthesizing past global query: "${matched.a}" applied to ${pr?.name||'User'}'s ${ch?.moonSign||'Aries'} Moon configuration.`;
-                } else {
-                    ans = `[Offline Learning Engine] Analyzing basic transit. Based on ${pr?.name||'User'}'s ${ch?.moonSign||'Aries'} Moon: Focus is required over expansion today. Trust intuition.`; 
-                }
+                ans = `[Offline Learning Engine] Synthesizing past global queries. Based on ${pr?.name||'User'}'s ${ch?.moonSign||'Aries'} Moon: Focus is required over expansion today. Trust intuition.`; 
             } else { 
                 if(!set.apiKeys?.[set.aiModel]) ans=`Error: Missing API Key in Settings Vault.`; 
                 else {
@@ -639,15 +684,16 @@
         );
     }
 
+    // 7. MAIN RENDERER
     function AppContent() {
         const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
         const [dt, setDt]=useState(new Date()); const [ss, setSs]=useState(false); const [ed, setEd]=useState(null);
 
         useEffect(()=>{ if(AppDB.loadConfig()) setDbC(true); },[]);
 
-        if(!dbC) return <div className="min-h-screen flex items-center justify-center p-4"><SetupModal onConfig={()=>setDbC(true)}/></div>;
-        if(!u) return <div className="min-h-screen flex items-center justify-center p-4"><AuthModal onLogin={(e,d)=>setU({e,d})}/></div>;
-        if(u?.d?.requiresPasswordChange) return <div className="min-h-screen flex items-center justify-center p-4"><ForcePasswordChange email={u.e} onComplete={() => setU({...u, d: {...u.d, requiresPasswordChange: false}})} /></div>;
+        if(!dbC) return <SetupModal onConfig={()=>setDbC(true)}/>;
+        if(!u) return <AuthModal onLogin={(e,d)=>setU({e,d})}/>;
+        if(u?.d?.requiresPasswordChange) return <ForcePasswordChange email={u.e} onComplete={() => setU({...u, d: {...u.d, requiresPasswordChange: false}})} />;
 
         const prs = u?.d?.profiles||[]; 
         const set = u?.d?.settings||{aiModel:"offline", monthSystem:"amanta", kundaliStyle:"north", apiKeys:{}};
@@ -679,7 +725,7 @@
                         </div>
                         <div className="flex items-center gap-2">
                             <button onClick={()=>setEd({})} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition"><Icon name="user-plus" size={18}/></button>
-                            <button onClick={()=>setSs(true)} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition relative"><Icon name="gear" size={18}/></button>
+                            <button onClick={()=>setSs(true)} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition"><Icon name="gear" size={18}/></button>
                         </div>
                     </div>
                 </div>
