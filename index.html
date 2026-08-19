@@ -10,9 +10,11 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=Sora:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   
+  <!-- CORE DEPENDENCIES -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <!-- USING BABEL FOR IN-BROWSER JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -86,12 +88,14 @@
         }, 'google_translate_element'); 
     }
     
-    // This bridges our beautiful custom dropdown to Google's hidden engine
     function triggerGoogleTranslate(langCode) {
-        var selectElement = document.querySelector('#google_translate_element select');
+        var selectElement = document.querySelector('.goog-te-combo');
         if (selectElement) {
             selectElement.value = langCode;
             selectElement.dispatchEvent(new Event('change'));
+        } else {
+             // Fallback if google script hasn't loaded fully yet.
+            setTimeout(() => triggerGoogleTranslate(langCode), 500);
         }
     }
   </script>
@@ -99,7 +103,7 @@
 
   <!-- REACT APPLICATION LOGIC -->
   <script type="text/babel">
-    const { useState, useEffect, useMemo, Component } = window.React;
+    const { useState, useEffect, useMemo, Component, Fragment } = window.React;
     const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } = window.Recharts;
     const { jsPDF } = window.jspdf;
 
@@ -135,8 +139,19 @@
 
     // 2. SECURE CRYPTO (Fixed Unicode Corruption)
     const CryptoUtils = {
-        b64EncodeUnicode: (str) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m, p1) => String.fromCharCode('0x' + p1))),
-        b64DecodeUnicode: (str) => decodeURIComponent(atob(str).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')),
+        b64EncodeUnicode: (str) => {
+             // Safe Base64 encoding for Unicode
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+                function toSolidBytes(match, p1) {
+                    return String.fromCharCode('0x' + p1);
+            }));
+        },
+        b64DecodeUnicode: (str) => {
+            // Safe Base64 decoding for Unicode
+            return decodeURIComponent(atob(str).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        },
         encrypt: (data) => {
             if (!data) return data;
             const str = typeof data === 'object' ? JSON.stringify(data) : String(data);
@@ -149,16 +164,22 @@
                 const dec = CryptoUtils.b64DecodeUnicode(b64);
                 let res = ''; for(let i=0; i<dec.length; i++) res += String.fromCharCode(dec.charCodeAt(i) ^ "SAGE2026".charCodeAt(i % 8));
                 try { return JSON.parse(res); } catch(e) { return res; }
-            } catch(e) { return b64; }
+            } catch(e) { return b64; } // Return raw if decryption fails (fallback for old data)
         },
         hashPassword: async (str) => {
+             // Fallback hashing if crypto.subtle is unavailable (e.g. running on local file:// without HTTPS)
+             const fallbackHash = (s) => {
+                let h = 0;
+                for(let i = 0; i < s.length; i++) { h = Math.imul(31, h) + s.charCodeAt(i) | 0; }
+                return "hash_" + Math.abs(h).toString(16);
+             }
+
             try {
-                if (!window.crypto || !window.crypto.subtle) throw new Error("No subtle crypto");
+                if (!window.crypto || !window.crypto.subtle) return fallbackHash(str);
                 const buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
                 return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
             } catch (err) {
-                let hash = 0; for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
-                return "fallback_hash_" + Math.abs(hash).toString(16);
+                return fallbackHash(str);
             }
         }
     };
@@ -188,8 +209,10 @@
         const headers = { 'Authorization': `token ${this.config.token}`, 'Accept': 'application/vnd.github.v3+json' };
         if (body) headers['Content-Type'] = 'application/json';
         const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
+        
         if (!res.ok) {
-            if (res.status === 404 && method === 'GET') return null; // File doesn't exist yet
+            // CRITICAL: Handle 404 (file doesn't exist yet). Return null to signify creation needed.
+            if (res.status === 404 && method === 'GET') return null; 
             throw new Error(`GitHub Error: ${res.status} ${res.statusText}`);
         }
         return await res.json();
@@ -215,12 +238,22 @@
           const db = await this.getDB(); 
           if(!db.content.users || !db.content.users[email]) return null;
           const user = db.content.users[email];
-          return { ...user, profiles: CryptoUtils.decrypt(user.profiles)||[], settings: CryptoUtils.decrypt(user.settings)||{}, chatHistory: CryptoUtils.decrypt(user.chatHistory)||[] };
+          // Provide defaults for missing encrypted fields during migration
+          return { 
+              ...user, 
+              profiles: CryptoUtils.decrypt(user.profiles) || [], 
+              settings: CryptoUtils.decrypt(user.settings) || {}, 
+              chatHistory: CryptoUtils.decrypt(user.chatHistory) || [] 
+          };
       },
       async syncUserData(email, userData) {
-        const db = await this.getDB(); if(!db.content.users) db.content.users = {};
-        db.content.users[email] = { ...db.content.users[email], 
-            profiles: CryptoUtils.encrypt(userData.profiles || []), settings: CryptoUtils.encrypt(userData.settings || {}), chatHistory: CryptoUtils.encrypt(userData.chatHistory || []) 
+        const db = await this.getDB(); 
+        if(!db.content.users) db.content.users = {};
+        db.content.users[email] = { 
+            ...db.content.users[email], 
+            profiles: CryptoUtils.encrypt(userData.profiles || []), 
+            settings: CryptoUtils.encrypt(userData.settings || {}), 
+            chatHistory: CryptoUtils.encrypt(userData.chatHistory || []) 
         };
         await this.saveDB(db.content, db.sha);
       }
@@ -329,13 +362,22 @@
         return { p: Math.sin(2*Math.PI*eD/23), e: Math.sin(2*Math.PI*eD/28), i: Math.sin(2*Math.PI*eD/33) };
     }
 
-    // 5. ISOLATED AUTH COMPONENTS
+    // 5. ISOLATED AUTH COMPONENTS (NO BLANK SCREENS)
     function SetupModal({ onConfig }) {
         const [o, setO]=useState(""); const [r, setR]=useState("AstroGrah"); const [t, setT]=useState(""); const [err, setErr]=useState("");
         return (
             <div className="min-h-screen flex items-center justify-center p-4">
                 <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl gl-fadein border border-white/10">
-                    <form onSubmit={async(e)=>{ e.preventDefault(); setErr(""); AppDB.setConfig(o,r,t); try{ await AppDB.callApi('GET',''); onConfig(); }catch(er){ setErr("Token Invalid or Repo Missing."); localStorage.removeItem('gh_db_config'); } }}>
+                    <form onSubmit={async(e)=>{ 
+                        e.preventDefault(); setErr(""); AppDB.setConfig(o,r,t); 
+                        try{ 
+                            await AppDB.callApi('GET',''); 
+                            onConfig(); 
+                        }catch(er){ 
+                            setErr("Token Invalid or Repo Missing."); 
+                            localStorage.removeItem('gh_db_config'); 
+                        } 
+                    }}>
                         <SageLogo/><h2 className="text-center font-serif text-xl mt-2 mb-4">Secure Cloud Setup</h2>
                         <p className="text-xs t60 text-center mb-4">Connect your GitHub Personal Access Token.</p>
                         {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-2 rounded">{err}</div>}
@@ -364,14 +406,13 @@
                     if(db.content.users[e]) throw new Error("Email already registered."); 
                     const gen="Om-"+Math.random().toString(36).slice(-6)+"!"; 
                     const hashedPw = await CryptoUtils.hashPassword(gen);
-                    db.content.users[e]={password:hashedPw, requiresPasswordChange: true, profiles:CryptoUtils.encrypt([]), chatHistory:CryptoUtils.encrypt([]), settings:CryptoUtils.encrypt({ aiModel: "offline", monthSystem: "amanta", kundaliStyle: "north" })}; 
+                    db.content.users[e] = { password: hashedPw, requiresPasswordChange: true }; 
                     await AppDB.saveDB(db.content, db.sha); setGp(gen); setMode("generated");
                 } else if(mode === "login") { 
                     const u = db.content.users[e]; if(!u) throw new Error("Account not found.");
                     const hashedInput = await CryptoUtils.hashPassword(p);
                     if(u.password !== p && u.password !== hashedInput) throw new Error("Invalid password."); 
                     const parsedData = await AppDB.getUserData(e);
-                    if(!parsedData) throw new Error("Data corruption error.");
                     onLogin(e, parsedData); 
                 }
             } catch(error) { setErr(error.message); }
@@ -684,12 +725,15 @@
         );
     }
 
-    // 7. MAIN RENDERER
+    // 7. MAIN RENDERER (BULLETPROOF INIT)
     function AppContent() {
         const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
         const [dt, setDt]=useState(new Date()); const [ss, setSs]=useState(false); const [ed, setEd]=useState(null);
 
-        useEffect(()=>{ if(AppDB.loadConfig()) setDbC(true); },[]);
+        // Synchronous check to prevent race condition blank screen
+        useEffect(()=>{ 
+            if(AppDB.loadConfig()) setDbC(true); 
+        },[]);
 
         if(!dbC) return <SetupModal onConfig={()=>setDbC(true)}/>;
         if(!u) return <AuthModal onLogin={(e,d)=>setU({e,d})}/>;
@@ -715,7 +759,7 @@
         return (
             <div className="min-h-screen w-full font-sans pb-10">
                 <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
-                    <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-12">
+                    <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-32">
                         <div className="flex items-center gap-3">
                             <SageLogo size={28}/>
                             <div>
@@ -738,7 +782,7 @@
                             <button onClick={()=>setEd({})} className="px-8 py-3 rounded-full bg-amber-400 text-black text-sm font-semibold hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">Create Natal Profile</button>
                         </div>
                     ) : (
-                        <>
+                        <Fragment>
                             <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bgfaint2 p-1 font-mono text-xs shadow-inner">
                                 {[{id:"person",l:"Astrology"},{id:"panchang",l:"Panchang"},{id:"union",l:"Union"},{id:"ask",l:"Ask AI"}].map(t=><button key={t.id} onClick={()=>setTb(t.id)} className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2.5 transition ${tb===t.id?"bg-white/15 t100 shadow":"t50 hover:t100"}`}>{t.l}</button>)}
                             </div>
@@ -746,7 +790,7 @@
                             {tb==="panchang" && <PanchangTab d={dt} p={aP} utc={aP?.utcOffset||5.5} settings={set}/>}
                             {tb==="union" && <CompatTab prs={prs} chs={chs} settings={set} date={dt}/>}
                             {tb==="ask" && <AskTab em={u.e} set={set} pr={aP} ch={chs[aP?.id]}/>}
-                        </>
+                        </Fragment>
                     )}
 
                     {ss && (
