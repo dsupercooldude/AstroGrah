@@ -882,6 +882,23 @@
                                     <button onClick={()=>setSs(false)} className="p-1 rounded-full hover:bg-white/10 transition"><Icon name="x"/></button>
                                 </div>
                                 
+                                <div>
+                                    <label className="fs9 font-mono uppercase t50 mb-1.5 block">Update Password</label>
+                                    <div className="flex gap-2">
+                                        <input id="new_pw_input" type="password" placeholder="Enter new password" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400/50"/>
+                                        <button type="button" onClick={async () => {
+                                            const v = document.getElementById('new_pw_input').value;
+                                            if(!v || v.length < 6) return alert('Password must be at least 6 characters.');
+                                            const db = await AppDB.getDB();
+                                            db.content.users[u.e].password = await CryptoUtils.hashPassword(v);
+                                            await AppDB.saveDB(db.content, db.sha);
+                                            alert('Password updated successfully!');
+                                            document.getElementById('new_pw_input').value = '';
+                                        }} className="px-4 py-2 bg-amber-400 text-black font-semibold rounded-xl text-xs hover:bg-amber-300 transition">Save</button>
+                                    </div>
+                                    <p className="text-[9px] t40 mt-1">Hashes locally via SHA-256 before saving to cloud.</p>
+                                </div>
+
                                 <div><label className="fs9 font-mono uppercase t50 mb-1.5 block">AI Intelligence Engine</label><select value={set.aiModel} onChange={e=>updateSettings({...set,aiModel:e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400/50">{LLM_PROVIDERS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
                                 <div><label className="fs9 font-mono uppercase t50 mb-1.5 block">Lunar Month System</label><select value={set.monthSystem} onChange={e=>updateSettings({...set,monthSystem:e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400/50"><option value="amanta">Amanta (Ends on Amavasya)</option><option value="purnimanta">Purnimanta (Ends on Purnima)</option></select></div>
                                 
