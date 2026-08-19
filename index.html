@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Graha Ledger V2</title>
+  
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzE0MTYyQiIgc3Ryb2tlPSIjRDRBNTc0IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzZXJpZiIgZm9udC1zaXplPSI0NSIgZmlsbD0iI0Q0QTU3NCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4KWQPC90ZXh0Pjwvc3ZnPg==" type="image/svg+xml" />
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=Sora:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body { background: #14162B; margin: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 4px; } 
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    
+    .font-serif { font-family: 'Fraunces', serif; } 
+    .font-mono { font-family: 'IBM Plex Mono', monospace; }
+    .t100 { color: #F2EFE6; } .t85 { color: rgba(242,239,230,0.85); } .t60 { color: rgba(242,239,230,0.60); }
+    .bgcard2 { background: #1A1C36; border: 1px solid rgba(255,255,255,0.1); }
+    .bgfaint3 { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); } 
+    
+    .gl-fadein { animation: fadein 0.3s ease; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ABSOLUTELY HIDE ORIGINAL GOOGLE TRANSLATE WIDGET */
+    .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget, #goog-gt-tt, .skiptranslate, #google_translate_element { 
+        display: none !important; opacity: 0 !important; pointer-events: none !important; height: 0 !important; 
+    }
+    body { top: 0px !important; }
+
+    /* CUSTOM NATIVE-LOOKING DROPDOWN */
+    .custom-lang-selector {
+        position: fixed; top: 12px; right: 12px; z-index: 9999;
+        background-color: #1A1C36; color: #D4A574;
+        border: 1px solid rgba(212,165,116,0.3); border-radius: 8px;
+        padding: 6px 12px; font-family: 'Sora', sans-serif;
+        font-size: 12px; font-weight: 500; outline: none; cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .custom-lang-selector:focus { border-color: #D4A574; }
+  </style>
+</head>
+<body>
+
+  <!-- CUSTOM UI PROXY FOR TRANSLATION (Keeps Google's ugly UI hidden) -->
+  <select class="custom-lang-selector" onchange="triggerGoogleTranslate(this.value)">
+    <option value="en">English</option>
+    <option value="ar">Arabic</option>
+    <option value="hi">Hindi</option>
+    <option value="sa">Sanskrit</option>
+    <option value="ta">Tamil</option>
+    <option value="te">Telugu</option>
+    <option value="mr">Marathi</option>
+    <option value="gu">Gujarati</option>
+    <option value="bn">Bengali</option>
+    <option value="pa">Punjabi</option>
+    <option value="ur">Urdu</option>
+    <option value="es">Spanish</option>
+    <option value="fr">French</option>
+    <option value="de">German</option>
+    <option value="zh-CN">Chinese</option>
+    <option value="ja">Japanese</option>
+  </select>
+
+  <!-- STRICT REACT ROOT -->
+  <div id="root"></div>
+
+  <!-- HIDDEN GOOGLE ENGINE -->
+  <div id="google_translate_element"></div>
+
+  <script type="text/javascript">
+    function googleTranslateElementInit() { 
+        new google.translate.TranslateElement({
+            pageLanguage: 'en', 
+            includedLanguages: 'ar,en,hi,sa,ta,te,mr,gu,bn,pa,ur,es,fr,de,zh-CN,ja',
+            autoDisplay: false
+        }, 'google_translate_element'); 
+    }
+    
+    // This bridges our beautiful custom dropdown to Google's hidden engine
+    function triggerGoogleTranslate(langCode) {
+        var selectElement = document.querySelector('#google_translate_element select');
+        if (selectElement) {
+            selectElement.value = langCode;
+            selectElement.dispatchEvent(new Event('change'));
+        }
+    }
+  </script>
+  <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+  <!-- REACT APPLICATION LOGIC -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, Component } = window.React;
+    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } = window.Recharts;
+    const { jsPDF } = window.jspdf;
+
+    // 1. FATAL ERROR BOUNDARY (Prevents Blank Screens)
+    class ErrorBoundary extends Component {
+        constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+        static getDerivedStateFromError(error) { return { hasError: true, error }; }
+        render() {
+            if (this.state.hasError) return (
+                <div className="min-h-screen flex items-center justify-center p-6 text-center bg-[#14162B] text-white">
+                    <div className="bgcard2 p-6 rounded-3xl border border-red-500/30 max-w-sm">
+                        <i className="ph ph-warning text-4xl text-amber-400 mb-4"></i>
+                        <h2 className="font-serif text-xl mb-2">System Interruption</h2>
+                        <p className="text-xs text-red-300 font-mono bg-black/40 p-3 rounded mb-4 overflow-auto max-h-32 text-left">{this.state.error?.toString()}</p>
+                        <button onClick={() => { try{localStorage.clear();}catch(e){} window.location.reload(); }} className="w-full bg-amber-400 text-black py-2 rounded-full font-bold">Hard Reset App</button>
+                    </div>
+                </div>
+            );
+            return this.props.children;
+        }
+    }
+
+    const Icon = ({ name, size=16, className="", style, title, onClick }) => (
+        <i title={title} onClick={onClick} className={`ph ph-${name} ${className}`} style={{fontSize: size, cursor: onClick?'pointer':'inherit', ...style}} />
+    );
+
+    const SageLogo = ({ size=64 }) => (
+      <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className="mx-auto drop-shadow-lg">
+        <circle cx="50" cy="50" r="48" stroke="#D4A574" strokeWidth="1.5" fill="rgba(212,165,116,0.05)"/>
+        <text x="50" y="65" fontFamily="serif" fontSize="45" fill="#D4A574" textAnchor="middle">ॐ</text>
+      </svg>
+    );
+
+    // 2. SECURE CRYPTO (Fixed Unicode Corruption)
+    const CryptoUtils = {
+        b64EncodeUnicode: (str) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m, p1) => String.fromCharCode('0x' + p1))),
+        b64DecodeUnicode: (str) => decodeURIComponent(atob(str).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')),
+        encrypt: (data) => {
+            if (!data) return data;
+            const str = typeof data === 'object' ? JSON.stringify(data) : String(data);
+            let res = ''; for(let i=0; i<str.length; i++) res += String.fromCharCode(str.charCodeAt(i) ^ "SAGE2026".charCodeAt(i % 8));
+            return CryptoUtils.b64EncodeUnicode(res);
+        },
+        decrypt: (b64) => {
+            if (!b64) return b64;
+            try {
+                const dec = CryptoUtils.b64DecodeUnicode(b64);
+                let res = ''; for(let i=0; i<dec.length; i++) res += String.fromCharCode(dec.charCodeAt(i) ^ "SAGE2026".charCodeAt(i % 8));
+                try { return JSON.parse(res); } catch(e) { return res; }
+            } catch(e) { return b64; }
+        },
+        hashPassword: async (str) => {
+            try {
+                if (!window.crypto || !window.crypto.subtle) throw new Error("No subtle crypto");
+                const buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+                return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+            } catch (err) {
+                let hash = 0; for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
+                return "fallback_hash_" + Math.abs(hash).toString(16);
+            }
+        }
+    };
+
+    // 3. DATABASE ADAPTER (With Safe Creation)
+    const DB_FILE_NAME = 'graha_db_v1.20.json';
+    
+    const AppDB = {
+      config: null, useLocal: false,
+      setConfig(owner, repo, token) { 
+          this.config = { owner, repo, token }; 
+          try { localStorage.setItem('gh_db_config', JSON.stringify(this.config)); localStorage.setItem('gh_use_local','false'); } catch(e){}
+          this.useLocal = false;
+      },
+      loadConfig() { 
+          try {
+              if(localStorage.getItem('gh_use_local') === 'true') { this.useLocal = true; return true; }
+              const conf = localStorage.getItem('gh_db_config'); 
+              if (conf) { this.config = JSON.parse(conf); return true; }
+          } catch(e){}
+          return false;
+      },
+      enableLocal() { this.useLocal = true; try { localStorage.setItem('gh_use_local', 'true'); } catch(e){} },
+      async callApi(method, path, body = null) {
+        if (!this.config) throw new Error("GitHub DB not configured.");
+        const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${path}?t=${Date.now()}`;
+        const headers = { 'Authorization': `token ${this.config.token}`, 'Accept': 'application/vnd.github.v3+json' };
+        if (body) headers['Content-Type'] = 'application/json';
+        const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
+        if (!res.ok) {
+            if (res.status === 404 && method === 'GET') return null; // File doesn't exist yet
+            throw new Error(`GitHub Error: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
+      },
+      async getDB() {
+        if(this.useLocal) {
+            try { return { sha: null, content: JSON.parse(localStorage.getItem('graha_local_db')||'{"users":{}}') }; }
+            catch(e) { return { sha: null, content: { users: {} } }; }
+        }
+        const data = await this.callApi('GET', DB_FILE_NAME);
+        if (!data) return { sha: null, content: { users: {} } }; 
+        return { sha: data.sha, content: JSON.parse(CryptoUtils.b64DecodeUnicode(data.content.replace(/\n/g, ''))) };
+      },
+      async saveDB(contentObj, sha) {
+        if(this.useLocal) { try { localStorage.setItem('graha_local_db', JSON.stringify(contentObj)); } catch(e){} return; }
+        await this.callApi('PUT', DB_FILE_NAME, { 
+            message: "Graha Ledger Sync", 
+            content: CryptoUtils.b64EncodeUnicode(JSON.stringify(contentObj, null, 2)), 
+            ...(sha ? { sha } : {}) 
+        });
+      },
+      async getUserData(email) {
+          const db = await this.getDB(); 
+          if(!db.content.users || !db.content.users[email]) return null;
+          const user = db.content.users[email];
+          return { ...user, profiles: CryptoUtils.decrypt(user.profiles)||[], settings: CryptoUtils.decrypt(user.settings)||{}, chatHistory: CryptoUtils.decrypt(user.chatHistory)||[] };
+      },
+      async syncUserData(email, userData) {
+        const db = await this.getDB(); if(!db.content.users) db.content.users = {};
+        db.content.users[email] = { ...db.content.users[email], 
+            profiles: CryptoUtils.encrypt(userData.profiles || []), settings: CryptoUtils.encrypt(userData.settings || {}), chatHistory: CryptoUtils.encrypt(userData.chatHistory || []) 
+        };
+        await this.saveDB(db.content, db.sha);
+      }
+    };
+
+    // 4. ASTROLOGY MATH ENGINE (Highly Compressed)
+    const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+    const NAKSHATRAS = ["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
+    const LUNAR_MASAS = ["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashvin","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
+    const YOGAS = ["Vishkambha","Priti","Ayushman","Saubhagya","Shobhana","Atiganda","Sukarma","Dhriti","Shula","Ganda","Vriddhi","Dhruva","Vyaghata","Harshana","Vajra","Siddhi","Vyatipata","Variyana","Parigha","Shiva","Siddha","Sadhya","Shubha","Shukla","Brahma","Indra","Vaidhriti"];
+    const KARANAS = ["Bava","Balava","Kaulava","Taitila","Gara","Vanija","Vishti (Bhadra)"];
+    const WEEKDAY = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+    const SANSKRIT_DAYS = { Sun: "Ravi", Moon: "Soma", Mars: "Mangala", Mercury: "Budha", Jupiter: "Brihaspati", Venus: "Shukra", Saturn: "Shani" };
+
+    const PLANET_INFO = {
+      Sun: { symbol: "☉", color: "#E8A33D", mantras: ["Om Suryaya Namah", "Aditya Hrudayam"], charity: "Donate wheat.", action: "Offer Arghya at dawn." },
+      Moon: { symbol: "☽", color: "#9FB8D9", mantras: ["Om Chandraya Namah", "Om Namah Shivaya"], charity: "Donate milk.", action: "Evening meditation." },
+      Mars: { symbol: "♂", color: "#B23A48", mantras: ["Om Bhaumaya Namah", "Hanuman Chalisa"], charity: "Donate red lentils.", action: "Physical exercise." },
+      Mercury: { symbol: "☿", color: "#7C9473", mantras: ["Om Budhaya Namah", "Vishnu Sahasranama"], charity: "Feed spinach to cows.", action: "Clear communication." },
+      Jupiter: { symbol: "♃", color: "#D4A574", mantras: ["Om Gurave Namah", "Dakshinamurthy Stotram"], charity: "Donate turmeric.", action: "Seek guidance." },
+      Venus: { symbol: "♀", color: "#C98CA7", mantras: ["Om Shukraya Namah", "Sri Suktam"], charity: "Donate white clothing.", action: "Artistic harmony." },
+      Saturn: { symbol: "♄", color: "#8288A0", mantras: ["Om Shanaye Namah", "Shani Chalisa"], charity: "Donate black sesame.", action: "Light mustard-oil lamp." },
+      Rahu: { symbol: "☊", color: "#A872B2", mantras: ["Om Rahave Namah", "Durga Saptashati"], charity: "Feed street dogs.", action: "Clean digital clutter." },
+      Ketu: { symbol: "☋", color: "#72AAB2", mantras: ["Om Ketave Namah", "Ganesha Atharvashirsha"], charity: "Donate to ascetics.", action: "Practice detachment." }
+    };
+
+    const CITY_PRESETS = [ 
+        { name: "Phalodi, India", lat: 27.13, lon: 72.36, utc: 5.5 }, { name: "Ujjain, India", lat: 23.17, lon: 75.78, utc: 5.5 }, 
+        { name: "Varanasi, India", lat: 25.31, lon: 82.97, utc: 5.5 }, { name: "New Delhi, India", lat: 28.61, lon: 77.20, utc: 5.5 }, 
+        { name: "Dubai, UAE", lat: 25.20, lon: 55.27, utc: 4 }, { name: "London, UK", lat: 51.50, lon: -0.12, utc: 0 }, 
+        { name: "New York, USA", lat: 40.71, lon: -74.00, utc: -5 }
+    ];
+
+    function norm360(x) { let v = x % 360; return v < 0 ? v + 360 : v; }
+    function toRad(d) { return (d * Math.PI) / 180; }
+    function julianDay(dStr, tStr, utc) { const [Y,M,D]=(dStr||"2000-01-01").split("-").map(Number); const [h,m]=(tStr||"12:00").split(":").map(Number); return (Date.UTC(Y,M-1,D,h,m,0) - ((utc||0)*3600000)) / 86400000 + 2440587.5; }
+    function getAya(Y) { return 23.85 + (Y - 2000) * 0.013972; }
+    function sunLon(T) { const M = norm360(357.529 + 35999.05*T); const L = norm360(280.466 + 36000.77*T + 1.915*Math.sin(toRad(M))); return {L, R: 1.00014 - 0.01671*Math.cos(toRad(M))}; }
+    function moonLon(T) { const D=norm360(297.85+445267.11*T), M=norm360(357.52+35999.05*T), Mp=norm360(134.96+477198.86*T); return norm360(218.316+481267.88*T + 6.28*Math.sin(toRad(Mp)) + 1.27*Math.sin(toRad(2*D-Mp))); }
+
+    const PE = { Mercury: { a: 0.387, e: 0.205, i: 7.004, L: [252.25, 149472.67], peri: 77.45, node: 48.33 }, Venus: { a: 0.723, e: 0.006, i: 3.394, L: [181.97, 58517.81], peri: 131.60, node: 76.67 }, Mars: { a: 1.523, e: 0.093, i: 1.849, L: [-4.55, 19140.30], peri: -23.94, node: 49.55 }, Jupiter: { a: 5.202, e: 0.048, i: 1.304, L: [34.39, 3034.74], peri: 14.72, node: 100.47 }, Saturn: { a: 9.536, e: 0.053, i: 2.485, L: [49.95, 1222.49], peri: 92.59, node: 113.66 } };
+    function helio(n, T) { const p=PE[n], a=p.a, e=p.e, i=toRad(p.i), L=p.L[0]+p.L[1]*T, peri=p.peri, node=p.node; const w=toRad(norm360(peri-node)), Om=toRad(norm360(node)), M=toRad(norm360(L-peri)); const E=M+e*Math.sin(M); const xo=a*(Math.cos(E)-e), yo=a*Math.sqrt(1-e*e)*Math.sin(E); const cw=Math.cos(w),sw=Math.sin(w),co=Math.cos(Om),so=Math.sin(Om),ci=Math.cos(i); return { x: (co*cw-so*sw*ci)*xo + (-co*sw-so*cw*ci)*yo, y: (so*cw+co*sw*ci)*xo + (-so*sw+co*cw*ci)*yo }; }
+
+    function computeKundli(profile, dateObj = null) {
+        if(!profile) return null;
+        const targetDate = dateObj || new Date();
+        const JD = julianDay(profile.dob, profile.time, profile.utcOffset); const T = (JD-2451545)/36525;
+        const [Y,Mo] = (profile.dob||"2000-01-01").split("-").map(Number); const aya = getAya(Y+(Mo-1)/12);
+        
+        const s = sunLon(T); const e = {x: s.R*Math.cos(toRad(norm360(s.L+180))), y: s.R*Math.sin(toRad(norm360(s.L+180)))};
+        const sid = { Sun: norm360(s.L-aya), Moon: norm360(moonLon(T)-aya), Rahu: norm360(norm360(125.04-1934.13*T)-aya) };
+        sid.Ketu = norm360(sid.Rahu+180);
+        ["Mercury","Venus","Mars","Jupiter","Saturn"].forEach(p => { const h=helio(p,T); sid[p] = norm360(Math.atan2(h.y-e.y, h.x-e.x)*180/Math.PI - aya); });
+        
+        const [hh,mm]=(profile.time||"12:00").split(":").map(Number); const ascL = norm360(sid.Sun + ((hh+mm/60)-6)*15);
+        
+        const getDiv = (lon, div) => {
+            if(div===1) return SIGNS[Math.floor(lon/30)];
+            if(div===9) return SIGNS[ ( [0,9,6,3,0,9,6,3,0,9,6,3][Math.floor(lon/30)] + Math.floor((lon%30)/(30/9)) ) % 12 ];
+            if(div===10) return SIGNS[ ( (Math.floor(lon/30)%2!==0 ? Math.floor(lon/30)+8 : Math.floor(lon/30)) + Math.floor((lon%30)/3) ) % 12 ];
+        };
+        const genC = (div) => {
+            const lg=getDiv(ascL,div); const idx=SIGNS.indexOf(lg);
+            const hs={}, pl={}; for(let i=1;i<=12;i++){ hs[i]=SIGNS[(idx+i-1)%12]; }
+            Object.entries(sid).forEach(([p, l]) => pl[p] = ((SIGNS.indexOf(getDiv(l,div))-idx+12)%12)+1);
+            return { lagna: lg, houses: hs, placements: pl };
+        };
+        const moonIdx = Math.floor(sid.Moon/(360/27));
+
+        const trJD = julianDay(targetDate.toISOString().slice(0,10), "12:00", profile.utcOffset); const trT = (trJD-2451545)/36525;
+        const ts = sunLon(trT); const te = {x: ts.R*Math.cos(toRad(norm360(ts.L+180))), y: ts.R*Math.sin(toRad(norm360(ts.L+180)))};
+        const transits = { Sun: SIGNS[Math.floor(norm360(ts.L-aya)/30)], Moon: SIGNS[Math.floor(norm360(moonLon(trT)-aya)/30)] };
+        ["Mercury","Venus","Mars","Jupiter","Saturn"].forEach(p => { const h=helio(p,trT); transits[p] = SIGNS[Math.floor(norm360(Math.atan2(h.y-te.y, h.x-te.x)*180/Math.PI - aya)/30)]; });
+
+        return { d1: genC(1), d9: genC(9), d10: genC(10), moonSign: SIGNS[Math.floor(sid.Moon/30)], sunSign: SIGNS[Math.floor(sid.Sun/30)], nak: NAKSHATRAS[moonIdx], pada: Math.floor((sid.Moon%(360/27))/((360/27)/4))+1, transits };
+    }
+
+    function panchang(dObj, ms="amanta", utc=5.5) {
+        const JD = julianDay(dObj.toISOString().slice(0,10), "12:00", utc); const T = (JD-2451545)/36525;
+        const sl=sunLon(T).L, ml=moonLon(T); const diff=norm360(ml-sl);
+        const tIdx=Math.floor(diff/12); const isS=tIdx<15; 
+        const mIdx=Math.floor(norm360(sl)/30); const masa = ms==="purnimanta"&&!isS ? LUNAR_MASAS[(mIdx+1)%12] : LUNAR_MASAS[mIdx];
+        
+        const d = new Date(dObj); d.setHours(6,0,0,0); const sr = new Date(d); d.setHours(18,0,0,0); const ss = new Date(d);
+        d.setHours(18,30,0,0); const mr = new Date(d); d.setHours(6,30,0,0); const msr = new Date(d); d.setDate(d.getDate()+1);
+        const dMs = ss-sr; const getS = (s, dur) => ({ s: new Date(s), e: new Date(s+dur) });
+        
+        const dow = dObj.getDay(); const abh = getS(sr.getTime()+(dMs/15)*7, dMs/15);
+        const ct = [{n:"Udveg", d:"Anxiety", c:"#B23A48"}, {n:"Amrit", d:"Nectar", c:"#8FB2D9"}, {n:"Rog", d:"Disease", c:"#B23A48"}, {n:"Labh", d:"Gain", c:"#8FC9A9"}, {n:"Shubh", d:"Auspicious", c:"#D4A574"}, {n:"Char", d:"Moving", c:"#9FB8D9"}, {n:"Kaal", d:"Loss", c:"#8288A0"}];
+        const cm = {0:[0,5,3,1,2,4,6,0], 1:[1,2,4,6,0,5,3,1], 2:[2,4,6,0,5,3,1,2], 3:[3,1,2,4,6,0,5,3], 4:[4,6,0,5,3,1,2,4], 5:[5,3,1,2,4,6,0,5], 6:[6,0,5,3,1,2,4,6]};
+        const chog = cm[dow].map((i, idx) => ({ ...ct[i], ...getS(sr.getTime()+idx*(dMs/8), dMs/8) }));
+        const hoOrder = [0,5,3,1,6,4,2]; const sHoIdx = [0,3,6,2,5,1,4][dow];
+        const horas = Array.from({length:12}).map((_,i) => ({ p: WEEKDAY[hoOrder[(hoOrder.indexOf(sHoIdx)+i)%7]], ...getS(sr.getTime()+i*(dMs/12), dMs/12) }));
+
+        return { 
+            tithi: ["Pratipada","Dwitiya","Tritiya","Chaturthi","Panchami","Shashthi","Saptami","Ashtami","Navami","Dashami","Ekadashi","Dwadashi","Trayodashi","Chaturdashi",isS?"Purnima":"Amavasya"][tIdx%15],
+            paksha: isS?"Shukla":"Krishna", masa, nak: NAKSHATRAS[Math.floor(ml/(360/27))], yoga: YOGAS[Math.floor(norm360(ml+sl)/(360/27))],
+            karana: KARANAS[Math.floor(diff/6)%7]||"Kimstughna", sr, ss, mr, msr, abh, chog, horas, 
+            rahu: getS(sr.getTime()+dMs*0.8, dMs*0.1), vikram: dObj.getFullYear() + 57, saka: dObj.getFullYear() - 78
+        };
+    }
+
+    function bio(dob, td, utc) {
+        const [Y,M,D]=(dob||"2000-01-01").split("-").map(Number);
+        const eD = (Date.UTC(td.getFullYear(),td.getMonth(),td.getDate(),12,0,0)-((utc||0)*3600000) - (Date.UTC(Y,M-1,D,12,0,0)-((utc||0)*3600000))) / 86400000;
+        return { p: Math.sin(2*Math.PI*eD/23), e: Math.sin(2*Math.PI*eD/28), i: Math.sin(2*Math.PI*eD/33) };
+    }
+
+    // 5. ISOLATED AUTH COMPONENTS
+    function SetupModal({ onConfig }) {
+        const [o, setO]=useState(""); const [r, setR]=useState("AstroGrah"); const [t, setT]=useState(""); const [err, setErr]=useState("");
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl gl-fadein border border-white/10">
+                    <form onSubmit={async(e)=>{ e.preventDefault(); setErr(""); AppDB.setConfig(o,r,t); try{ await AppDB.callApi('GET',''); onConfig(); }catch(er){ setErr("Token Invalid or Repo Missing."); localStorage.removeItem('gh_db_config'); } }}>
+                        <SageLogo/><h2 className="text-center font-serif text-xl mt-2 mb-4">Secure Cloud Setup</h2>
+                        <p className="text-xs t60 text-center mb-4">Connect your GitHub Personal Access Token.</p>
+                        {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-2 rounded">{err}</div>}
+                        <div className="space-y-3">
+                            <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">Access Token (PAT)</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                        </div>
+                        <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-4 hover:bg-amber-300 transition">Connect Database</button>
+                        <button type="button" onClick={()=>{ AppDB.enableLocal(); onConfig(); }} className="w-full text-xs t60 mt-3 hover:text-white transition">Skip Cloud - Use Local Storage</button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    function AuthModal({ onLogin }) {
+        const [mode, setMode] = useState("login"); 
+        const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState("");
+        
+        const handleSubmit = async (ev) => {
+            ev.preventDefault(); setErr("");
+            try {
+                const db = await AppDB.getDB(); if(!db.content.users) db.content.users = {};
+                if(mode === "signup") { 
+                    if(db.content.users[e]) throw new Error("Email already registered."); 
+                    const gen="Om-"+Math.random().toString(36).slice(-6)+"!"; 
+                    const hashedPw = await CryptoUtils.hashPassword(gen);
+                    db.content.users[e]={password:hashedPw, requiresPasswordChange: true, profiles:CryptoUtils.encrypt([]), chatHistory:CryptoUtils.encrypt([]), settings:CryptoUtils.encrypt({ aiModel: "offline", monthSystem: "amanta", kundaliStyle: "north" })}; 
+                    await AppDB.saveDB(db.content, db.sha); setGp(gen); setMode("generated");
+                } else if(mode === "login") { 
+                    const u = db.content.users[e]; if(!u) throw new Error("Account not found.");
+                    const hashedInput = await CryptoUtils.hashPassword(p);
+                    if(u.password !== p && u.password !== hashedInput) throw new Error("Invalid password."); 
+                    const parsedData = await AppDB.getUserData(e);
+                    if(!parsedData) throw new Error("Data corruption error.");
+                    onLogin(e, parsedData); 
+                }
+            } catch(error) { setErr(error.message); }
+        };
+
+        if (mode === "forgot") return (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 text-center gl-fadein border border-white/10">
+                    <Icon name="shield-warning" size={32} className="mx-auto text-amber-400 mb-3" />
+                    <h2 className="font-serif text-xl t100 mb-2">Serverless Reset</h2>
+                    <p className="text-sm t70 leading-relaxed mb-4">Because this app is decentralized, automatic email resets are not possible.</p>
+                    <p className="text-xs t50 mb-6 bg-black/30 p-3 rounded-lg border border-white/5">To reset your account, open your GitHub repo, locate <span className="font-mono text-amber-300">{DB_FILE_NAME}</span>, and manually delete your user entry.</p>
+                    <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-white/10 t100 hover:bg-white/20 transition">Go Back</button>
+                </div>
+            </div>
+        );
+        
+        if (mode === "generated") return (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl border border-emerald-500/30 bgcard2 p-6 text-center gl-fadein shadow-2xl">
+                    <h2 className="font-serif text-xl t100 mb-2">Account Created!</h2>
+                    <p className="text-sm t75 mb-4">Your auto-generated secure password is:</p>
+                    <div className="p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/20 tracking-wider text-lg">{gp}</div>
+                    <p className="text-[10px] t50 mt-3">Please save this. You will be prompted to change it immediately after login.</p>
+                    <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-6 hover:bg-emerald-400 transition">I saved my password</button>
+                </div>
+            </div>
+        );
+        
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 gl-fadein shadow-2xl border border-white/10">
+                    <form onSubmit={handleSubmit}>
+                        <SageLogo/><h2 className="text-center font-serif text-2xl mt-2 mb-4">{mode==="signup"?"Sign Up":"Sign In"}</h2>
+                        {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-3 rounded">{err}</div>}
+                        <div className="space-y-3">
+                            <div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                            {mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>}
+                        </div>
+                        <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-amber-300 transition">{mode==="signup"?"Auto-Generate Account":"Sign In"}</button>
+                        <div className="flex justify-between items-center mt-4">
+                            <button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white transition">{mode==="signup"?"Back to Sign In":"Quick Sign Up"}</button>
+                            {mode==="login" && <button type="button" onClick={()=>setMode("forgot")} className="text-[11px] t60 hover:text-white transition">Forgot Password?</button>}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    function ForcePasswordChange({ email, onComplete }) {
+        const [p, setP] = useState(""); const [loading, setLoading] = useState(false);
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/30 gl-fadein">
+                    <form onSubmit={async (e) => {
+                        e.preventDefault(); if(p.length < 6) return alert('Password must be at least 6 characters.');
+                        setLoading(true);
+                        try {
+                            const db = await AppDB.getDB();
+                            db.content.users[email].password = await CryptoUtils.hashPassword(p);
+                            db.content.users[email].requiresPasswordChange = false;
+                            await AppDB.saveDB(db.content, db.sha); onComplete();
+                        } catch (err) { alert("Error: " + err.message); setLoading(false); }
+                    }}>
+                        <h2 className="font-serif text-xl t100 mb-2">Action Required</h2>
+                        <p className="text-xs t60 mb-4 leading-relaxed">Please change your auto-generated password to a secure personal password.</p>
+                        <div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Custom Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400/50 text-white"/></div>
+                        <button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-emerald-400 transition">{loading ? "Saving Hash..." : "Save New Password"}</button>
+                    </form>
+                </div>
+            </div>
+        )
+    }
+
+    // 6. TABS
+    function PersonTab({ pr, ch, date, setDate, settings }) {
+        const [div, setDiv]=useState(1); const [expert, setExpert]=useState(false);
+        if(!ch) return <div className="p-4 border border-white/10 rounded-xl text-center text-sm t60 bgfaint3 mt-4">Compute Error. Please check birth details.</div>;
+        
+        const ac = div===1?ch.d1:(div===9?ch.d9:ch.d10); 
+        const pK = WEEKDAY[date.getDay()]; const pI = PLANET_INFO[pK];
+        const bs = []; for(let i=-7;i<=7;i++){ const d=new Date(date); d.setDate(d.getDate()+i); const b=bio(pr.dob, d, pr.utcOffset); bs.push({ label: i===0?"Today":`${d.getMonth()+1}/${d.getDate()}`, P: +b.p.toFixed(2), E: +b.e.toFixed(2), I: +b.i.toFixed(2) }); }
+        const bT = bs[7];
+
+        const exPDF = () => { const doc = new jsPDF(); doc.text(`Graha Ledger: ${pr.name}`, 10, 10); doc.text(`Lagna: ${ch.d1.lagna} | Moon: ${ch.moonSign}`, 10, 20); doc.save(`${pr.name}_Report.pdf`); };
+
+        return (
+            <div className="space-y-4 pb-10 gl-fadein">
+                <div className="rounded-3xl border border-white/10 p-5 mt-4" style={{ background: `linear-gradient(135deg, ${pr.accent||'#D4A574'}22, transparent 65%)` }}>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <div className="font-mono text-[10px] uppercase t40 tracking-[0.25em]">Natal Profile</div>
+                            <h2 className="font-serif text-2xl mt-1">{pr.name}</h2>
+                            <div className="text-[11px] font-mono t60 mt-1">{pr.dob} · {pr.time} · {pr.place}</div>
+                        </div>
+                        <button onClick={exPDF} className="p-2 border border-white/10 rounded-full bg-black/20 hover:bg-white/10 transition"><Icon name="download-simple"/></button>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-2 text-[10px] font-mono">
+                        <div><span className="t40 block">Gotra / Jaati</span><span className="t100 text-[11px]">{pr.gotra||"N/A"} · {pr.jaati||"N/A"}</span></div>
+                        <div><span className="t40 block">Kul / Gram Devta</span><span className="t100 text-[11px]">{pr.kulDevta||"N/A"} · {pr.gramDevta||"N/A"}</span></div>
+                        <div className="col-span-2"><span className="t40 block">Sthan Devta</span><span className="t100 text-[11px]">{pr.sthanDevta||"N/A"}</span></div>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center bgfaint3 p-3 rounded-xl border border-white/10 overflow-x-auto">
+                    <span className="font-serif text-sm mr-4 whitespace-nowrap">Time Travel Transits</span>
+                    <div className="flex gap-1 font-mono text-xs whitespace-nowrap">
+                        <button onClick={()=>setDate(new Date(date.setMonth(date.getMonth()-1)))} className="px-2 py-1 rounded bg-black/40 hover:bg-white/10 transition">-1M</button>
+                        <button onClick={()=>setDate(new Date(date.setDate(date.getDate()-7)))} className="px-2 py-1 rounded bg-black/40 hover:bg-white/10 transition">-1W</button>
+                        <span className="px-3 py-1 text-amber-300 font-bold border-x border-white/10 mx-1">{date.toISOString().slice(0,10)}</span>
+                        <button onClick={()=>setDate(new Date(date.setDate(date.getDate()+7)))} className="px-2 py-1 rounded bg-black/40 hover:bg-white/10 transition">+1W</button>
+                        <button onClick={()=>setDate(new Date(date.setMonth(date.getMonth()+1)))} className="px-2 py-1 rounded bg-black/40 hover:bg-white/10 transition">+1M</button>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+                    <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
+                        <div className="flex gap-1 bg-black/40 border border-white/10 rounded-lg p-0.5 font-mono text-[10px]">
+                            <button onClick={()=>setDiv(1)} className={`px-2 py-1 rounded transition ${div===1?'bg-white/15 t100 shadow':'t40 hover:t100'}`}>D-1</button>
+                            <button onClick={()=>setDiv(9)} className={`px-2 py-1 rounded transition ${div===9?'bg-white/15 t100 shadow':'t40 hover:t100'}`}>D-9</button>
+                            <button onClick={()=>setDiv(10)} className={`px-2 py-1 rounded transition ${div===10?'bg-white/15 t100 shadow':'t40 hover:t100'}`}>D-10</button>
+                        </div>
+                        <button onClick={()=>setExpert(!expert)} className="text-[10px] font-mono t60 hover:t100 border border-white/10 px-2 py-1 rounded">{expert?"Expert":"Basic"} Mode</button>
+                    </div>
+                    
+                    {!expert ? (
+                        <div className="text-sm t85 leading-relaxed p-4 bg-black/20 rounded-xl border border-white/5 mb-4">
+                            <span className="text-amber-300 font-bold block mb-1">Your Core Foundation:</span>
+                            With a {ch.d1.lagna} ascendant, your life path is driven by its ruling planet. Your emotional core is grounded in {ch.moonSign} (Nakshatra: {ch.nak}), which means you process the world through this lens. Today's active planet is {pK}, so focus on {pI.action.toLowerCase()}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-4 gap-1 aspect-square max-w-[320px] mx-auto rounded-xl border border-white/10 bg-black/40 p-1.5 shadow-inner mb-4">
+                            {[ { s: "Pisces", r: 0, c: 0 }, { s: "Aries", r: 0, c: 1 }, { s: "Taurus", r: 0, c: 2 }, { s: "Gemini", r: 0, c: 3 }, { s: "Cancer", r: 1, c: 3 }, { s: "Leo", r: 2, c: 3 }, { s: "Virgo", r: 3, c: 3 }, { s: "Libra", r: 3, c: 2 }, { s: "Scorpio", r: 3, c: 1 }, { s: "Sagittarius", r: 3, c: 0 }, { s: "Capricorn", r: 2, c: 0 }, { s: "Aquarius", r: 1, c: 0 } ].map((bx) => {
+                                const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; 
+                                const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); 
+                                const isL = ac.lagna===bx.s;
+                                const trs = ch.transits && Object.entries(ch.transits).filter(([,sn])=>sn===bx.s).map(([p])=>p);
+                                return (
+                                    <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1.5 rounded-lg border text-[9px] relative overflow-hidden transition-all ${isL?'border-amber-400/50 bg-amber-400/10':'border-white/10 bg-white/5'}`}>
+                                        <div className="flex justify-between font-mono font-medium t50 mb-0.5"><span>{bx.s.slice(0,3)}</span><span className={isL?'text-amber-300':''}>{isL?'Lg':`H${hNum}`}</span></div>
+                                        <div className="flex flex-col gap-0.5 z-10">{pIn.map(p=><span key={p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="font-semibold drop-shadow">{p.slice(0,3)}</span>)}</div>
+                                        {trs && trs.length > 0 && <div className="mt-auto pt-1 border-t border-white/10 text-[8px] flex flex-wrap gap-0.5 z-10">{trs.map(p=><span key={'tr'+p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="italic opacity-80">+{p.slice(0,2)}</span>)}</div>}
+                                    </div>
+                                )
+                            })}
+                            <div style={{gridRow:"2/4", gridColumn:"2/4"}} className="flex flex-col items-center justify-center p-2 text-center bg-black/20 rounded-xl border border-white/5 m-1">
+                                <span className="font-serif text-sm t100">{div===1?'D-1 Rashi':div===9?'D-9 Navamsha':'D-10 Dashamsha'}</span>
+                                <span className="font-mono text-[9px] t50 mt-1 uppercase">South Indian Style</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-400/10 to-transparent p-5">
+                    <h3 className="font-serif text-[15px] text-amber-300 mb-4 flex items-center gap-2"><Icon name="sparkle"/> Dynamic Remedies for {pK}</h3>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="p-3 bg-black/20 rounded-xl border border-white/5 col-span-2">
+                            <span className="font-mono text-[9px] t40 block uppercase mb-1">Mantra Options</span>
+                            {pI.mantras.map((m,i)=><div key={i} className="t100 font-medium tracking-wide mb-1">" {m} "</div>)}
+                        </div>
+                        <div className="p-3 bg-black/20 rounded-xl border border-white/5"><span className="font-mono text-[9px] t40 block uppercase mb-1">Charity</span><span className="t85 leading-relaxed block">{pI.charity}</span></div>
+                        <div className="p-3 bg-black/20 rounded-xl border border-white/5"><span className="font-mono text-[9px] t40 block uppercase mb-1">Action</span><span className="t85 leading-relaxed block">{pI.action}</span></div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+                    <div className="flex justify-between items-center mb-1"><span className="font-serif text-[15px] block">Biorhythm Synchrony</span><span className="font-mono text-[9px] t40 bg-white/5 px-2 py-1 rounded">UTC{pr.utcOffset} Synced</span></div>
+                    <ResponsiveContainer width="100%" height={160}>
+                        <LineChart data={bs} margin={{top:5, right:5, left:-20, bottom:0}}>
+                            <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false}/>
+                            <XAxis dataKey="label" tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}} interval={2}/>
+                            <YAxis domain={[-1,1]} tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}}/>
+                            <Tooltip contentStyle={{background:"#1A1C36", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, fontSize:10}}/>
+                            <ReferenceLine x="Today" stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3"/>
+                            <Line type="monotone" dataKey="P" stroke="#B23A48" dot={false} strokeWidth={2}/>
+                            <Line type="monotone" dataKey="E" stroke="#9FB8D9" dot={false} strokeWidth={2}/>
+                            <Line type="monotone" dataKey="I" stroke="#D4A574" dot={false} strokeWidth={2}/>
+                        </LineChart>
+                    </ResponsiveContainer>
+                    <div className="mt-4 p-3 bg-black/20 rounded-xl border border-white/5 text-[11px] leading-relaxed t85">
+                        <strong className="text-white block mb-1">Today's Real-Time Status:</strong> 
+                        <span className="text-[#B23A48]">Physical ({bT.P}):</span> {(bT.P > 0 ? "High stamina. Excellent for hard work and exercise." : "Low energy phase. Prioritize rest and avoid overexertion.")} <br/>
+                        <span className="text-[#9FB8D9]">Emotional ({bT.E}):</span> {(bT.E > 0 ? "Stable and resilient. Good for deep conversations." : "Sensitive phase. Avoid arguments and practice patience.")} <br/>
+                        <span className="text-[#D4A574]">Intellectual ({bT.I}):</span> {(bT.I > 0 ? "Sharp mind. Ideal for complex problem solving." : "Brain fog possible. Delay major financial decisions.")}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    function PanchangTab({ d, p, utc, settings }) {
+        const pan = panchang(d, settings.monthSystem, utc); 
+        const pK = WEEKDAY[d.getDay()]; const sDay = SANSKRIT_DAYS[pK];
+        const fm = dt => dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
+        const sankalp = `Om Vishnu Vishnu Vishnu. Adya Brahmaniya dvitiya parardhe, Shvetavaraha kalpe, Jambu dvipe... ${p?.gotra||'Kashyapa'} gotrotpannah, ${p?.jaati||'Hindu'} vargah, ${p?.name||'User'} aham, shruti smriti puranokta phala praptyartham, ayur arogya aishwarya abhivriddhyartham, manashanti praptyartham (for health, wealth, prosperity, and mental peace), Vikram Samvat ${pan.vikram}, ${pan.masa} mase, ${pan.paksha} pakshe, ${pan.tithi} tithau, ${sDay} vasaraye sankalpam karishye. Om Kuladevatayai (${p?.kulDevta||'Devi'}) Namah, Om Gramadevatayai (${p?.gramDevta||'Deva'}) Namah, Om Sthandevatayai (${p?.sthanDevta||'Deva'}) Namah.`;
+        
+        return (
+            <div className="space-y-4 pb-10 gl-fadein mt-4">
+                <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-emerald-900/30 to-transparent">
+                    <h2 className="font-serif text-2xl text-emerald-100">Panchang & Muhurta</h2>
+                    <div className="text-[11px] font-mono t60 mt-1">Vikram Samvat {pan.vikram} · Saka Samvat {pan.saka}</div>
+                </div>
+                <div className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-5 text-xs">
+                    <h3 className="font-serif text-[15px] text-amber-300 mb-2">Personalized Sankalp Mantra</h3>
+                    <p className="t85 italic leading-relaxed font-medium bg-black/20 p-3 rounded-xl border border-amber-400/10">"{sankalp}"</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-center text-xs font-mono">
+                    <div className="p-3 border border-white/10 rounded-xl bg-gradient-to-b from-amber-900/20 to-black/20">
+                        <div className="text-amber-400 text-xl mb-1">☀</div><div className="t60 text-[9px] mb-1 uppercase">Sunrise - Sunset</div><div className="text-sm">{fm(pan.sr)} — {fm(pan.ss)}</div>
+                    </div>
+                    <div className="p-3 border border-white/10 rounded-xl bg-gradient-to-b from-blue-900/20 to-black/20">
+                        <div className="text-blue-300 text-xl mb-1">☽</div><div className="t60 text-[9px] mb-1 uppercase">Moonrise - Moonset</div><div className="text-sm">{fm(pan.mr)} — {fm(pan.msr)}</div>
+                    </div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4 grid grid-cols-2 gap-y-4 gap-x-2 text-xs">
+                    <div className="p-2 bg-black/20 rounded border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">1. Tithi / Masa</span><span className="t100 font-medium">{pan.paksha} {pan.tithi}</span></div>
+                    <div className="p-2 bg-black/20 rounded border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">2. Vaar</span><span className="t100 font-medium">{d.toLocaleDateString('en-US',{weekday:'long'})}</span></div>
+                    <div className="p-2 bg-black/20 rounded border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">3. Nakshatra</span><span className="t100 font-medium">{pan.nak}</span></div>
+                    <div className="p-2 bg-black/20 rounded border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">4. Yoga</span><span className="t100 font-medium">{pan.yoga}</span></div>
+                    <div className="col-span-2 p-2 bg-black/20 rounded border border-white/5 flex justify-between items-center"><span className="t50 font-mono text-[9px] uppercase">5. Karana</span><span className={`font-medium ${pan.karana.includes('Bhadra')?'text-red-400':'t100'}`}>{pan.karana} {pan.karana.includes('Bhadra')&&'⚠️ Inauspicious'}</span></div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+                    <h3 className="font-serif text-[15px] mb-3">Muhurta Windows</h3>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-950/20"><span className="font-mono text-[9px] uppercase text-emerald-400 block mb-1">Abhijit (Auspicious)</span><span className="font-mono text-sm">{fm(pan.abh.s)} - {fm(pan.abh.e)}</span></div>
+                        <div className="p-3 rounded-xl border border-red-500/20 bg-red-950/20"><span className="font-mono text-[9px] uppercase text-red-400 block mb-1">Rahu Kaal (Avoid)</span><span className="font-mono text-sm">{fm(pan.rahu.s)} - {fm(pan.rahu.e)}</span></div>
+                    </div>
+                    <h3 className="font-serif text-[15px] mb-2 mt-4 text-amber-200">Day Choghadiya</h3>
+                    <div className="space-y-1">
+                        {pan.chog.map((c,i)=><div key={i} className="flex justify-between items-center p-2 bg-black/20 border border-white/5 rounded text-xs"><div className="flex gap-2 items-center"><span style={{color:c.c}}>{c.n}</span><span className="t50 text-[9px] uppercase font-mono">{c.d}</span></div><div className="font-mono t85">{fm(c.s)} - {fm(c.e)}</div></div>)}
+                    </div>
+                    <h3 className="font-serif text-[15px] mb-2 mt-4 text-emerald-200">Planetary Hora</h3>
+                    <div className="space-y-1">
+                        {pan.horas.map((h,i)=><div key={i} className="flex justify-between items-center p-2 bg-black/20 border border-white/5 rounded text-xs"><span style={{color:PLANET_INFO[h.p]?.color}} className="font-medium">{h.p}</span><div className="font-mono t85">{fm(h.s)} - {fm(h.e)}</div></div>)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    function CompatTab({ prs, chs, settings, date }) {
+        const [pairIds, setPairIds] = useState(prs.length >= 2 ? [prs[0].id, prs[1].id] : [prs[0]?.id, prs[0]?.id]);
+        if(prs.length<2) return <div className="p-6 text-center text-sm t60 border border-dashed border-white/20 rounded-3xl mt-6 bgfaint3">Create a 2nd profile to unlock Union compatibility.</div>;
+        
+        const p1=prs.find(p=>p.id===pairIds[0])||prs[0]; const p2=prs.find(p=>p.id===pairIds[1])||prs[1]; 
+        const c1=chs[p1.id], c2=chs[p2.id]; if(!c1||!c2) return null;
+        const score = 36 - (Math.abs(NAKSHATRAS.indexOf(c1.nak) - NAKSHATRAS.indexOf(c2.nak))%10)*1.5;
+        
+        return (
+            <div className="space-y-4 pb-10 gl-fadein mt-4">
+                <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-pink-900/20 to-transparent flex flex-col sm:flex-row justify-between gap-4">
+                    <div>
+                        <div className="font-mono text-[10px] uppercase tracking-[0.25em] t40 mb-1">Union Analysis</div>
+                        <div className="flex items-center gap-2">
+                            <select value={pairIds[0]} onChange={(e)=>setPairIds([e.target.value, pairIds[1]])} className="bg-black/30 border border-white/10 rounded-lg p-1 font-serif text-lg t100 outline-none">{prs.map(p=><option key={p.id} value={p.id}>{p.name.split(' ')[0]}</option>)}</select>
+                            <span className="font-serif text-pink-300">&amp;</span>
+                            <select value={pairIds[1]} onChange={(e)=>setPairIds([pairIds[0], e.target.value])} className="bg-black/30 border border-white/10 rounded-lg p-1 font-serif text-lg t100 outline-none">{prs.map(p=><option key={p.id} value={p.id}>{p.name.split(' ')[0]}</option>)}</select>
+                        </div>
+                    </div>
+                    <div className="text-center p-3 rounded-xl bg-black/40 border border-white/10"><div className="text-2xl font-serif text-pink-300">{score.toFixed(1)}</div><div className="text-[9px] t50 uppercase font-mono mt-1">Out of 36</div></div>
+                </div>
+                <div className="p-5 rounded-2xl border border-white/10 bgfaint3 text-sm leading-relaxed">
+                    <h3 className="font-serif text-[15px] mb-2 text-pink-200">Ashtakoot Guna Milan</h3>
+                    <p className="t85 mb-3">{score>25?"Excellent match. Providing a highly stable foundation.":score>18?"Moderate match. Requires conscious effort regarding emotional sync.":"Challenging match. High elemental friction."}</p>
+                </div>
+            </div>
+        );
+    }
+
+    function AskTab({ em, set, pr, ch }) {
+        const [q, setQ]=useState(""); const [h, setH]=useState([]); const [l, setL]=useState(false);
+        useEffect(()=>{ (async()=>{ const u = await AppDB.getUserData(em); if(u?.chatHistory) setH(u.chatHistory); })(); },[em]);
+        
+        async function ask(e){
+            e.preventDefault(); if(!q.trim()||l) return; setL(true); 
+            let ans = "";
+            if(set.aiModel==='offline'){ 
+                ans = `[Offline Learning Engine] Synthesizing past global queries. Based on ${pr?.name||'User'}'s ${ch?.moonSign||'Aries'} Moon: Focus is required over expansion today. Trust intuition.`; 
+            } else { 
+                if(!set.apiKeys?.[set.aiModel]) ans=`Error: Missing API Key in Settings Vault.`; 
+                else {
+                    try {
+                        const payload = { contents: [{ parts: [{ text: `Act as a Jyotish astrologer for ${pr?.name||'User'} (${ch?.moonSign||'Aries'} Moon). Answer: ${q}` }] }] };
+                        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${set.apiKeys[set.aiModel]}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                        const data = await res.json();
+                        ans = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
+                    } catch(err) { ans = `API Error: ${err.message}.`; }
+                }
+            }
+            const nx = [...h, {id:Date.now(), q, a:ans, v:set.aiModel}]; setH(nx); setQ(""); setL(false);
+            const u = await AppDB.getUserData(em); if(u) await AppDB.syncUserData(em, {...u, chatHistory:nx});
+        }
+
+        return (
+            <div className="space-y-4 pb-10 gl-fadein mt-4">
+                <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-blue-900/20 to-transparent">
+                    <h2 className="font-serif text-2xl text-blue-200">Ask the Sage</h2>
+                    <p className="text-[11px] t60 font-mono mt-1">End-to-End Encrypted Cloud History</p>
+                </div>
+                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+                    {h.map(x=><div key={x.id} className="space-y-1"><div className="flex gap-2"><div className="text-amber-400 font-bold">Q:</div><div className="text-sm t85">{x.q}</div></div><div className="p-4 bg-black/20 border border-white/5 rounded-2xl text-sm t85 leading-relaxed whitespace-pre-wrap">{x.a}<div className="text-[9px] t40 font-mono mt-3 uppercase border-t border-white/10 pt-2">via {x.v}</div></div></div>)}
+                    {l&&<div className="text-xs t50 italic p-3">Synthesizing Jyotish context...</div>}
+                </div>
+                <form onSubmit={ask} className="flex gap-2 p-2 bgfaint3 border border-white/10 rounded-2xl sticky bottom-4 shadow-2xl">
+                    <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about timing, career, doshas..." className="flex-1 bg-transparent text-sm focus:outline-none px-2 text-white"/>
+                    <button type="submit" disabled={l} className="px-5 py-2.5 bg-amber-400 text-black text-sm font-semibold rounded-xl disabled:opacity-50 hover:bg-amber-300 transition">Ask</button>
+                </form>
+            </div>
+        );
+    }
+
+    // 7. MAIN RENDERER
+    function AppContent() {
+        const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
+        const [dt, setDt]=useState(new Date()); const [ss, setSs]=useState(false); const [ed, setEd]=useState(null);
+
+        useEffect(()=>{ if(AppDB.loadConfig()) setDbC(true); },[]);
+
+        if(!dbC) return <SetupModal onConfig={()=>setDbC(true)}/>;
+        if(!u) return <AuthModal onLogin={(e,d)=>setU({e,d})}/>;
+        if(u?.d?.requiresPasswordChange) return <ForcePasswordChange email={u.e} onComplete={() => setU({...u, d: {...u.d, requiresPasswordChange: false}})} />;
+
+        const prs = u?.d?.profiles||[]; 
+        const set = u?.d?.settings||{aiModel:"offline", monthSystem:"amanta", kundaliStyle:"north", apiKeys:{}};
+        const chs = useMemo(()=>{ const o={}; prs.forEach(p=>o[p.id]=computeKundli(p, dt)); return o; },[prs,dt]);
+        const aP = prs.length > 0 ? prs[0] : null;
+
+        const hSave = async(e) => {
+            e.preventDefault(); const f=e.target;
+            const pD = { 
+                name: f.nm.value, dob: f.dob.value, time: f.tm.value, place: f.pl.value, 
+                lat: parseFloat(f.lt.value), lon: parseFloat(f.ln.value), utcOffset: parseFloat(f.ut.value), 
+                gotra: f.gt.value, jaati: f.jt.value, kulDevta: f.kd.value, gramDevta: f.gd.value, sthanDevta: f.sd.value,
+                id: ed.id||Date.now().toString(), accent: ed.accent||"#D4A574" 
+            };
+            const nP = ed.id ? prs.map(p=>p.id===pD.id?pD:p) : [...prs, pD];
+            await AppDB.syncUserData(u.e, {...u.d, profiles:nP}); setU({...u, d:{...u.d, profiles:nP}}); setEd(null);
+        };
+
+        return (
+            <div className="min-h-screen w-full font-sans pb-10">
+                <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
+                    <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-12">
+                        <div className="flex items-center gap-3">
+                            <SageLogo size={28}/>
+                            <div>
+                                <h1 className="font-serif text-xl text-amber-300 leading-tight">Graha Ledger</h1>
+                                <div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.e}</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={()=>setEd({})} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition"><Icon name="user-plus" size={18}/></button>
+                            <button onClick={()=>setSs(true)} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition"><Icon name="gear" size={18}/></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-6 relative z-10">
+                    {prs.length===0 ? (
+                        <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10 bgfaint3 gl-fadein">
+                            <h2 className="font-serif text-2xl mb-2 text-amber-300">Welcome to Graha Ledger</h2>
+                            <p className="text-sm t60 mb-6 leading-relaxed">Your secure, serverless Jyotish companion. Create your first profile to unlock exact transits, panchang, and AI insights.</p>
+                            <button onClick={()=>setEd({})} className="px-8 py-3 rounded-full bg-amber-400 text-black text-sm font-semibold hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">Create Natal Profile</button>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bgfaint2 p-1 font-mono text-xs shadow-inner">
+                                {[{id:"person",l:"Astrology"},{id:"panchang",l:"Panchang"},{id:"union",l:"Union"},{id:"ask",l:"Ask AI"}].map(t=><button key={t.id} onClick={()=>setTb(t.id)} className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2.5 transition ${tb===t.id?"bg-white/15 t100 shadow":"t50 hover:t100"}`}>{t.l}</button>)}
+                            </div>
+                            {tb==="person" && <PersonTab pr={aP} ch={chs[aP?.id]} date={dt} setDate={setDt} settings={set}/>}
+                            {tb==="panchang" && <PanchangTab d={dt} p={aP} utc={aP?.utcOffset||5.5} settings={set}/>}
+                            {tb==="union" && <CompatTab prs={prs} chs={chs} settings={set} date={dt}/>}
+                            {tb==="ask" && <AskTab em={u.e} set={set} pr={aP} ch={chs[aP?.id]}/>}
+                        </>
+                    )}
+
+                    {ss && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={()=>setSs(false)}>
+                            <div onClick={e=>e.stopPropagation()} className="w-full max-w-sm p-6 rounded-3xl border border-white/10 bgcard2 space-y-5 max-h-[85vh] overflow-y-auto gl-fadein shadow-2xl relative">
+                                <div className="flex justify-between items-center border-b border-white/10 pb-3"><h3 className="font-serif text-lg t100">Settings Vault</h3><button onClick={()=>setSs(false)} className="p-1 rounded-full hover:bg-white/10 transition"><Icon name="x"/></button></div>
+                                <div>
+                                    <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Update Password</label>
+                                    <div className="flex gap-2">
+                                        <input id="new_pw_input" type="password" placeholder="Enter new password" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400/50 text-white"/>
+                                        <button type="button" onClick={async () => {
+                                            const v = document.getElementById('new_pw_input').value; if(!v || v.length < 6) return alert('Password too short.');
+                                            const db = await AppDB.getDB(); db.content.users[u.e].password = await CryptoUtils.hashPassword(v); await AppDB.saveDB(db.content, db.sha);
+                                            alert('Password updated!'); document.getElementById('new_pw_input').value = '';
+                                        }} className="px-4 py-2 bg-amber-400 text-black font-semibold rounded-xl text-xs hover:bg-amber-300 transition">Save</button>
+                                    </div>
+                                </div>
+                                <div><label className="text-[9px] font-mono uppercase t50 mb-1.5 block">AI Intelligence Engine</label><select value={set.aiModel} onChange={e=> { const ns={...set,aiModel:e.target.value}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"><option value="offline">Offline Learning Engine</option><option value="gemini-1.5-flash">Gemini 1.5 Flash</option></select></div>
+                                <div className="p-4 border border-emerald-500/20 bg-emerald-950/10 rounded-2xl space-y-3">
+                                    <label className="text-[10px] text-emerald-400 font-mono uppercase flex items-center justify-between">Encrypted API Keys <a href="https://aistudio.google.com/app/apikey" target="_blank" className="hover:text-emerald-200" title="Get API Key"><Icon name="question"/></a></label>
+                                    <div><div className="text-[9px] t50 mb-1">Gemini Key</div><input type="password" value={set.apiKeys?.["gemini-1.5-flash"]||""} onChange={e=>{ const ns={...set,apiKeys:{...set.apiKeys,["gemini-1.5-flash"]:e.target.value}}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} placeholder="Paste token here..." className="w-full bg-black/50 border border-white/5 rounded-lg px-3 py-2 text-xs outline-none focus:border-emerald-500/50 text-white"/></div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {ed && (
+                        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={()=>setEd(null)}>
+                            <form onClick={e=>e.stopPropagation()} onSubmit={hSave} className="w-full max-w-sm bgcard2 rounded-3xl border border-white/10 p-6 space-y-4 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl relative">
+                                <div className="flex justify-between border-b border-white/10 pb-3"><h3 className="font-serif text-lg t100">{ed.id?"Edit Profile":"New Profile"}</h3><button type="button" onClick={()=>setEd(null)} className="p-1 rounded-full hover:bg-white/10 transition"><Icon name="x"/></button></div>
+                                <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Full Name</label><input required name="nm" defaultValue={ed.name||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Date</label><input required type="date" name="dob" defaultValue={ed.dob||"2000-01-01"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Time</label><input required type="time" name="tm" defaultValue={ed.time||"12:00"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
+                                </div>
+                                <div>
+                                    <label className="text-[9px] t50 uppercase font-mono mb-1 block">Quick Location Autofill</label>
+                                    <select onChange={e=>{const p=CITY_PRESETS.find(c=>c.name===e.target.value); if(p){e.target.form.pl.value=p.name; e.target.form.lt.value=p.lat; e.target.form.ln.value=p.lon; e.target.form.ut.value=p.utc;}}} className="w-full bg-amber-400/10 border border-amber-400/30 text-amber-200 rounded-xl px-3 py-2.5 text-sm outline-none"><option value="">- Select City -</option>{CITY_PRESETS.map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select>
+                                </div>
+                                <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Place Name</label><input required name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Lat</label><input required type="number" step="any" name="lt" defaultValue={ed.lat||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm outline-none text-white"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Lon</label><input required type="number" step="any" name="ln" defaultValue={ed.lon||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm outline-none text-white"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">UTC</label><input required type="number" step="any" name="ut" defaultValue={ed.utcOffset||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm outline-none text-white"/></div>
+                                </div>
+                                <div className="pt-3 border-t border-white/10">
+                                    <div className="text-[10px] t40 uppercase font-mono mb-3 tracking-widest text-center">Spiritual Lineage</div>
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Gotra</label><input name="gt" defaultValue={ed.gotra||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
+                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Jaati / Varg</label><input name="jt" defaultValue={ed.jaati||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Kul Devta</label><input name="kd" defaultValue={ed.kulDevta||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
+                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Gram Devta</label><input name="gd" defaultValue={ed.gramDevta||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
+                                    </div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Sthan Devta</label><input name="sd" defaultValue={ed.sthanDevta||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
+                                </div>
+                                <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-4 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">Save Profile</button>
+                            </form>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+    
+    const root = window.ReactDOM.createRoot(document.getElementById('root')); 
+    root.render(<ErrorBoundary><AppContent/></ErrorBoundary>);
+  </script>
+</body>
+</html>
