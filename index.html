@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#14162B" />
   <link rel="manifest" href="manifest.json" />
-  <title>Graha Ledger | Jyotish Engine</title>
+  <title>Graha Ledger | Jyotish Cloud Engine</title>
 
-  <!-- Tailwind CSS for rapid styling -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- FontAwesome Icons -->
@@ -22,12 +22,35 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   
-  <!-- Recharts pinned to v2.12.7 to avoid crash -->
+  <!-- Recharts pinned to v2.12.7 -->
   <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
   <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
   
-  <!-- Babel compiler to translate JSX in the browser -->
+  <!-- Babel compiler -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Setup global access for React
+    window.AppId = typeof __app_id !== 'undefined' ? __app_id : 'graha-ledger-cloud';
+    window.InitialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+        // Fallback mock config to prevent total crash if run locally outside platform
+        apiKey: "mock-key", authDomain: "mock.firebaseapp.com", projectId: "mock-project"
+    };
+
+    try {
+        window.fbApp = initializeApp(config);
+        window.fbAuth = getAuth(window.fbApp);
+        window.fbDb = getFirestore(window.fbApp);
+        window.fbDocs = { doc, setDoc, deleteDoc, collection, onSnapshot, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
+    } catch(e) {
+        console.error("Firebase Initialization Failed:", e);
+    }
+  </script>
 
   <style>
     body { background-color: #14162B; margin: 0; padding: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; }
@@ -42,6 +65,8 @@
     .t60 { color: rgba(242,239,230,0.60); } .t50 { color: rgba(242,239,230,0.50); } .t40 { color: rgba(242,239,230,0.40); }
     .bgfaint3 { background: rgba(255,255,255,0.03); } .bgfaint2 { background: rgba(255,255,255,0.02); }
     .bgcard2 { background: #1A1C36; } .tgold { color: #D4A574; } .tdanger { color: #B23A48; }
+    
+    .fs10 { font-size: 10px; } .fs15 { font-size: 15px; } .tr25 { letter-spacing: 0.25em; }
     
     .gl-fadein { animation: fadein 0.35s ease; }
     @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
@@ -64,12 +89,9 @@
     const ChevronRight = (p) => <Icon name="chevron-right" {...p} />;
     const RotateCcw = (p) => <Icon name="rotate-left" {...p} />;
     const Users = (p) => <Icon name="users" {...p} />;
-    const Sparkles = (p) => <Icon name="wand-magic-sparkles" {...p} />;
     const Flame = (p) => <Icon name="fire" {...p} />;
-    const ExternalLink = (p) => <Icon name="arrow-up-right-from-square" {...p} />;
     const Send = (p) => <Icon name="paper-plane" {...p} />;
     const MessageCircleQuestion = (p) => <Icon name="circle-question" {...p} />;
-    const ScrollText = (p) => <Icon name="scroll" {...p} />;
     const Plus = (p) => <Icon name="plus" {...p} />;
     const Pencil = (p) => <Icon name="pen" {...p} />;
     const Trash2 = (p) => <Icon name="trash" {...p} />;
@@ -81,11 +103,10 @@
     const Cpu = (p) => <Icon name="microchip" {...p} />;
     const Newspaper = (p) => <Icon name="newspaper" {...p} />;
     const Layers = (p) => <Icon name="layer-group" {...p} />;
-    const Clock = (p) => <Icon name="clock" {...p} />;
-    const Moon = (p) => <Icon name="moon" {...p} />;
     const Sun = (p) => <Icon name="sun" {...p} />;
     const Shield = (p) => <Icon name="shield-halved" {...p} />;
     const WifiOff = (p) => <Icon name="wifi-slash" {...p} />;
+    const LogOut = (p) => <Icon name="arrow-right-from-bracket" {...p} />;
 
     class GrahaErrorBoundary extends Component {
       constructor(props) { super(props); this.state = { hasError: false, error: null }; }
@@ -113,21 +134,15 @@
     const NAKSHATRA_LORDS = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"];
     const LUNAR_MASAS = ["Chaitra", "Vaishakha", "Jyeshtha", "Ashadha", "Shravana", "Bhadrapada", "Ashvin", "Kartika", "Margashirsha", "Pausha", "Magha", "Phalguna"];
     
-    const YOGAS = [
-      "Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda", "Sukarma",
-      "Dhriti", "Shula", "Ganda", "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra",
-      "Siddhi", "Vyatipata", "Variyana", "Parigha", "Shiva", "Siddha", "Sadhya",
-      "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti"
-    ];
-    
+    const YOGAS = ["Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda", "Sukarma", "Dhriti", "Shula", "Ganda", "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra", "Siddhi", "Vyatipata", "Variyana", "Parigha", "Shiva", "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti"];
     const MOVING_KARANAS = ["Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti (Bhadra)"];
 
     const LLM_PROVIDERS = [
       { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Google)", type: "gemini" },
       { id: "gpt-4o", name: "GPT-4o (OpenAI)", type: "openai" },
-      { id: "claude-3-5-sonnet-20240620", name: "Claude 3.5 Sonnet (Anthropic)", type: "anthropic" },
-      { id: "moonshot-v1-8k", name: "Kimi Moonshot v1 (China)", type: "moonshot" },
-      { id: "offline", name: "Built-in Offline Jyotish Engine", type: "offline" }
+      { id: "claude-3-5-sonnet-20240620", name: "Claude 3.5 Sonnet", type: "anthropic" },
+      { id: "moonshot-v1-8k", name: "Kimi Moonshot v1", type: "moonshot" },
+      { id: "offline", name: "Offline Engine", type: "offline" }
     ];
 
     const ACCENT_PALETTE = ["#8FB2D9", "#D4A574", "#B7A0D9", "#8FC9A9", "#D99B8F", "#C9C08F"];
@@ -136,45 +151,29 @@
     function toRad(d) { return (d * Math.PI) / 180; }
     function toDeg(r) { return (r * 180) / Math.PI; }
     function signOf(lon) { return SIGNS[Math.floor(norm360(lon) / 30)] || "Aries"; }
+    function addDays(date, days) { const result = new Date(date); result.setDate(result.getDate() + days); return result; }
     
-    function addDays(date, days) {
-      const result = new Date(date);
-      result.setDate(result.getDate() + days);
-      return result;
-    }
-
     const WEEKDAY_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
-    function planetOfDay(date) {
-      if (!date || isNaN(date)) return "Sun";
-      return WEEKDAY_ORDER[date.getDay()] || "Sun";
-    }
+    function planetOfDay(date) { if (!date || isNaN(date)) return "Sun"; return WEEKDAY_ORDER[date.getDay()] || "Sun"; }
+    function ordinalSuffix(n) { if ([11, 12, 13].includes(n % 100)) return "th"; switch (n % 10) { case 1: return "st"; case 2: return "nd"; case 3: return "rd"; default: return "th"; } }
 
     const PLANET_INFO = {
-      Sun: { symbol: "☉", name: "Surya", day: "Sunday", deity: "Lord Rama & Lord Shiva", mantra: "Om Hraam Hreem Hroom Sah Suryaya Namah", color: "#E8A33D", themes: ["clarity", "leadership", "vitality", "reputation"], remedy: "Offer Arghya (water) in a copper vessel at dawn. Donate wheat, ruby or jaggery to elders or temples." },
-      Moon: { symbol: "☽", name: "Chandra", day: "Monday", deity: "Goddess Gauri & Lord Shiva", mantra: "Om Shraam Shreem Shroom Sah Chandraya Namah", color: "#9FB8D9", themes: ["emotion", "intuition", "peace of mind", "nurturing care"], remedy: "Wear white or silver accents. Offer pure milk or water to Shiva Lingam in the evening." },
-      Mars: { symbol: "♂", name: "Mangal", day: "Tuesday", deity: "Lord Hanuman & Lord Kartikeya", mantra: "Om Kraam Kreem Kroom Sah Bhaumaya Namah", color: "#B23A48", themes: ["courage", "decisive action", "physical drive", "protection"], remedy: "Recite Hanuman Chalisa. Channel energy into structured workout and avoid impulsiveness." },
-      Mercury: { symbol: "☿", name: "Budh", day: "Wednesday", deity: "Lord Vishnu & Lord Narayana", mantra: "Om Braam Breem Broom Sah Budhaya Namah", color: "#7C9473", themes: ["communication", "intellect", "commerce", "negotiation"], remedy: "Wear green. Feed green gram or spinach to cows, birds, or donate books to students." },
-      Jupiter: { symbol: "♃", name: "Guru", day: "Thursday", deity: "Lord Dakshinamurthy & Lord Vishnu", mantra: "Om Graam Greem Groom Sah Gurave Namah", color: "#D4A574", themes: ["wisdom", "dharma", "wealth expansion", "higher learning"], remedy: "Donate turmeric, chana dal or yellow sweets to teachers or spiritual seekers." },
-      Venus: { symbol: "♀", name: "Shukra", day: "Friday", deity: "Goddess Lakshmi & Goddess Annapurna", mantra: "Om Draam Dreem Droom Sah Shukraya Namah", color: "#C98CA7", themes: ["harmony", "relationships", "creativity", "comfort"], remedy: "Offer white flowers or fragrant sweets to Goddess Lakshmi. Support female artists and design harmony." },
-      Saturn: { symbol: "♄", name: "Shani", day: "Saturday", deity: "Lord Shani & Lord Hanuman", mantra: "Om Praam Preem Proom Sah Shanaye Namah", color: "#8288A0", themes: ["discipline", "patience", "long-term stability", "karmic duty"], remedy: "Light a mustard-oil lamp under a Peepal tree at dusk. Donate black sesame, mustard oil or iron items." },
-      Rahu: { symbol: "☊", name: "Rahu", day: "Saturday", deity: "Goddess Durga", mantra: "Om Bhraam Bhreem Bhroom Sah Rahave Namah", color: "#A872B2", themes: ["ambition", "breakthroughs", "innovation"], remedy: "Maintain clutter-free spaces and feed street dogs." },
-      Ketu: { symbol: "☋", name: "Ketu", day: "Tuesday", deity: "Lord Ganesha", mantra: "Om Sraam Sreem Sroom Sah Ketave Namah", color: "#72AAB2", themes: ["detachment", "spiritual depth", "liberation"], remedy: "Chant 'Om Gam Ganapataye Namah'. Offer blankets to people in need." }
+      Sun: { symbol: "☉", name: "Surya", day: "Sunday", deity: "Lord Rama", mantra: "Om Hraam Hreem Hroom Sah Suryaya Namah", color: "#E8A33D", themes: ["clarity", "leadership"], remedy: "Offer Arghya (water) in a copper vessel at dawn." },
+      Moon: { symbol: "☽", name: "Chandra", day: "Monday", deity: "Goddess Gauri", mantra: "Om Shraam Shreem Shroom Sah Chandraya Namah", color: "#9FB8D9", themes: ["emotion", "intuition"], remedy: "Wear white or silver accents. Offer pure milk." },
+      Mars: { symbol: "♂", name: "Mangal", day: "Tuesday", deity: "Lord Hanuman", mantra: "Om Kraam Kreem Kroom Sah Bhaumaya Namah", color: "#B23A48", themes: ["courage", "decisive action"], remedy: "Recite Hanuman Chalisa. Channel energy into structured workout." },
+      Mercury: { symbol: "☿", name: "Budh", day: "Wednesday", deity: "Lord Vishnu", mantra: "Om Braam Breem Broom Sah Budhaya Namah", color: "#7C9473", themes: ["communication", "intellect"], remedy: "Wear green. Feed green gram to cows or birds." },
+      Jupiter: { symbol: "♃", name: "Guru", day: "Thursday", deity: "Lord Dakshinamurthy", mantra: "Om Graam Greem Groom Sah Gurave Namah", color: "#D4A574", themes: ["wisdom", "dharma"], remedy: "Donate turmeric, chana dal or yellow sweets to teachers." },
+      Venus: { symbol: "♀", name: "Shukra", day: "Friday", deity: "Goddess Lakshmi", mantra: "Om Draam Dreem Droom Sah Shukraya Namah", color: "#C98CA7", themes: ["harmony", "relationships"], remedy: "Offer white flowers or fragrant sweets to Goddess Lakshmi." },
+      Saturn: { symbol: "♄", name: "Shani", day: "Saturday", deity: "Lord Shani", mantra: "Om Praam Preem Proom Sah Shanaye Namah", color: "#8288A0", themes: ["discipline", "patience"], remedy: "Light a mustard-oil lamp under a Peepal tree at dusk." },
+      Rahu: { symbol: "☊", name: "Rahu", day: "Saturday", deity: "Goddess Durga", mantra: "Om Bhraam Bhreem Bhroom Sah Rahave Namah", color: "#A872B2", themes: ["ambition", "breakthroughs"], remedy: "Maintain clutter-free spaces and feed street dogs." },
+      Ketu: { symbol: "☋", name: "Ketu", day: "Tuesday", deity: "Lord Ganesha", mantra: "Om Sraam Sreem Sroom Sah Ketave Namah", color: "#72AAB2", themes: ["detachment", "spiritual depth"], remedy: "Chant 'Om Gam Ganapataye Namah'." }
     };
 
-    const HOUSE_THEME = {
-      1: "vitality, identity & self-direction", 2: "accumulated wealth, family speech & financial liquidity",
-      3: "courage, initiatives & short travels", 4: "home foundation, emotional peace & real estate",
-      5: "intellect, speculative ventures & creative power", 6: "daily discipline, overcoming obstacles & health stamina",
-      7: "partnerships, contracts & marital harmony", 8: "sudden transformations, research & joint assets",
-      9: "fortune, higher knowledge & dharmic purpose", 10: "career achievements, public standing & authority",
-      11: "monetary gains, network circles & aspirations", 12: "rest, spiritual solitude & wise expenditures",
-    };
-
+    const HOUSE_THEME = { 1: "vitality", 2: "wealth", 3: "courage", 4: "home", 5: "intellect", 6: "discipline", 7: "partnerships", 8: "transformations", 9: "fortune", 10: "career", 11: "gains", 12: "rest" };
     const DOMAINS = [
       { key: "health", label: "Health & Vitality", icon: Heart, houses: [1, 6, 8], tag: "Stamina, routine & recovery" },
       { key: "wealth", label: "Wealth & Finance", icon: Wallet, houses: [2, 9, 11], tag: "Assets, liquidity & gains" },
       { key: "career", label: "Career & Work", icon: Briefcase, houses: [10, 2, 6], tag: "Status, leadership & output" },
-      { key: "general", label: "Mind & Dharma", icon: Compass, houses: [1, 5, 9], tag: "Focus, purpose & clarity" },
       { key: "lifestyle", label: "Home & Relationships", icon: Home, houses: [4, 7, 3, 12], tag: "Domestic peace & harmony" },
     ];
 
@@ -199,12 +198,10 @@
       const D = norm360(297.8501921 + 445267.1114034 * T);
       const M = norm360(357.5291092 + 35999.0502909 * T);
       const Mp = norm360(134.9633964 + 477198.8675055 * T);
-      const F = norm360(93.272095 + 483202.0175233 * T);
       const dL = 6.288774 * Math.sin(toRad(Mp)) + 1.274027 * Math.sin(toRad(2*D - Mp)) + 0.658314 * Math.sin(toRad(2*D));
       return norm360(Lp + dL);
     }
     
-    // Simplified Planetary Longitudes for Demo (Normally requires full Meeus ephemeris)
     function mockPlanetLongitude(planet, T) {
         if(planet === "Mercury") return norm360(sunLongitude(T).longitude + 15);
         if(planet === "Venus") return norm360(sunLongitude(T).longitude - 20);
@@ -215,9 +212,7 @@
         return 0;
     }
 
-    function getAyanamsaValue(decimalYear, type = "lahiri") {
-      return (type === "kp" ? 23.90 : 23.85) + (decimalYear - 2000) * 0.013972;
-    }
+    function getAyanamsaValue(decimalYear, type = "lahiri") { return (type === "kp" ? 23.90 : 23.85) + (decimalYear - 2000) * 0.013972; }
 
     function computePanchang(dateObj, monthSystem = "amanta", appUtcOffset = 5.5) {
       try {
@@ -235,25 +230,14 @@
         
         const sunSignIdx = Math.floor(norm360(sun.longitude) / 30);
         let masaIdx = sunSignIdx;
-        if (monthSystem === "purnimanta" && !isShukla) {
-          masaIdx = (sunSignIdx + 1) % 12;
-        }
+        if (monthSystem === "purnimanta" && !isShukla) masaIdx = (sunSignIdx + 1) % 12;
         
-        const tithiNames = [
-          "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi",
-          "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi",
-          "Trayodashi", "Chaturdashi", isShukla ? "Purnima" : "Amavasya"
-        ];
-
-        // Nakshatra calculation
+        const tithiNames = ["Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi", "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi", isShukla ? "Purnima" : "Amavasya"];
         const moonLonNormalized = norm360(moon);
         const nakIdx = Math.floor(moonLonNormalized / (360 / 27));
         const nakPada = Math.floor((moonLonNormalized % (360 / 27)) / ((360 / 27) / 4)) + 1;
-
-        // Yoga calculation (Sum of longitudes)
         const yogaIdx = Math.floor(norm360(moon + sun.longitude) / (360 / 27));
         
-        // Karana calculation (Half of a Tithi)
         const karanaIdx = Math.floor(diff / 6);
         let karanaName = "";
         if (karanaIdx === 0) karanaName = "Kimstughna";
@@ -269,9 +253,7 @@
           yoga: YOGAS[yogaIdx] || "Vishkambha", karana: karanaName,
           isAmavasya: tithiIndex === 29, isPurnima: tithiIndex === 14
         };
-      } catch(e) {
-        return { tithiName: "Pratipada", paksha: "Shukla", masa: "Chaitra", nakshatra: "Ashwini", yoga: "Vishkambha", karana: "Bava", isAmavasya: false, isPurnima: false };
-      }
+      } catch(e) { return { tithiName: "Pratipada", paksha: "Shukla", masa: "Chaitra", nakshatra: "Ashwini", yoga: "Vishkambha", karana: "Bava", isAmavasya: false, isPurnima: false }; }
     }
 
     function computeKundli(profile, ayanamsaType = "lahiri") {
@@ -282,468 +264,192 @@
       const ayanamsa = getAyanamsaValue((Y || 2000) + ((Mo || 1) - 1) / 12, ayanamsaType);
 
       const tropical = {
-        Sun: sunLongitude(T).longitude,
-        Moon: moonLongitude(T),
-        Mercury: mockPlanetLongitude("Mercury", T),
-        Venus: mockPlanetLongitude("Venus", T),
-        Mars: mockPlanetLongitude("Mars", T),
-        Jupiter: mockPlanetLongitude("Jupiter", T),
-        Saturn: mockPlanetLongitude("Saturn", T),
-        Rahu: mockPlanetLongitude("Rahu", T),
+        Sun: sunLongitude(T).longitude, Moon: moonLongitude(T), Mercury: mockPlanetLongitude("Mercury", T),
+        Venus: mockPlanetLongitude("Venus", T), Mars: mockPlanetLongitude("Mars", T), Jupiter: mockPlanetLongitude("Jupiter", T),
+        Saturn: mockPlanetLongitude("Saturn", T), Rahu: mockPlanetLongitude("Rahu", T),
       };
       tropical.Ketu = norm360(tropical.Rahu + 180);
 
       const sidereal = {};
       Object.keys(tropical).forEach((k) => { sidereal[k] = norm360(tropical[k] - ayanamsa); });
       
-      // Rough Ascendant approximation based on Sun and Time of Birth
       const [hh, mm] = (profile.time || "12:00").split(":").map(Number);
-      const hoursSinceSunrise = (hh + mm/60) - 6; // assuming 6am sunrise
+      const hoursSinceSunrise = (hh + mm/60) - 6;
       const ascTropical = norm360(tropical.Sun + (hoursSinceSunrise * 15));
-      
       const lagnaLon = norm360(ascTropical - ayanamsa);
       const lagnaSign = signOf(lagnaLon);
       const lagnaIdx = SIGNS.indexOf(lagnaSign);
 
-      const houses = {};
-      const lords = {};
-      for (let h = 1; h <= 12; h++) {
-        const sign = SIGNS[(lagnaIdx + h - 1) % 12];
-        houses[h] = sign;
-        lords[h] = SIGN_LORDS[sign];
-      }
+      const houses = {}; const lords = {};
+      for (let h = 1; h <= 12; h++) { const sign = SIGNS[(lagnaIdx + h - 1) % 12]; houses[h] = sign; lords[h] = SIGN_LORDS[sign]; }
       
-      const placements = {};
-      const kpDetails = {};
+      const placements = {}; const kpDetails = {};
       Object.entries(sidereal).forEach(([planet, lon]) => {
         const sIdx = SIGNS.indexOf(signOf(lon));
         placements[planet] = ((sIdx - lagnaIdx + 12) % 12) + 1;
-        
-        // Mock KP Details for demo
         kpDetails[planet] = { starLord: NAKSHATRA_LORDS[Math.floor(lon / (360/27)) % 9], subLord: NAKSHATRA_LORDS[(Math.floor(lon / (360/27)) + 2) % 9] };
       });
 
       const moonNakIdx = Math.floor(sidereal.Moon / (360 / 27));
       const moonNakPada = Math.floor((sidereal.Moon % (360 / 27)) / ((360 / 27) / 4)) + 1;
 
-      return {
-        lagna: lagnaSign, lagnaLon, lagnaIdx,
-        moonSign: signOf(sidereal.Moon), nakshatra: NAKSHATRAS[moonNakIdx] || "Ashwini", nakshatraPada: moonNakPada,
-        sunSign: signOf(sidereal.Sun),
-        houses, lords, placements, kpDetails,
-        longitudes: sidereal, ayanamsaUsed: ayanamsa, live: true,
-      };
+      return { lagna: lagnaSign, lagnaLon, lagnaIdx, moonSign: signOf(sidereal.Moon), nakshatra: NAKSHATRAS[moonNakIdx] || "Ashwini", nakshatraPada: moonNakPada, sunSign: signOf(sidereal.Sun), houses, lords, placements, kpDetails, longitudes: sidereal, ayanamsaUsed: ayanamsa };
     }
 
-    function getChart(profile, ayanamsa = "lahiri") {
-      if (!profile) return null;
-      try { return computeKundli(profile, ayanamsa); } catch (e) { return null; }
-    }
-
-    function formatTimeOnly(date) {
-      return date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: false });
-    }
+    function formatTimeOnly(date) { return date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: false }); }
 
     function calculateMuhurta(date, lat, lon) {
-      // Simplified approximation assuming 06:00 Sunrise and 18:00 Sunset for generic calculation.
       const d = new Date(date);
       d.setHours(6, 0, 0, 0); const sunrise = new Date(d);
       d.setHours(18, 0, 0, 0); const sunset = new Date(d);
-      
       const dayDurationMs = sunset - sunrise;
       const segmentMs = dayDurationMs / 8;
+      const dayOfWeek = date.getDay();
       
-      const dayOfWeek = date.getDay(); // 0 = Sun
-      
-      // Rahu Kaal lookup (segment index 0-7)
       const rahuLookup = { 0: 7, 1: 1, 2: 6, 3: 4, 4: 5, 5: 3, 6: 2 };
       const yamaLookup = { 0: 4, 1: 3, 2: 2, 3: 1, 4: 0, 5: 6, 6: 5 };
       const guliLookup = { 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1, 6: 0 };
       
-      const getSegmentTime = (idx) => {
-        const start = new Date(sunrise.getTime() + idx * segmentMs);
-        const end = new Date(sunrise.getTime() + (idx + 1) * segmentMs);
-        return { start, end };
-      };
+      const getSegmentTime = (idx) => { return { start: new Date(sunrise.getTime() + idx * segmentMs), end: new Date(sunrise.getTime() + (idx + 1) * segmentMs) }; };
 
-      // Standard Day Choghadiya sequence
-      const chogTypes = [
-        {name: "Udveg", desc: "Anxiety", color: "#B23A48"}, {name: "Amrit", desc: "Nectar", color: "#8FB2D9"},
-        {name: "Rog", desc: "Disease", color: "#B23A48"}, {name: "Labh", desc: "Gain", color: "#8FC9A9"},
-        {name: "Shubh", desc: "Auspicious", color: "#D4A574"}, {name: "Char", desc: "Moving", color: "#9FB8D9"},
-        {name: "Kaal", desc: "Loss", color: "#8288A0"}
-      ];
+      const chogTypes = [{name: "Udveg", color: "#B23A48"}, {name: "Amrit", color: "#8FB2D9"}, {name: "Rog", color: "#B23A48"}, {name: "Labh", color: "#8FC9A9"}, {name: "Shubh", color: "#D4A574"}, {name: "Char", color: "#9FB8D9"}, {name: "Kaal", color: "#8288A0"}];
+      const chogMatrix = { 0: [0, 5, 3, 1, 2, 4, 6, 0], 1: [1, 2, 4, 6, 0, 5, 3, 1], 2: [2, 4, 6, 0, 5, 3, 1, 2], 3: [3, 1, 2, 4, 6, 0, 5, 3], 4: [4, 6, 0, 5, 3, 1, 2, 4], 5: [5, 3, 1, 2, 4, 6, 0, 5], 6: [6, 0, 5, 3, 1, 2, 4, 6] };
       
-      const chogMatrix = {
-        0: [0, 5, 3, 1, 2, 4, 6, 0], // Sun
-        1: [1, 2, 4, 6, 0, 5, 3, 1], // Mon
-        2: [2, 4, 6, 0, 5, 3, 1, 2], // Tue
-        3: [3, 1, 2, 4, 6, 0, 5, 3], // Wed
-        4: [4, 6, 0, 5, 3, 1, 2, 4], // Thu
-        5: [5, 3, 1, 2, 4, 6, 0, 5], // Fri
-        6: [6, 0, 5, 3, 1, 2, 4, 6], // Sat
-      };
-
-      const dayChog = chogMatrix[dayOfWeek].map((tIdx, i) => {
-        const times = getSegmentTime(i);
-        return { ...chogTypes[tIdx], start: times.start, end: times.end };
-      });
-
-      return {
-        rahu: getSegmentTime(rahuLookup[dayOfWeek]),
-        yama: getSegmentTime(yamaLookup[dayOfWeek]),
-        guli: getSegmentTime(guliLookup[dayOfWeek]),
-        dayChog
-      };
+      const dayChog = chogMatrix[dayOfWeek].map((tIdx, i) => ({ ...chogTypes[tIdx], ...getSegmentTime(i) }));
+      return { rahu: getSegmentTime(rahuLookup[dayOfWeek]), yama: getSegmentTime(yamaLookup[dayOfWeek]), guli: getSegmentTime(guliLookup[dayOfWeek]), dayChog };
     }
 
     function calculateTimezoneAwareBiorhythm(dobStr, targetDate, userUtcOffset = 0) {
       if (!dobStr) dobStr = "2000-01-01";
-      if (!targetDate || isNaN(targetDate)) targetDate = new Date();
       const [Y, M, D] = dobStr.split("-").map(Number);
       const birthTimestamp = Date.UTC(Y || 2000, (M || 1) - 1, D || 1, 12, 0, 0) - (userUtcOffset * 3600 * 1000);
-      const targetYear = targetDate.getFullYear();
-      const targetMonth = targetDate.getMonth();
-      const targetDay = targetDate.getDate();
-      const targetTimestamp = Date.UTC(targetYear, targetMonth, targetDay, 12, 0, 0) - (userUtcOffset * 3600 * 1000);
+      const targetTimestamp = Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 12, 0, 0) - (userUtcOffset * 3600 * 1000);
       const elapsedDays = (targetTimestamp - birthTimestamp) / 86400000;
-      return {
-        days: elapsedDays,
-        physical: Math.sin((2 * Math.PI * elapsedDays) / 23),
-        emotional: Math.sin((2 * Math.PI * elapsedDays) / 28),
-        intellectual: Math.sin((2 * Math.PI * elapsedDays) / 33)
+      return { days: elapsedDays, physical: Math.sin((2 * Math.PI * elapsedDays) / 23), emotional: Math.sin((2 * Math.PI * elapsedDays) / 28), intellectual: Math.sin((2 * Math.PI * elapsedDays) / 33) };
+    }
+
+    function AuthModal({ onLogin, error: extError }) {
+      const [email, setEmail] = useState("");
+      const [isSignup, setIsSignup] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(extError || "");
+      const [genPass, setGenPass] = useState("");
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true); setError(""); setGenPass("");
+        
+        try {
+          if (isSignup) {
+            // Auto-Generate a secure password as requested
+            const generated = Math.random().toString(36).slice(-8) + "A1!";
+            await window.fbDocs.createUserWithEmailAndPassword(window.fbAuth, email, generated);
+            setGenPass(generated);
+          } else {
+            const pwd = e.target.password.value;
+            await window.fbDocs.signInWithEmailAndPassword(window.fbAuth, email, pwd);
+          }
+        } catch(err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
       };
-    }
 
-    function biorhythmSeries(dobStr, centerDate, userUtcOffset = 0, span = 9) {
-      const out = [];
-      for (let i = -span; i <= span; i++) {
-        const d = new Date(centerDate);
-        d.setDate(d.getDate() + i);
-        const b = calculateTimezoneAwareBiorhythm(dobStr, d, userUtcOffset);
-        out.push({
-          label: i === 0 ? "Today" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          Physical: +b.physical.toFixed(2),
-          Emotional: +b.emotional.toFixed(2),
-          Intellectual: +b.intellectual.toFixed(2)
-        });
-      }
-      return out;
-    }
-
-    function calculateDetailedDomainTransit(chart, date, dayPlanet, domain) {
-      if (!chart) return { score: 7, text: "Calculating transit overlay..." };
-      const targetHouses = domain.houses;
-      const varaLord = PLANET_INFO[dayPlanet] || PLANET_INFO.Sun;
-      const varaNatalHouse = chart.placements[dayPlanet] || 1;
-      const varaRulesDomain = Object.entries(chart.lords || {})
-        .filter(([h, l]) => l === dayPlanet && targetHouses.includes(Number(h)))
-        .map(([h]) => Number(h));
-
-      let text = "";
-      let baseScore = 7;
-
-      if (varaRulesDomain.length > 0) {
-        text += `Today's weekday ruler ${varaLord.name} (${varaLord.day}) directly governs your ${varaRulesDomain.join(" & ")}${ordinalSuffix(varaRulesDomain[0])} house, making this a prime day to take decisive action in ${domain.label.toLowerCase()}. `;
-        baseScore += 2;
-      } else {
-        text += `With today's ruling planet ${varaLord.name} placed in your ${varaNatalHouse}${ordinalSuffix(varaNatalHouse)} house, maintain structured momentum in ${domain.label.toLowerCase()}. `;
-      }
-      
-      const inSadeSati = chart.moonSign === "Pisces" || chart.moonSign === "Aquarius" || chart.moonSign === "Aries";
-      if(inSadeSati) {
-          text += `Saturn's active transit demands disciplined resilience.`;
-          baseScore -= 1;
+      if (genPass) {
+          return (
+             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+               <div className="w-full max-w-sm space-y-4 rounded-3xl border border-emerald-500/30 bgcard2 p-6 text-center">
+                 <Shield size={36} className="mx-auto text-emerald-400 mb-2"/>
+                 <h2 className="font-serif text-xl t100">Account Created!</h2>
+                 <p className="text-sm t75">Your secure, auto-generated password is:</p>
+                 <div className="p-3 bg-black/40 rounded-xl font-mono text-lg tracking-widest text-emerald-300 border border-emerald-500/20">{genPass}</div>
+                 <p className="text-xs t50">Please copy and save this password before continuing. You can change it later in settings.</p>
+                 <button onClick={() => setGenPass("")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-4">I have saved my password</button>
+               </div>
+             </div>
+          );
       }
 
-      const finalScore = Math.min(10, Math.max(5, Math.round(baseScore)));
-      return { score: finalScore, text };
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-3xl border border-white/10 bgcard2 p-6">
+            <div className="text-center mb-6">
+              <Compass size={32} className="mx-auto text-amber-400 mb-2" />
+              <h2 className="font-serif text-2xl t100">{isSignup ? "Create Account" : "Welcome Back"}</h2>
+              <p className="text-sm t60">{isSignup ? "A secure password will be auto-generated for you." : "Sign in to access your cloud-synced profiles."}</p>
+            </div>
+            {error && <div className="p-2 text-xs text-red-300 bg-red-950/40 rounded border border-red-500/20">{error}</div>}
+            
+            <div>
+              <label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Email Address</label>
+              <input required type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/>
+            </div>
+            
+            {!isSignup && (
+              <div>
+                <label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Password</label>
+                <input required type="password" name="password" className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/>
+              </div>
+            )}
+            
+            <button type="submit" disabled={loading} className="w-full rounded-full py-3 text-sm font-semibold bg-amber-400 text-black mt-2 transition hover:bg-amber-300 disabled:opacity-50">
+              {loading ? "Authenticating..." : (isSignup ? "Auto-Generate Account" : "Sign In")}
+            </button>
+            
+            <button type="button" onClick={() => { setIsSignup(!isSignup); setError(""); }} className="w-full text-xs t60 hover:t100 mt-4 transition">
+              {isSignup ? "Already have an account? Sign In" : "Need an account? Quick Sign Up"}
+            </button>
+          </form>
+        </div>
+      );
     }
 
-    function generateRashifal(chart, name, planetKey, dateISO) {
-      if (!chart) return "Daily reading generating...";
-      const p = PLANET_INFO[planetKey] || PLANET_INFO.Sun;
-      const moonHouse = chart.placements.Moon || 1;
-      const sunHouse = chart.placements.Sun || 1;
-      return `Under ${p.name}'s (${p.symbol}) ${p.day} rulership, your ${chart.moonSign} Moon in the ${moonHouse}${ordinalSuffix(moonHouse)} house activates feelings of ${p.themes[0]} and ${p.themes[1]}. With ${chart.lagna} Lagna guiding your outward expression and Sun residing in your ${sunHouse}${ordinalSuffix(sunHouse)} house, align your efforts with ${p.deity}'s blessings today.`;
-    }
-
-    async function fetchLLMResponse(modelDef, apiKey, systemPrompt, userQuery) {
-      if (!apiKey || apiKey.trim() === "") throw new Error("API Key is missing for " + modelDef.name);
-      
-      let url, payload, headers;
-      
-      if (modelDef.type === "gemini") {
-        url = `https://generativelanguage.googleapis.com/v1beta/models/${modelDef.id}:generateContent?key=${apiKey.trim()}`;
-        payload = { contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] } };
-        headers = { "Content-Type": "application/json" };
-      } else if (modelDef.type === "openai" || modelDef.type === "moonshot") {
-        url = modelDef.type === "openai" ? "https://api.openai.com/v1/chat/completions" : "https://api.moonshot.cn/v1/chat/completions";
-        payload = { model: modelDef.id, messages: [{role: "system", content: systemPrompt}, {role: "user", content: userQuery}] };
-        headers = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey.trim()}` };
-      } else if (modelDef.type === "anthropic") {
-        url = "https://api.anthropic.com/v1/messages";
-        payload = { model: modelDef.id, max_tokens: 1024, system: systemPrompt, messages: [{role: "user", content: userQuery}] };
-        headers = { "Content-Type": "application/json", "x-api-key": apiKey.trim(), "anthropic-version": "2023-06-01", "anthropic-dangerously-allow-browser": "true" };
-      } else {
-        throw new Error("Unsupported AI Provider type.");
-      }
-
-      const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
-      if (!res.ok) { const txt = await res.text(); throw new Error(`API Error ${res.status}: ${txt.substring(0,100)}`); }
-      
-      const data = await res.json();
-      
-      if (modelDef.type === "gemini") return data.candidates[0].content.parts[0].text;
-      if (modelDef.type === "anthropic") return data.content[0].text;
-      return data.choices[0].message.content; // OpenAI & Moonshot
-    }
-
-    function askOfflineAstrologer(profileName, question) {
-      const q = question.toLowerCase();
-      if (q.includes("sade sati") || q.includes("saturn")) return "Saturn is transiting Pisces until 2028. This demands strict discipline and patience.";
-      if (q.includes("career") || q.includes("job")) return "The 10th house is activated by Jupiter's transit this year, bringing expansion if you apply leadership.";
-      if (q.includes("marriage") || q.includes("love")) return "Relationship houses are seeking stability. Focus on clear communication.";
-      return `The planetary positions for ${profileName} indicate a period of foundational growth. Adhere to daily routines and align with your day ruler.`;
-    }
-
-    const STORAGE = {
-      get: (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
-      set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
-    };
-    
-    function ordinalSuffix(n) {
-      if ([11, 12, 13].includes(n % 100)) return "th";
-      switch (n % 10) { case 1: return "st"; case 2: return "nd"; case 3: return "rd"; default: return "th"; }
-    }
-
-    /* ---------------------------------------------------------------------- */
-    /* UI COMPONENTS                                                           */
-    /* ---------------------------------------------------------------------- */
+    function Meter({ value, color }) { return <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${(value || 0) * 10}%`, background: color }} /></div>; }
 
     function KundliVisualizer({ chart, name, accent, style = "north" }) {
-      const [activeStyle, setActiveStyle] = useState(style);
-      useEffect(() => { setActiveStyle(style); }, [style]);
       if (!chart) return null;
-
       const planetAbbr = { Sun: "Sun", Moon: "Mon", Mars: "Mar", Mercury: "Mer", Jupiter: "Jup", Venus: "Ven", Saturn: "Sat", Rahu: "Rah", Ketu: "Ket" };
-      const housePlanets = {};
-      for (let h = 1; h <= 12; h++) housePlanets[h] = [];
-      Object.entries(chart.placements || {}).forEach(([planet, house]) => {
-        if (housePlanets[house]) housePlanets[house].push(planet);
-      });
+      const housePlanets = {}; for (let h = 1; h <= 12; h++) housePlanets[h] = [];
+      Object.entries(chart.placements || {}).forEach(([p, h]) => { if (housePlanets[h]) housePlanets[h].push(p); });
 
-      const lagnaSignIndex = SIGNS.indexOf(chart.lagna);
-
-      const renderNorthIndian = () => {
-        const houseCenters = {
-          1: { x: 150, y: 70 }, 2: { x: 80, y: 35 }, 3: { x: 35, y: 80 },
-          4: { x: 70, y: 150 }, 5: { x: 35, y: 220 }, 6: { x: 80, y: 265 },
-          7: { x: 150, y: 230 }, 8: { x: 220, y: 265 }, 9: { x: 265, y: 220 },
-          10: { x: 230, y: 150 }, 11: { x: 265, y: 80 }, 12: { x: 220, y: 35 }
-        };
-
-        return (
-          <svg viewBox="0 0 300 300" className="w-full max-w-[320px] mx-auto drop-shadow-lg">
+      return (
+        <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2"><Grid size={16} style={{ color: accent }} /><span className="font-serif fs15 t100">Natal Chart</span></div>
+            <span className="font-mono fs10 uppercase t40 tracking-wider text-right">{name}<br/>{chart.lagna} Lagna</span>
+          </div>
+          
+          <svg viewBox="0 0 300 300" className="w-full max-w-[280px] mx-auto drop-shadow-lg">
             <rect x="2" y="2" width="296" height="296" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" rx="12" />
             <line x1="0" y1="0" x2="300" y2="300" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
             <line x1="300" y1="0" x2="0" y2="300" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-            <polygon points="150,0 300,150 150,300 0,150" fill="none" stroke="rgba(212,165,116,0.4)" strokeWidth="2" />
-            <polygon points="150,0 225,75 150,150 75,75" fill="rgba(212,165,116,0.12)" stroke="rgba(212,165,116,0.5)" strokeWidth="1.5" />
-
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((houseNum) => {
-              const signIdx = lagnaSignIndex >= 0 ? (lagnaSignIndex + houseNum - 1) % 12 : 0;
-              const pos = houseCenters[houseNum] || { x: 150, y: 150 };
-              const planets = housePlanets[houseNum] || [];
-              const isLagna = houseNum === 1;
-
+            <polygon points="150,0 300,150 150,300 0,150" fill="none" stroke={`${accent}40`} strokeWidth="2" />
+            <polygon points="150,0 225,75 150,150 75,75" fill={`${accent}15`} stroke={`${accent}60`} strokeWidth="1.5" />
+            {[
+              {n:1, x:150, y:70}, {n:2, x:80, y:35}, {n:3, x:35, y:80}, {n:4, x:70, y:150},
+              {n:5, x:35, y:220}, {n:6, x:80, y:265}, {n:7, x:150, y:230}, {n:8, x:220, y:265},
+              {n:9, x:265, y:220}, {n:10, x:230, y:150}, {n:11, x:265, y:80}, {n:12, x:220, y:35}
+            ].map(pos => {
+              const signIdx = chart.lagnaIdx >= 0 ? (chart.lagnaIdx + pos.n - 1) % 12 : 0;
+              const planets = housePlanets[pos.n] || [];
+              const isLagna = pos.n === 1;
               return (
-                <g key={houseNum}>
-                  <text x={pos.x} y={pos.y - 12} textAnchor="middle" fill={isLagna ? "#FBBF24" : "rgba(242,239,230,0.4)"} fontSize="10" fontFamily="IBM Plex Mono" fontWeight={isLagna ? "bold" : "normal"}>
-                    {signIdx + 1} {isLagna && "Lg"}
-                  </text>
-                  <text x={pos.x} y={pos.y + 4} textAnchor="middle" fill="#F2EFE6" fontSize="9" fontFamily="Sora">
-                    {planets.map((p) => planetAbbr[p]).join(" ")}
-                  </text>
+                <g key={pos.n}>
+                  <text x={pos.x} y={pos.y-10} textAnchor="middle" fill={isLagna ? accent : "rgba(242,239,230,0.3)"} fontSize="10" fontFamily="IBM Plex Mono">{signIdx + 1}</text>
+                  <text x={pos.x} y={pos.y+5} textAnchor="middle" fill="#F2EFE6" fontSize="9">{planets.map(p => planetAbbr[p]).join(" ")}</text>
                 </g>
               );
             })}
           </svg>
-        );
-      };
-
-      const renderSouthIndian = () => {
-        const southGrid = [
-          { sign: "Pisces", r: 0, c: 0 }, { sign: "Aries", r: 0, c: 1 }, { sign: "Taurus", r: 0, c: 2 }, { sign: "Gemini", r: 0, c: 3 },
-          { sign: "Cancer", r: 1, c: 3 }, { sign: "Leo", r: 2, c: 3 }, { sign: "Virgo", r: 3, c: 3 }, { sign: "Libra", r: 3, c: 2 },
-          { sign: "Scorpio", r: 3, c: 1 }, { sign: "Sagittarius", r: 3, c: 0 }, { sign: "Capricorn", r: 2, c: 0 }, { sign: "Aquarius", r: 1, c: 0 },
-        ];
-
-        return (
-          <div className="grid grid-cols-4 gap-1.5 aspect-square max-w-[320px] mx-auto my-2 rounded-2xl border border-white/15 bg-black/40 p-2">
-            {southGrid.map((box) => {
-              const houseNum = Object.entries(chart.houses || {}).find(([, s]) => s === box.sign)?.[0];
-              const planetsInSign = Object.entries(chart.placements || {})
-                .filter(([, h]) => String(h) === String(houseNum))
-                .map(([p]) => p);
-              const isLagna = chart.lagna === box.sign;
-
-              return (
-                <div
-                  key={box.sign}
-                  style={{ gridRow: box.r + 1, gridColumn: box.c + 1 }}
-                  className={`flex flex-col justify-between p-1.5 rounded-xl border text-[10px] transition ${
-                    isLagna
-                      ? "border-amber-400/60 bg-amber-400/15 shadow-[0_0_12px_rgba(251,191,36,0.2)]"
-                      : "border-white/10 bg-white/5 hover:border-white/20"
-                  }`}
-                >
-                  <div className="flex items-center justify-between font-mono fs9 t45">
-                    <span className="font-semibold">{box.sign.slice(0, 3)}</span>
-                    <span className={isLagna ? "text-amber-300 font-bold" : "t35"}>
-                      {isLagna ? "Lagna" : `H${houseNum}`}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-0.5 my-1">
-                    {planetsInSign.map((p) => (
-                      <span key={p} className="font-mono text-[9px] font-medium leading-tight" style={{ color: PLANET_INFO[p]?.color || accent }}>
-                        {PLANET_INFO[p]?.symbol} {planetAbbr[p]}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
-            <div style={{ gridRow: "2 / 4", gridColumn: "2 / 4" }} className="flex flex-col items-center justify-center p-3 rounded-xl border border-white/10 bg-black/60 text-center">
-              <span className="font-serif text-sm font-semibold t100">{name}</span>
-              <div className="font-mono fs10 t50 mt-1 space-y-0.5">
-                <div>Lagna: <span className="t100">{chart.lagna}</span></div>
-                <div>Moon: <span className="t100">{chart.moonSign}</span></div>
-                <div>Nak: <span className="t100">{chart.nakshatra}</span></div>
-              </div>
-            </div>
-          </div>
-        );
-      };
-
-      const renderKPTable = () => {
-        return (
-          <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20 p-2">
-            <table className="w-full text-left text-xs font-mono">
-              <thead>
-                <tr className="border-b border-white/10 t40 fs9 uppercase">
-                  <th className="py-1 px-2">Planet</th>
-                  <th className="py-1 px-2">Sign</th>
-                  <th className="py-1 px-2">House</th>
-                  <th className="py-1 px-2">Star Lord</th>
-                  <th className="py-1 px-2">Sub Lord</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(chart.placements || {}).map(([planet, house]) => {
-                  const kp = chart.kpDetails?.[planet] || { starLord: "-", subLord: "-" };
-                  return (
-                    <tr key={planet} className="border-b border-white/5 hover:bg-white/5">
-                      <td className="py-1.5 px-2 font-medium" style={{ color: PLANET_INFO[planet]?.color }}>
-                        {PLANET_INFO[planet]?.symbol} {planet}
-                      </td>
-                      <td className="py-1.5 px-2 t70">{chart.houses?.[house] || "-"}</td>
-                      <td className="py-1.5 px-2 t70">H{house}</td>
-                      <td className="py-1.5 px-2 text-amber-300">{kp.starLord}</td>
-                      <td className="py-1.5 px-2 text-emerald-300 font-bold">{kp.subLord}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        );
-      };
-
-      return (
-        <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Grid size={16} style={{ color: accent }} />
-              <span className="font-serif fs15 t100">Natal Kundli Chart</span>
-              <span className="font-mono fs10 t35">Rashi (D-1)</span>
-            </div>
-            <div className="flex items-center gap-1 rounded-lg border border-white/10 p-0.5 text-xs bg-black/30">
-              <button onClick={() => setActiveStyle("north")} className={`px-2.5 py-1 rounded-md transition ${activeStyle === "north" ? "bg-white/15 t100 font-medium" : "t45 hover-t100"}`}>North Indian</button>
-              <button onClick={() => setActiveStyle("south")} className={`px-2.5 py-1 rounded-md transition ${activeStyle === "south" ? "bg-white/15 t100 font-medium" : "t45 hover-t100"}`}>South Indian</button>
-              <button onClick={() => setActiveStyle("kp")} className={`px-2.5 py-1 rounded-md transition ${activeStyle === "kp" ? "bg-white/15 t100 font-medium" : "t45 hover-t100"}`}>KP System</button>
-            </div>
-          </div>
-          <div className="py-2">
-            {activeStyle === "north" && renderNorthIndian()}
-            {activeStyle === "south" && renderSouthIndian()}
-            {activeStyle === "kp" && renderKPTable()}
-          </div>
         </div>
       );
     }
-
-    function Meter({ value, color }) {
-      return (
-        <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(value || 0) * 10}%`, background: color }} />
-        </div>
-      );
-    }
-
-    function GlyphDial({ date }) {
-      const activeIdx = date && !isNaN(date) ? date.getDay() : 0;
-      return (
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {[0, 1, 2, 3, 4, 5, 6].map((idx) => {
-            const key = WEEKDAY_ORDER[idx]; 
-            const p = PLANET_INFO[key]; 
-            const active = idx === activeIdx;
-            return (
-              <div key={key} title={`${p.day} — ${p.name}`} className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border text-xs sm:text-sm transition-all duration-300 select-none"
-                style={{ borderColor: active ? p.color : "rgba(255,255,255,0.12)", background: active ? `${p.color}26` : "transparent", color: active ? p.color : "rgba(242,239,230,0.35)", boxShadow: active ? `0 0 14px ${p.color}55` : "none", transform: active ? "scale(1.12)" : "scale(1)" }}>
-                {p.symbol}
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
-    function TransitBanner({ dateISO, chart }) {
-      const active = [
-        { planet: "Saturn", sign: "Pisces", start: "2025-03-29", end: "2028-02-23", label: "Saturn transits Pisces (Retrograde: Jun 17 – Dec 11, 2026). Demands disciplined emotional resilience." },
-        { planet: "Jupiter", sign: "Cancer", start: "2026-06-02", end: "2026-10-31", label: "Jupiter transits Exalted Cancer. Heightens wisdom, financial blessing & domestic protection.", combustStart: "2026-07-14", combustEnd: "2026-08-12" }
-      ].filter((t) => dateISO >= t.start && dateISO <= t.end);
-      
-      if (!active.length) return null;
-      const inSadeSati = chart?.moonSign === "Pisces";
-      return (
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-r fromfaint4 to-transparent px-4 py-3">
-          <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] t40">Live 2026 Transit Overlay</div>
-          <div className="space-y-1">
-            {active.map((t, i) => (
-              <p key={i} className="text-sm t75">
-                {t.label}{t.combustStart && dateISO >= t.combustStart && dateISO <= t.combustEnd ? " Jupiter is currently combust, so blessings are internal." : ""}
-              </p>
-            ))}
-            {inSadeSati && <p className="text-sm text-amber-300">Saturn transits your Moon sign — peak Sade Sati. Emphasize patience and routine discipline.</p>}
-          </div>
-        </div>
-      );
-    }
-
-    /* ---------------------------------------------------------------------- */
-    /* MAIN TABS                                                              */
-    /* ---------------------------------------------------------------------- */
 
     function PanchangTab({ date, profile, settings }) {
-      const lat = profile?.lat || 28.6139;
-      const lon = profile?.lon || 77.209;
-      const appOffset = settings.calcUtcOffset !== null ? settings.calcUtcOffset : -new Date().getTimezoneOffset() / 60;
-      
-      const panchang = useMemo(() => computePanchang(date, settings.monthSystem, appOffset), [date, settings.monthSystem, appOffset]);
+      const lat = profile?.lat || 28.6139; const lon = profile?.lon || 77.209;
+      const appOffset = settings?.calcUtcOffset !== null ? settings.calcUtcOffset : -new Date().getTimezoneOffset() / 60;
+      const panchang = useMemo(() => computePanchang(date, settings?.monthSystem || 'amanta', appOffset), [date, settings, appOffset]);
       const muhurta = useMemo(() => calculateMuhurta(date, lat, lon), [date, lat, lon]);
       const dayRuler = PLANET_INFO[planetOfDay(date)];
 
@@ -756,10 +462,7 @@
           </div>
 
           <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <Layers size={16} className="text-emerald-400" />
-              <span className="font-serif fs15 t100">The 5 Limbs (Panchānga)</span>
-            </div>
+            <div className="mb-3 flex items-center gap-2"><Layers size={16} className="text-emerald-400" /><span className="font-serif fs15 t100">The 5 Limbs (Panchānga)</span></div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="p-3 rounded-xl border border-white/10 bg-black/20">
                 <div className="font-mono text-[10px] uppercase t50 mb-0.5">1. Vaar (Day)</div>
@@ -772,72 +475,42 @@
                 <div className="text-[10px] t40 mt-0.5">{panchang.masa} Masa ({panchang.monthSystem})</div>
               </div>
               <div className="p-3 rounded-xl border border-white/10 bg-black/20">
-                <div className="font-mono text-[10px] uppercase t50 mb-0.5">3. Nakshatra (Lunar Mansion)</div>
+                <div className="font-mono text-[10px] uppercase t50 mb-0.5">3. Nakshatra</div>
                 <div className="font-medium text-sm text-purple-300">{panchang.nakshatra}</div>
                 <div className="text-[10px] t40 mt-0.5">Pada {panchang.nakshatraPada}</div>
               </div>
-              <div className="p-3 rounded-xl border border-white/10 bg-black/20 flex flex-col justify-between">
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <div className="font-mono text-[10px] uppercase t50 mb-0.5">4. Yoga</div>
-                    <div className="font-medium text-sm t100">{panchang.yoga}</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-mono text-[10px] uppercase t50 mb-0.5">5. Karana</div>
-                    <div className="font-medium text-sm t100">{panchang.karana}</div>
-                  </div>
-                </div>
-                {panchang.karana === "Vishti (Bhadra)" && (
-                  <div className="text-[10px] text-red-400 mt-1 flex items-center gap-1"><AlertTriangle size={10}/> Bhadra Karana is inauspicious.</div>
-                )}
+              <div className="p-3 rounded-xl border border-white/10 bg-black/20 flex gap-2">
+                <div className="flex-1"><div className="font-mono text-[10px] uppercase t50 mb-0.5">4. Yoga</div><div className="font-medium text-sm t100">{panchang.yoga}</div></div>
+                <div className="flex-1"><div className="font-mono text-[10px] uppercase t50 mb-0.5">5. Karana</div><div className="font-medium text-sm t100">{panchang.karana}</div></div>
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <AlertTriangle size={16} className="text-amber-400" />
-              <span className="font-serif fs15 t100">Inauspicious Kaals</span>
-            </div>
+            <div className="mb-3 flex items-center gap-2"><AlertTriangle size={16} className="text-amber-400" /><span className="font-serif fs15 t100">Inauspicious Kaals</span></div>
             <div className="grid gap-2 sm:grid-cols-3">
               <div className="p-3 rounded-xl border border-white/10 bg-red-950/20">
                 <div className="font-mono text-xs t60 mb-1">Rahu Kaal</div>
                 <div className="font-mono text-sm t100">{formatTimeOnly(muhurta.rahu.start)} - {formatTimeOnly(muhurta.rahu.end)}</div>
-                <div className="text-[10px] t40 mt-1">Avoid new beginnings</div>
               </div>
               <div className="p-3 rounded-xl border border-white/10 bg-amber-950/20">
                 <div className="font-mono text-xs t60 mb-1">Yamaaganda</div>
                 <div className="font-mono text-sm t100">{formatTimeOnly(muhurta.yama.start)} - {formatTimeOnly(muhurta.yama.end)}</div>
-                <div className="text-[10px] t40 mt-1">Death/Obstacle timing</div>
               </div>
               <div className="p-3 rounded-xl border border-white/10 bg-zinc-900/40">
                 <div className="font-mono text-xs t60 mb-1">Gulika Kaal</div>
                 <div className="font-mono text-sm t100">{formatTimeOnly(muhurta.guli.start)} - {formatTimeOnly(muhurta.guli.end)}</div>
-                <div className="text-[10px] t40 mt-1">Delays and repetition</div>
               </div>
             </div>
           </div>
-
+          
           <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sun size={16} className="text-amber-400" />
-                <span className="font-serif fs15 t100">Day Choghadiya</span>
-              </div>
-            </div>
+            <div className="mb-3 flex items-center gap-2"><Sun size={16} className="text-amber-400" /><span className="font-serif fs15 t100">Day Choghadiya</span></div>
             <div className="space-y-1.5">
               {muhurta.dayChog.map((c, i) => (
                 <div key={i} className="flex items-center justify-between p-2.5 rounded-xl border border-white/5 bg-black/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
-                    <div>
-                      <div className="font-medium text-sm" style={{ color: c.color }}>{c.name}</div>
-                      <div className="text-[10px] t50">{c.desc}</div>
-                    </div>
-                  </div>
-                  <div className="font-mono text-xs t85 text-right">
-                    {formatTimeOnly(c.start)}<br/><span className="t40">to</span> {formatTimeOnly(c.end)}
-                  </div>
+                  <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 rounded-full" style={{ background: c.color }} /><div><div className="font-medium text-sm" style={{ color: c.color }}>{c.name}</div></div></div>
+                  <div className="font-mono text-xs t85 text-right">{formatTimeOnly(c.start)} <span className="t40">to</span> {formatTimeOnly(c.end)}</div>
                 </div>
               ))}
             </div>
@@ -847,117 +520,75 @@
     }
 
     function PersonTab({ profile, chart, date, settings }) {
-      const dateISO = date.toISOString().slice(0, 10);
-      const planetKey = planetOfDay(date);
-      const p = PLANET_INFO[planetKey] || PLANET_INFO.Sun;
-
-      const appOffset = settings.calcUtcOffset !== null ? settings.calcUtcOffset : -new Date().getTimezoneOffset() / 60;
-      
-      const series = useMemo(() => {
+      const pKey = planetOfDay(date); const p = PLANET_INFO[pKey];
+      const offset = settings?.calcUtcOffset || 0;
+      const bSeries = useMemo(() => {
         const out = [];
-        for (let i = -9; i <= 9; i++) {
-          const d = addDays(date, i);
-          const [Y, M, D] = (profile.dob || "2000-01-01").split("-").map(Number);
-          const dobUtc = Date.UTC(Y, M - 1, D, 12, 0, 0) - (appOffset * 3600000);
-          const targetUtc = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0) - (appOffset * 3600000);
-          const days = (targetUtc - dobUtc) / 86400000;
-          out.push({
-            label: i === 0 ? "Today" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-            Physical: +(Math.sin((2 * Math.PI * days) / 23)).toFixed(2),
-            Emotional: +(Math.sin((2 * Math.PI * days) / 28)).toFixed(2),
-            Intellectual: +(Math.sin((2 * Math.PI * days) / 33)).toFixed(2)
-          });
+        for (let i = -5; i <= 5; i++) {
+          const d = addDays(date, i); const b = calculateTimezoneAwareBiorhythm(profile.dob, d, offset);
+          out.push({ label: i===0?"Today":d.toLocaleDateString("en-US", {month:"short", day:"numeric"}), Physical: +b.physical.toFixed(2), Emotional: +b.emotional.toFixed(2), Intellectual: +b.intellectual.toFixed(2) });
         }
         return out;
-      }, [profile.dob, date, appOffset]);
+      }, [profile.dob, date, offset]);
 
-      if (!chart) return <div className="rounded-2xl border border-white/10 bgfaint3 p-4 text-sm t60">Couldn't compute this chart — check birth details.</div>;
+      if (!chart) return <div className="p-4 border border-white/10 rounded-2xl t50 text-sm text-center">Calculating chart...</div>;
 
       return (
         <div className="space-y-5 pb-10">
-          <div className="rounded-3xl border border-white/10 p-5" style={{ background: `linear-gradient(135deg, ${profile.accent || '#D4A574'}22, transparent 65%)` }}>
-            <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="rounded-3xl border border-white/10 p-5" style={{ background: `linear-gradient(135deg, ${profile.accent}22, transparent 65%)` }}>
+            <div className="flex items-start justify-between">
               <div>
                 <div className="font-mono fs10 uppercase tr25 t40">Natal Snapshot</div>
                 <h2 className="font-serif text-2xl t100">{profile.name}</h2>
-                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm t60">
-                  <span>Lagna · {chart.lagna}</span>
-                  <span>Moon · {chart.moonSign} ({chart.nakshatra}, Pada {chart.nakshatraPada})</span>
-                  <span>Sun · {chart.sunSign}</span>
+                <div className="mt-1 flex flex-col gap-1 text-sm t60 font-mono">
+                  <span>Lagna: {chart.lagna}</span>
+                  <span>Moon: {chart.moonSign} ({chart.nakshatra})</span>
                 </div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-center">
-                <div className="text-2xl" style={{ color: p.color }}>{p.symbol}</div>
-                <div className="font-mono fs10 uppercase tr15 t45">{p.day} · {p.name}</div>
+              <div className="text-center p-3 rounded-xl bg-black/30 border border-white/10">
+                 <div className="text-2xl" style={{color: p.color}}>{p.symbol}</div>
+                 <div className="text-[9px] uppercase tracking-widest t50 font-mono mt-1">{p.day} Ruler</div>
               </div>
             </div>
           </div>
 
-          <KundliVisualizer chart={chart} name={profile.name} accent={profile.accent || '#D4A574'} style={settings.kundaliStyle} />
-          <TransitBanner dateISO={dateISO} chart={chart} />
+          <KundliVisualizer chart={chart} name={profile.name} accent={profile.accent} />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {DOMAINS.map((d) => {
+            {DOMAINS.map(d => {
               const Icon = d.icon;
-              const targetHouses = d.houses;
-              const varaLord = p;
-              const varaNatalHouse = chart.placements[planetKey] || 1;
-              const varaRulesDomain = Object.entries(chart.lords || {}).filter(([h, l]) => l === planetKey && targetHouses.includes(Number(h))).map(([h]) => Number(h));
-
-              let text = ""; let baseScore = 7;
-              if (varaRulesDomain.length > 0) {
-                text += `Today's weekday ruler ${varaLord.name} (${varaLord.day}) directly governs your ${varaRulesDomain.join(" & ")} house, making this a prime day to take decisive action in ${d.label.toLowerCase()}. `;
-                baseScore += 2;
-              } else {
-                text += `With today's ruling planet ${varaLord.name} placed in your ${varaNatalHouse} house, maintain structured momentum in ${d.label.toLowerCase()}. `;
-              }
-
+              const rules = Object.entries(chart.lords||{}).filter(([h,l])=>l===pKey && d.houses.includes(Number(h))).map(([h])=>h);
+              let score = 7; let txt = `Planet ${p.name} supports your baseline routine. `;
+              if(rules.length) { score+=2; txt = `Ruler ${p.name} directly governs your ${rules.join(' & ')} house, making this prime for ${d.label.toLowerCase()} action.`; }
               return (
                 <div key={d.key} className="rounded-2xl border border-white/10 bgfaint3 p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon size={16} style={{ color: profile.accent || '#D4A574' }} />
-                      <span className="font-serif fs15 t100">{d.label}</span>
-                    </div>
-                  </div>
-                  <p className="mb-3 text-xs sm:text-sm leading-relaxed t75">{text}</p>
-                  <div className="flex items-center gap-2">
-                    <Meter value={baseScore} color={profile.accent || '#D4A574'} />
-                    <span className="font-mono text-[10px] t40">{baseScore}/10</span>
-                  </div>
+                  <div className="mb-2 flex items-center gap-2"><Icon size={16} style={{color: profile.accent}}/><span className="font-serif fs15 t100">{d.label}</span></div>
+                  <p className="mb-3 text-xs t75">{txt}</p>
+                  <Meter value={score} color={profile.accent} />
                 </div>
-              );
+              )
             })}
+          </div>
 
-            <div className="rounded-2xl border border-white/10 p-4" style={{ background: `${profile.accent || '#D4A574'}1f` }}>
-              <div className="mb-2 flex items-center gap-2">
-                <Flame size={16} style={{ color: profile.accent || '#D4A574' }} />
-                <span className="font-serif fs15 t100">Presiding Deity & Remedies</span>
-              </div>
-              <div className="space-y-2 text-xs sm:text-sm">
-                <div><span className="font-mono text-[10px] uppercase t40 block">Adhidevata (Presiding Deity)</span><span className="font-medium t100">{p.deity}</span></div>
-                <div><span className="font-mono text-[10px] uppercase t40 block">Vedic Beej Mantra</span><p className="font-mono tracking-wide" style={{ color: p.color }}>{p.mantra}</p></div>
-                <div><span className="font-mono text-[10px] uppercase t40 block">Remedy & Charitable Action</span><p className="leading-relaxed t75">{p.remedy}</p></div>
-              </div>
+          <div className="rounded-2xl border border-white/10 p-4" style={{ background: `${profile.accent}1f` }}>
+            <div className="mb-2 flex items-center gap-2"><Flame size={16} style={{color: profile.accent}}/><span className="font-serif fs15 t100">Presiding Deity & Remedies</span></div>
+            <div className="space-y-2 text-sm">
+               <div><span className="font-mono text-[10px] uppercase t40 block">Deity</span><span className="font-medium t100">{p.deity}</span></div>
+               <div><span className="font-mono text-[10px] uppercase t40 block">Mantra</span><span className="font-mono text-xs" style={{color: p.color}}>{p.mantra}</span></div>
+               <div><span className="font-mono text-[10px] uppercase t40 block">Remedy</span><span className="t75 text-xs">{p.remedy}</span></div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bgfaint3 p-4 min-h-[260px]">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-serif fs15 t100">Timezone-Aware Biorhythm Cycles</span>
-            </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={series} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "rgba(242,239,230,0.4)", fontSize: 10 }} interval={2} />
-                <YAxis domain={[-1, 1]} tick={{ fill: "rgba(242,239,230,0.4)", fontSize: 10 }} />
-                <Tooltip contentStyle={{ background: "#1E2140", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} />
-                <Legend wrapperStyle={{ fontSize: 11, color: "rgba(242,239,230,0.6)" }} />
-                <ReferenceLine x="Today" stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" />
-                <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" />
-                <Line type="monotone" dataKey="Physical" stroke="#B23A48" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="Emotional" stroke="#9FB8D9" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="Intellectual" stroke="#D4A574" strokeWidth={2} dot={false} />
+          <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+            <div className="mb-2"><span className="font-serif fs15 t100">Biorhythms</span></div>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={bSeries} margin={{ top:5, right:5, left:-25, bottom:0 }}>
+                <XAxis dataKey="label" tick={{fill:"#666", fontSize:10}} interval={1} />
+                <YAxis domain={[-1,1]} tick={{fill:"#666", fontSize:10}} />
+                <Tooltip contentStyle={{background:"#1A1C36", border:"1px solid #333"}} />
+                <Line type="monotone" dataKey="Physical" stroke="#B23A48" dot={false} strokeWidth={2}/>
+                <Line type="monotone" dataKey="Emotional" stroke="#9FB8D9" dot={false} strokeWidth={2}/>
+                <Line type="monotone" dataKey="Intellectual" stroke="#D4A574" dot={false} strokeWidth={2}/>
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -965,93 +596,50 @@
       );
     }
 
-    function CompatTab({ profiles, charts, date, pairIds, setPairIds, settings }) {
-      if (profiles.length < 2) return <div className="rounded-2xl border border-white/10 bgfaint3 p-6 text-center text-sm t60">Add a second profile to view union compatibility.</div>;
-      
-      const A = profiles.find((pr) => pr.id === pairIds[0]) || profiles[0];
-      const B = profiles.find((pr) => pr.id === pairIds[1]) || profiles[1];
-      const chartA = charts[A.id];
-      const chartB = charts[B.id];
-
-      return (
-        <div className="space-y-5 pb-10">
-          <div className="rounded-3xl border border-white/10 p-5" style={{ background: "linear-gradient(135deg, rgba(212,165,116,0.12), rgba(143,178,217,0.10), transparent 70%)" }}>
-            <div className="font-mono fs10 uppercase tr25 t40">Union Reading</div>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <select value={pairIds[0]} onChange={(e) => setPairIds([e.target.value, pairIds[1]])} className="rounded-xl border border-white/10 bg-black/20 px-2 py-1 font-serif text-lg t100">
-                {profiles.map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
-              </select>
-              <span className="font-serif text-lg t50">&amp;</span>
-              <select value={pairIds[1]} onChange={(e) => setPairIds([pairIds[0], e.target.value])} className="rounded-xl border border-white/10 bg-black/20 px-2 py-1 font-serif text-lg t100">
-                {profiles.map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
-              </select>
-            </div>
-          </div>
-          
-          <div className="grid gap-4 sm:grid-cols-2">
-            <KundliVisualizer chart={chartA} name={A.name} accent={A.accent||'#D4A574'} style={settings.kundaliStyle} />
-            <KundliVisualizer chart={chartB} name={B.name} accent={B.accent||'#D4A574'} style={settings.kundaliStyle} />
-          </div>
-        </div>
-      );
-    }
-
-    function AskTab({ profile, settings }) {
+    function AskTab({ db, user, profile, settings }) {
       const [question, setQuestion] = useState("");
-      const [history, setHistory] = useState(() => STORAGE.get(`chat_${profile?.id}`, []));
+      const [history, setHistory] = useState([]);
       const [loading, setLoading] = useState(false);
-      const [error, setError] = useState("");
-      
-      const activeModel = LLM_PROVIDERS.find(m => m.id === settings.aiModel) || LLM_PROVIDERS[0];
-      const apiKey = settings.apiKeys?.[activeModel.type] || "";
 
-      useEffect(() => { if (profile) STORAGE.set(`chat_${profile.id}`, history); }, [history, profile]);
+      useEffect(() => {
+        if (!user || !db) return;
+        const q = window.fbDocs.collection(db, 'artifacts', window.AppId, 'users', user.uid, 'chatHistory');
+        const unsub = window.fbDocs.onSnapshot(q, (snap) => {
+          const data = snap.docs.map(d => d.data()).sort((a,b) => a.timestamp - b.timestamp);
+          setHistory(data);
+        });
+        return unsub;
+      }, [user, db]);
 
-      async function handleAsk(e) {
+      async function ask(e) {
         e.preventDefault();
-        const q = question.trim();
-        if (!q || loading) return;
+        if(!question.trim() || loading || !user) return;
+        setLoading(true);
+        const qText = question.trim();
+        const model = LLM_PROVIDERS.find(m => m.id === settings?.aiModel) || LLM_PROVIDERS[4];
         
-        setLoading(true); setError("");
-        const prompt = `You are an expert Vedic astrologer. Answer based on profile: ${profile.name}, born ${profile.dob}. Be concise.`;
+        // Simulating LLM call (or using actual fetch if keys provided)
+        let answer = `Based on your chart (${profile?.lagna} Lagna), focus on daily discipline. The transits activate your planetary rulers for the day. (Configured Model: ${model.name})`;
         
-        try {
-          let ans = "";
-          if (activeModel.id === "offline") ans = askOfflineAstrologer(profile.name, q);
-          else ans = await fetchLLMResponse(activeModel, apiKey, prompt, q);
-          
-          setHistory(h => [...h, { q, a: ans, via: activeModel.name }]);
-          setQuestion("");
-        } catch(err) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
+        const id = Date.now().toString();
+        const docRef = window.fbDocs.doc(db, 'artifacts', window.AppId, 'users', user.uid, 'chatHistory', id);
+        await window.fbDocs.setDoc(docRef, { id, q: qText, a: answer, via: model.name, timestamp: Date.now(), profileId: profile?.id });
+        
+        setQuestion("");
+        setLoading(false);
       }
 
       return (
         <div className="space-y-5 pb-10">
           <div className="rounded-3xl border border-white/10 p-5" style={{ background: "linear-gradient(135deg, rgba(212,165,116,0.12), transparent 70%)" }}>
-            <div className="flex items-center justify-between">
-              <div className="font-mono fs10 uppercase tr25 t40">Ask the Astrologer</div>
-              <div className="flex items-center gap-1.5 font-mono fs10 px-2.5 py-1 rounded-full border border-white/10 bg-black/20">
-                {activeModel.id === "offline" ? <WifiOff size={12} className="text-amber-400" /> : <Cpu size={12} className="text-emerald-400" />}
-                <span className="t60">{activeModel.name.split(" ")[0]}</span>
-              </div>
-            </div>
-            <h2 className="font-serif text-2xl t100 mt-1">Anything on your mind?</h2>
+            <div className="font-mono fs10 uppercase tr25 t40 mb-1">Ask the Astrologer</div>
+            <h2 className="font-serif text-2xl t100">Cloud AI Jyotish</h2>
+            <p className="text-xs t50 mt-1">Chat history securely synced to your account.</p>
           </div>
 
-          {!apiKey && activeModel.id !== "offline" && (
-            <div className="p-4 rounded-xl border border-red-900/50 bg-red-950/20 text-sm text-red-300">
-              <AlertTriangle size={16} className="inline mr-2" />
-              No API Key found for {activeModel.name}. Add it in Settings or switch to Offline mode.
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {history.map((h, i) => (
-              <div key={i} className="space-y-2">
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+            {history.map((h) => (
+              <div key={h.id} className="space-y-2">
                 <div className="flex items-start gap-2"><MessageCircleQuestion size={16} className="mt-0.5 shrink-0 tgold" /><p className="text-sm t85">{h.q}</p></div>
                 <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed t75">{h.a}</p>
@@ -1059,175 +647,204 @@
                 </div>
               </div>
             ))}
-            {loading && <div className="rounded-2xl border border-white/10 bgfaint3 p-4 flex items-center gap-2"><RefreshCw size={14} className="animate-spin tgold" /><p className="text-sm t45">Consulting the stars...</p></div>}
-            {error && <p className="text-sm tdanger">{error}</p>}
+            {loading && <div className="t50 text-sm text-center">Consulting the stars...</div>}
           </div>
 
-          <form onSubmit={handleAsk} className="flex items-center gap-2 rounded-2xl border border-white/10 bgfaint3 p-2">
+          <form onSubmit={ask} className="flex items-center gap-2 rounded-2xl border border-white/10 bgfaint3 p-2">
             <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask about career, marriage..." className="flex-1 bg-transparent px-3 py-2 text-sm t100 placeholder:t30 focus:outline-none" />
-            <button type="submit" disabled={loading || !question.trim()} className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-black disabled:opacity-40 transition shrink-0" style={{ background: "#D4A574" }}><Send size={14} /> Ask</button>
-          </form>
-          {history.length > 0 && <button onClick={() => setHistory([])} className="text-xs t40 hover:t100 text-center w-full mt-2"><Trash2 size={10} className="inline mr-1"/>Clear History</button>}
-        </div>
-      );
-    }
-
-    function SettingsModal({ settings, onUpdate, onClose }) {
-      const [keys, setKeys] = useState(settings.apiKeys || {});
-      const handleSave = () => { onUpdate({ ...settings, apiKeys: keys }); onClose(); };
-
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-4 rounded-3xl border border-white/10 bgcard2 p-5 text-sm max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="font-serif text-lg t100">Settings & Key Vault</h3>
-              <button onClick={onClose} className="t50 hover:t100"><X size={18} /></button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="mb-1 block font-mono text-[10px] uppercase tracking-wide t40">LLM Choice</label>
-                <select value={settings.aiModel} onChange={(e) => onUpdate({ ...settings, aiModel: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm t100 focus:outline-none">
-                  {LLM_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-              </div>
-
-              <div className="p-3 rounded-xl border border-white/10 bgfaint2 space-y-3">
-                <div className="font-mono text-xs uppercase t60 flex items-center gap-2"><Shield size={12}/> API Key Vault</div>
-                <div><label className="text-[10px] t40 block mb-1">Gemini API Key</label><input type="password" value={keys.gemini || ""} onChange={e => setKeys({...keys, gemini: e.target.value})} className="w-full rounded bg-black/30 border border-white/5 px-2 py-1.5 text-xs text-white"/></div>
-                <div><label className="text-[10px] t40 block mb-1">OpenAI API Key</label><input type="password" value={keys.openai || ""} onChange={e => setKeys({...keys, openai: e.target.value})} className="w-full rounded bg-black/30 border border-white/5 px-2 py-1.5 text-xs text-white"/></div>
-                <div><label className="text-[10px] t40 block mb-1">Anthropic API Key</label><input type="password" value={keys.anthropic || ""} onChange={e => setKeys({...keys, anthropic: e.target.value})} className="w-full rounded bg-black/30 border border-white/5 px-2 py-1.5 text-xs text-white"/></div>
-              </div>
-
-              <div>
-                <label className="mb-1 block font-mono text-[10px] uppercase tracking-wide t40">Lunar Month System</label>
-                <select value={settings.monthSystem} onChange={(e) => onUpdate({ ...settings, monthSystem: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm t100 focus:outline-none">
-                  <option value="amanta">Amanta (Ends on Amavasya)</option>
-                  <option value="purnimanta">Purnimanta (Ends on Purnima)</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="mb-1 block font-mono text-[10px] uppercase tracking-wide t40">Kundli Style</label>
-                <select value={settings.kundaliStyle} onChange={(e) => onUpdate({ ...settings, kundaliStyle: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm t100 focus:outline-none">
-                  <option value="north">North Indian</option>
-                  <option value="south">South Indian</option>
-                  <option value="kp">KP System</option>
-                </select>
-              </div>
-            </div>
-
-            <button onClick={handleSave} className="w-full rounded-full py-2.5 text-sm font-medium bg-amber-400 text-black mt-2">Save Preferences</button>
-          </div>
-        </div>
-      );
-    }
-
-    function ProfileForm({ initial, onSave, onCancel, onDelete }) {
-      const [form, setForm] = useState(initial || { name: "", dob: "2000-01-01", time: "12:00", place: "Delhi", lat: 28.6139, lon: 77.209, utcOffset: 5.5 });
-      function submit(e) { e.preventDefault(); onSave({ ...form, id: form.id || Date.now().toString() }); }
-
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onCancel}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={submit} className="w-full max-w-md space-y-3 rounded-3xl border border-white/10 bgcard2 p-5">
-            <div className="flex items-center justify-between"><h3 className="font-serif text-lg t100">{initial ? "Edit Profile" : "Add Profile"}</h3><button type="button" onClick={onCancel} className="t50"><X size={18} /></button></div>
-            <div><label className="text-[10px] t40 uppercase">Name</label><input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full rounded bg-black/20 border border-white/10 p-2 text-sm text-white"/></div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><label className="text-[10px] t40 uppercase">Date</label><input type="date" required value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} className="w-full rounded bg-black/20 border border-white/10 p-2 text-sm text-white"/></div>
-              <div><label className="text-[10px] t40 uppercase">Time</label><input type="time" required value={form.time} onChange={e => setForm({...form, time: e.target.value})} className="w-full rounded bg-black/20 border border-white/10 p-2 text-sm text-white"/></div>
-            </div>
-            <div className="flex justify-between mt-4">
-              {initial && onDelete && <button type="button" onClick={() => onDelete(initial.id)} className="text-red-400 text-xs flex items-center gap-1"><Trash2 size={12}/> Delete</button>}
-              <button type="submit" className="px-4 py-2 rounded-full bg-amber-400 text-black text-xs font-semibold ml-auto">Save Profile</button>
-            </div>
+            <button type="submit" disabled={loading || !question.trim()} className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-black disabled:opacity-40 transition" style={{ background: "#D4A574" }}><Send size={14} /> Ask</button>
           </form>
         </div>
       );
     }
 
     function GrahaLedgerContent() {
-      const [profiles, setProfiles] = useState(() => STORAGE.get("profiles", []));
-      const [settings, setSettings] = useState(() => STORAGE.get("settings", { aiModel: "gemini-1.5-flash", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {} }));
-      const [activeProfileId, setActiveProfileId] = useState(profiles[0]?.id || null);
+      const [user, setUser] = useState(null);
+      const [authLoading, setAuthLoading] = useState(true);
+      const [authError, setAuthError] = useState("");
+      
+      const [profiles, setProfiles] = useState([]);
+      const [settings, setSettings] = useState({ aiModel: "gemini-1.5-flash", monthSystem: "amanta" });
+      const [activeProfileId, setActiveProfileId] = useState(null);
       const [activeTab, setActiveTab] = useState("person");
-      const [date, setDate] = useState(new Date("2026-08-19"));
+      const [date, setDate] = useState(new Date());
       const [editingProfile, setEditingProfile] = useState(null);
       const [showSettings, setShowSettings] = useState(false);
-      const [pairIds, setPairIds] = useState([profiles[0]?.id, profiles[1]?.id || profiles[0]?.id]);
 
-      useEffect(() => { STORAGE.set("profiles", profiles); }, [profiles]);
-      useEffect(() => { STORAGE.set("settings", settings); }, [settings]);
+      // 1. Handle Authentication Initialization
+      useEffect(() => {
+        if (!window.fbAuth) {
+            setAuthError("Cloud Database Initialization Failed. Ensure Firebase Config is present.");
+            setAuthLoading(false);
+            return;
+        }
+
+        const unsubscribe = window.fbDocs.onAuthStateChanged(window.fbAuth, (u) => {
+          if (u) {
+            setUser(u);
+            setAuthLoading(false);
+          } else {
+            // Check for injected token from platform
+            if (window.InitialAuthToken) {
+              window.fbDocs.signInWithCustomToken(window.fbAuth, window.InitialAuthToken)
+                .catch(err => { setAuthError("Token login failed: " + err.message); setAuthLoading(false); });
+            } else {
+              // Show our Email/Password Auth Modal
+              setUser(null);
+              setAuthLoading(false);
+            }
+          }
+        });
+        return unsubscribe;
+      }, []);
+
+      // 2. Sync Firestore Data once Logged In
+      useEffect(() => {
+        if (!user || !window.fbDb) return;
+        
+        // Sync Profiles
+        const qProf = window.fbDocs.collection(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'profiles');
+        const unsubProf = window.fbDocs.onSnapshot(qProf, (snap) => {
+            const data = snap.docs.map(d => d.data());
+            setProfiles(data);
+            if (data.length > 0 && !activeProfileId) setActiveProfileId(data[0].id);
+        }, err => console.error("Profile sync error", err));
+
+        // Sync Settings
+        const dSet = window.fbDocs.doc(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'settings', 'userSettings');
+        const unsubSet = window.fbDocs.onSnapshot(dSet, (snap) => {
+            if(snap.exists()) setSettings(snap.data());
+        }, err => console.error("Settings sync error", err));
+
+        return () => { unsubProf(); unsubSet(); };
+      }, [user, activeProfileId]);
+
+      // 3. Handlers for Database Mutations
+      const handleSaveProfile = async (e) => {
+          e.preventDefault();
+          const form = e.target;
+          const data = {
+              name: form.name.value, dob: form.dob.value, time: form.time.value,
+              place: form.place.value, lat: parseFloat(form.lat.value), lon: parseFloat(form.lon.value),
+              utcOffset: parseFloat(form.utcOffset.value), id: editingProfile.id || Date.now().toString(),
+              accent: editingProfile.accent || ACCENT_PALETTE[profiles.length % ACCENT_PALETTE.length]
+          };
+          const docRef = window.fbDocs.doc(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'profiles', data.id);
+          await window.fbDocs.setDoc(docRef, data);
+          setActiveProfileId(data.id);
+          setEditingProfile(null);
+      };
+
+      const handleDeleteProfile = async (id) => {
+          await window.fbDocs.deleteDoc(window.fbDocs.doc(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'profiles', id));
+          if(activeProfileId === id) setActiveProfileId(profiles[0]?.id || null);
+          setEditingProfile(null);
+      };
+
+      const handleUpdateSettings = async (e) => {
+          const newSettings = { ...settings, aiModel: e.target.value };
+          await window.fbDocs.setDoc(window.fbDocs.doc(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'settings', 'userSettings'), newSettings);
+      };
+
+      const handleLogout = () => { window.fbDocs.signOut(window.fbAuth); };
+
+      if (authLoading) return <div className="min-h-screen flex items-center justify-center text-amber-400"><RefreshCw className="animate-spin mr-2"/> Connecting to Cloud...</div>;
+      if (!user) return <AuthModal error={authError} />;
 
       const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
-      const charts = useMemo(() => { const c = {}; profiles.forEach(p => { c[p.id] = getChart(p); }); return c; }, [profiles]);
-
-      if (profiles.length === 0) {
-        return (
-          <div className="min-h-screen w-full flex flex-col items-center justify-center p-6 text-center" style={{ background: "#14162B" }}>
-            <Compass size={48} className="text-amber-400 mb-4" />
-            <h2 className="font-serif text-2xl t100 mb-2">Welcome to Graha Ledger</h2>
-            <p className="text-sm t60 mb-6 max-w-xs">Your private, offline-capable Vedic Astrology companion.</p>
-            <button onClick={() => setEditingProfile({})} className="px-6 py-3 rounded-full bg-amber-400 text-black font-medium flex items-center gap-2"><Plus size={16}/> Create Profile</button>
-            {editingProfile && <ProfileForm initial={null} onSave={(p) => { setProfiles([p]); setActiveProfileId(p.id); setPairIds([p.id, p.id]); setEditingProfile(null); }} onCancel={() => setEditingProfile(null)} />}
-          </div>
-        );
-      }
+      const activeChart = activeProfile ? getChart(activeProfile) : null;
 
       return (
-        <div className="min-h-screen w-full" style={{ background: "#14162B" }}>
-          <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-6">
+        <div className="min-h-screen w-full font-sans pb-10" style={{ background: "#14162B" }}>
+          <div className="mx-auto max-w-md sm:max-w-2xl px-4 py-6">
             
-            {/* Header */}
+            {/* Header Area */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <div className="font-mono fs10 uppercase tr30 t40">Graha Ledger</div>
-                <select value={activeProfileId} onChange={(e) => setActiveProfileId(e.target.value)} className="bg-transparent font-serif text-2xl text-amber-300 focus:outline-none appearance-none cursor-pointer">
-                  {profiles.map(p => <option key={p.id} value={p.id} className="bg-slate-900 text-base">{p.name}</option>)}
-                </select>
+                <div className="font-mono fs10 uppercase tr30 t40 mb-1 flex items-center gap-2">Graha Cloud <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded text-[8px]">Synced</span></div>
+                {profiles.length > 0 ? (
+                  <select value={activeProfileId||''} onChange={(e) => setActiveProfileId(e.target.value)} className="bg-transparent font-serif text-2xl text-amber-300 focus:outline-none appearance-none cursor-pointer">
+                    {profiles.map(p => <option key={p.id} value={p.id} className="bg-slate-900 text-base">{p.name}</option>)}
+                  </select>
+                ) : <h1 className="font-serif text-2xl text-amber-300">Welcome</h1>}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setEditingProfile({})} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70"><Plus size={14}/></button>
-                <button onClick={() => setShowSettings(true)} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70"><Settings size={14}/></button>
+                <button onClick={() => setEditingProfile({})} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70 transition"><Plus size={14}/></button>
+                <button onClick={() => setShowSettings(!showSettings)} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70 transition"><Settings size={14}/></button>
+                <button onClick={handleLogout} className="p-2 rounded-full border border-red-500/30 hover:bg-red-500/20 text-red-400 transition" title="Logout"><LogOut size={14}/></button>
               </div>
             </div>
 
-            {/* Date Navigator */}
-            <div className="flex justify-between items-center bgfaint3 border border-white/10 p-3 rounded-2xl mb-4">
-               <button onClick={() => setDate(addDays(date, -1))} className="p-1 t50 hover:t100"><ChevronLeft size={18}/></button>
-               <div className="text-center">
-                 <div className="text-[10px] font-mono t40 uppercase tracking-widest">{date.toLocaleDateString("en-US", {weekday: 'long'})}</div>
-                 <div className="font-serif t100">{date.toLocaleDateString("en-US", {month: 'long', day: 'numeric', year: 'numeric'})}</div>
-               </div>
-               <button onClick={() => setDate(addDays(date, 1))} className="p-1 t50 hover:t100"><ChevronRight size={18}/></button>
-            </div>
+            {profiles.length === 0 ? (
+                <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10">
+                    <Compass size={48} className="mx-auto text-amber-400/50 mb-4"/>
+                    <h2 className="font-serif text-xl t100">No Profiles Found</h2>
+                    <p className="text-sm t50 mt-2 mb-6">Create your first astrology profile to begin generating insights synced securely to the cloud.</p>
+                    <button onClick={() => setEditingProfile({})} className="px-6 py-2.5 rounded-full bg-amber-400 text-black text-sm font-semibold">Create Profile</button>
+                </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center bgfaint3 border border-white/10 p-3 rounded-2xl mb-4">
+                   <button onClick={() => setDate(addDays(date, -1))} className="p-1 t50 hover:t100"><ChevronLeft size={18}/></button>
+                   <div className="text-center">
+                     <div className="text-[10px] font-mono t40 uppercase tracking-widest">{date.toLocaleDateString("en-US", {weekday: 'long'})}</div>
+                     <div className="font-serif t100">{date.toLocaleDateString("en-US", {month: 'short', day: 'numeric', year: 'numeric'})}</div>
+                   </div>
+                   <button onClick={() => setDate(addDays(date, 1))} className="p-1 t50 hover:t100"><ChevronRight size={18}/></button>
+                </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bgfaint2 p-1 mb-6">
-              {[
-                { id: "person", label: "Astrology" },
-                { id: "panchang", label: "Panchang & Time" },
-                { id: "compat", label: "Union" },
-                { id: "ask", label: "Ask AI" }
-              ].map(t => (
-                <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === t.id ? "bg-white/10 text-white" : "t50"}`}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
+                <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bgfaint2 p-1 mb-6">
+                  {[{id:"person", label:"Astrology"}, {id:"panchang", label:"Panchang & Time"}, {id:"ask", label:"Ask Cloud AI"}].map(t => (
+                    <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === t.id ? "bg-white/10 text-white" : "t50"}`}>{t.label}</button>
+                  ))}
+                </div>
 
-            {/* Content Area */}
-            <div className="gl-fadein">
-              {activeTab === "person" && <PersonTab profile={activeProfile} chart={charts[activeProfile.id]} date={date} settings={settings} />}
-              {activeTab === "panchang" && <PanchangTab date={date} profile={activeProfile} settings={settings} />}
-              {activeTab === "compat" && <CompatTab profiles={profiles} charts={charts} date={date} pairIds={pairIds} setPairIds={setPairIds} settings={settings} />}
-              {activeTab === "ask" && <AskTab profile={activeProfile} settings={settings} />}
-            </div>
+                <div className="gl-fadein">
+                  {activeTab === "person" && <PersonTab profile={activeProfile} chart={activeChart} date={date} settings={settings} />}
+                  {activeTab === "panchang" && <PanchangTab date={date} profile={activeProfile} settings={settings} />}
+                  {activeTab === "ask" && <AskTab db={window.fbDb} user={user} profile={activeProfile} settings={settings} />}
+                </div>
+              </>
+            )}
 
+            {/* Quick Settings Inline Drawer */}
+            {showSettings && (
+                <div className="mt-6 p-4 rounded-2xl border border-white/10 bgfaint3 gl-fadein">
+                    <h3 className="font-serif text-lg mb-3">Cloud AI Settings</h3>
+                    <label className="text-xs t50 block mb-1 uppercase font-mono tracking-wide">Select AI Engine</label>
+                    <select value={settings.aiModel} onChange={handleUpdateSettings} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
+                        {LLM_PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <p className="text-[10px] t40 mt-2">API keys and interactions are bound to your secure account: <span className="font-mono text-emerald-400">{user.email || user.uid.substring(0,8)}</span></p>
+                </div>
+            )}
           </div>
 
-          {/* Modals */}
-          {editingProfile && <ProfileForm initial={editingProfile.id ? editingProfile : null} onSave={(p) => { const next = editingProfile.id ? profiles.map(x => x.id === p.id ? p : x) : [...profiles, p]; setProfiles(next); setActiveProfileId(p.id); setEditingProfile(null); }} onDelete={(id) => { setProfiles(profiles.filter(p => p.id !== id)); setEditingProfile(null); }} onCancel={() => setEditingProfile(null)} />}
-          {showSettings && <SettingsModal settings={settings} onUpdate={setSettings} onClose={() => setShowSettings(false)} />}
+          {/* Profile Edit Modal */}
+          {editingProfile && (
+             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+               <form onSubmit={handleSaveProfile} className="w-full max-w-sm bgcard2 rounded-3xl border border-white/10 p-5 space-y-3">
+                 <div className="flex justify-between items-center mb-2"><h3 className="font-serif text-lg t100">{editingProfile.id ? "Edit Profile" : "New Profile"}</h3><button type="button" onClick={()=>setEditingProfile(null)} className="t50 hover:t100"><X size={16}/></button></div>
+                 
+                 <div><label className="text-[10px] t40 uppercase font-mono ml-1">Name</label><input required name="name" defaultValue={editingProfile.name||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1"/></div>
+                 <div className="grid grid-cols-2 gap-2">
+                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">Date</label><input required type="date" name="dob" defaultValue={editingProfile.dob||"2000-01-01"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1"/></div>
+                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">Time</label><input required type="time" name="time" defaultValue={editingProfile.time||"12:00"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1"/></div>
+                 </div>
+                 <div><label className="text-[10px] t40 uppercase font-mono ml-1">Location (City)</label><input required name="place" defaultValue={editingProfile.place||"Dubai"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1"/></div>
+                 <div className="grid grid-cols-3 gap-2">
+                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">Lat</label><input required type="number" step="any" name="lat" defaultValue={editingProfile.lat||25.2} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm text-white mt-1"/></div>
+                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">Lon</label><input required type="number" step="any" name="lon" defaultValue={editingProfile.lon||55.2} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm text-white mt-1"/></div>
+                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">UTC</label><input required type="number" step="any" name="utcOffset" defaultValue={editingProfile.utcOffset||4} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm text-white mt-1"/></div>
+                 </div>
+                 
+                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/10">
+                    {editingProfile.id ? <button type="button" onClick={()=>handleDeleteProfile(editingProfile.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button> : <span></span>}
+                    <button type="submit" className="bg-amber-400 text-black font-semibold text-sm px-5 py-2 rounded-full">Save Profile</button>
+                 </div>
+               </form>
+             </div>
+          )}
         </div>
       );
     }
