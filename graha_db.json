@@ -14,6 +14,17 @@
           "utcOffset": 5.5,
           "id": "1787171430782",
           "accent": "#8FB2D9"
+        },
+        {
+          "name": "Bahar Bano",
+          "dob": "2001-01-10",
+          "time": "02:45",
+          "place": "Lahore",
+          "lat": 31.5664,
+          "lon": 74.4322,
+          "utcOffset": 4.5,
+          "id": "1787171521366",
+          "accent": "#D4A574"
         }
       ],
       "chatHistory": [],
