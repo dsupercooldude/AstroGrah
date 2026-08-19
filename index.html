@@ -10,47 +10,24 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Sora:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Sora:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- React & ReactDOM (UMD Build) -->
+  <!-- React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   
-  <!-- Recharts pinned to v2.12.7 -->
+  <!-- Recharts -->
   <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
   <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
   
-  <!-- Babel compiler -->
+  <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Setup global access for React
-    window.AppId = typeof __app_id !== 'undefined' ? __app_id : 'graha-ledger-cloud';
-    window.InitialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-    const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-        // Fallback mock config to prevent total crash if run locally outside platform
-        apiKey: "mock-key", authDomain: "mock.firebaseapp.com", projectId: "mock-project"
-    };
-
-    try {
-        window.fbApp = initializeApp(config);
-        window.fbAuth = getAuth(window.fbApp);
-        window.fbDb = getFirestore(window.fbApp);
-        window.fbDocs = { doc, setDoc, deleteDoc, collection, onSnapshot, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
-    } catch(e) {
-        console.error("Firebase Initialization Failed:", e);
-    }
-  </script>
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
   <style>
     body { background-color: #14162B; margin: 0; padding: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; }
@@ -79,83 +56,73 @@
     const { useState, useEffect, useMemo, useRef, Component } = window.React;
     const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } = window.Recharts;
 
-    const Icon = ({ name, size=16, style, className }) => <i className={`fa-solid fa-${name} ${className||''}`} style={{fontSize: size, ...style}} />;
-    const Heart = (p) => <Icon name="heart" {...p} />;
-    const Wallet = (p) => <Icon name="wallet" {...p} />;
-    const Briefcase = (p) => <Icon name="briefcase" {...p} />;
-    const Compass = (p) => <Icon name="compass" {...p} />;
-    const Home = (p) => <Icon name="house" {...p} />;
-    const ChevronLeft = (p) => <Icon name="chevron-left" {...p} />;
-    const ChevronRight = (p) => <Icon name="chevron-right" {...p} />;
-    const RotateCcw = (p) => <Icon name="rotate-left" {...p} />;
-    const Users = (p) => <Icon name="users" {...p} />;
-    const Flame = (p) => <Icon name="fire" {...p} />;
-    const Send = (p) => <Icon name="paper-plane" {...p} />;
-    const MessageCircleQuestion = (p) => <Icon name="circle-question" {...p} />;
-    const Plus = (p) => <Icon name="plus" {...p} />;
-    const Pencil = (p) => <Icon name="pen" {...p} />;
-    const Trash2 = (p) => <Icon name="trash" {...p} />;
-    const X = (p) => <Icon name="xmark" {...p} />;
-    const Settings = (p) => <Icon name="gear" {...p} />;
-    const AlertTriangle = (p) => <Icon name="triangle-exclamation" {...p} />;
-    const Grid = (p) => <Icon name="border-all" {...p} />;
-    const RefreshCw = (p) => <Icon name="arrows-rotate" {...p} />;
-    const Cpu = (p) => <Icon name="microchip" {...p} />;
-    const Newspaper = (p) => <Icon name="newspaper" {...p} />;
-    const Layers = (p) => <Icon name="layer-group" {...p} />;
-    const Sun = (p) => <Icon name="sun" {...p} />;
-    const Shield = (p) => <Icon name="shield-halved" {...p} />;
-    const WifiOff = (p) => <Icon name="wifi-slash" {...p} />;
-    const LogOut = (p) => <Icon name="arrow-right-from-bracket" {...p} />;
+    const Icon = ({ name, size=16, className, style }) => <i className={`ph ph-${name} ${className||''}`} style={{fontSize: size, ...style}} />;
+    
+    const SageLogo = ({ size = 64, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+        <circle cx="50" cy="50" r="48" stroke="#D4A574" strokeWidth="1.5" fill="rgba(212,165,116,0.05)"/>
+        <path d="M70 30 A 12 12 0 1 0 82 18 A 14 14 0 1 1 70 30 Z" fill="#F2EFE6" opacity="0.8"/>
+        <circle cx="30" cy="25" r="1.5" fill="#F2EFE6" opacity="0.6"/>
+        <circle cx="40" cy="18" r="1" fill="#F2EFE6" opacity="0.4"/>
+        <circle cx="20" cy="40" r="1" fill="#F2EFE6" opacity="0.5"/>
+        <path d="M50 35 A 7 7 0 1 1 49.9 35 Z" fill="#F2EFE6" opacity="0.9"/>
+        <path d="M35 75 C 35 55, 45 48, 50 48 C 55 48, 65 55, 65 75 L 75 85 L 25 85 Z" fill="#D4A574"/>
+        <path d="M30 80 L 40 68 L 50 72 L 60 68 L 70 80" stroke="#1A1C36" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+        <path d="M43 73 L 50 67 L 57 73" stroke="#1A1C36" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+      </svg>
+    );
 
-    class GrahaErrorBoundary extends Component {
-      constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-      static getDerivedStateFromError(error) { return { hasError: true, error }; }
-      render() {
-        if (this.state.hasError) {
-          return (
-            <div className="min-h-screen w-full flex items-center justify-center p-6 text-center" style={{ background: "#14162B" }}>
-              <div className="max-w-md space-y-4 rounded-3xl border border-white/10 bg-black/40 p-6">
-                <AlertTriangle size={36} className="mx-auto text-amber-400" />
-                <h2 className="font-serif text-xl font-semibold">Calculation Error</h2>
-                <p className="text-[10px] font-mono text-red-300 bg-red-950/40 p-2 rounded text-left overflow-auto">{this.state.error?.toString()}</p>
-                <button onClick={() => window.location.reload()} className="w-full rounded-full py-2.5 text-xs font-semibold bg-amber-400 text-black mt-4">Reload App</button>
-              </div>
-            </div>
-          );
-        }
-        return this.props.children;
+    const GitHubDB = {
+      config: null,
+      setConfig(owner, repo, token) {
+        this.config = { owner, repo, token };
+        localStorage.setItem('gh_db_config', JSON.stringify(this.config));
+      },
+      loadConfig() {
+        const conf = localStorage.getItem('gh_db_config');
+        if (conf) this.config = JSON.parse(conf);
+        return this.config;
+      },
+      async callApi(method, path, body = null) {
+        if (!this.config) throw new Error("GitHub DB not configured.");
+        const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${path}`;
+        const headers = { 'Authorization': `token ${this.config.token}`, 'Accept': 'application/vnd.github.v3+json' };
+        if (body) headers['Content-Type'] = 'application/json';
+        
+        const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
+        if (!res.ok && res.status !== 404) throw new Error(`GitHub Error: ${res.statusText}`);
+        return res.status === 404 ? null : await res.json();
+      },
+      async getDB() {
+        const data = await this.callApi('GET', 'graha_db.json');
+        if (!data) return { sha: null, content: { users: {} } };
+        const contentStr = decodeURIComponent(escape(window.atob(data.content)));
+        return { sha: data.sha, content: JSON.parse(contentStr) };
+      },
+      async saveDB(contentObj, sha) {
+        const contentStr = JSON.stringify(contentObj, null, 2);
+        const encoded = window.btoa(unescape(encodeURIComponent(contentStr)));
+        const body = { message: "Graha Ledger Sync", content: encoded, ...(sha ? { sha } : {}) };
+        await this.callApi('PUT', 'graha_db.json', body);
+      },
+      async syncUserData(email, userData) {
+        const db = await this.getDB();
+        if(!db.content.users) db.content.users = {};
+        db.content.users[email] = { ...db.content.users[email], ...userData };
+        await this.saveDB(db.content, db.sha);
       }
-    }
+    };
 
     const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
     const SIGN_LORDS = { Aries:"Mars", Taurus:"Venus", Gemini:"Mercury", Cancer:"Moon", Leo:"Sun", Virgo:"Mercury", Libra:"Venus", Scorpio:"Mars", Sagittarius:"Jupiter", Capricorn:"Saturn", Aquarius:"Saturn", Pisces:"Jupiter" };
     const NAKSHATRAS = ["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
     const NAKSHATRA_LORDS = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"];
     const LUNAR_MASAS = ["Chaitra", "Vaishakha", "Jyeshtha", "Ashadha", "Shravana", "Bhadrapada", "Ashvin", "Kartika", "Margashirsha", "Pausha", "Magha", "Phalguna"];
-    
     const YOGAS = ["Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda", "Sukarma", "Dhriti", "Shula", "Ganda", "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra", "Siddhi", "Vyatipata", "Variyana", "Parigha", "Shiva", "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti"];
     const MOVING_KARANAS = ["Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti (Bhadra)"];
-
-    const LLM_PROVIDERS = [
-      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Google)", type: "gemini" },
-      { id: "gpt-4o", name: "GPT-4o (OpenAI)", type: "openai" },
-      { id: "claude-3-5-sonnet-20240620", name: "Claude 3.5 Sonnet", type: "anthropic" },
-      { id: "moonshot-v1-8k", name: "Kimi Moonshot v1", type: "moonshot" },
-      { id: "offline", name: "Offline Engine", type: "offline" }
-    ];
-
+    const LLM_PROVIDERS = [ { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" }, { id: "gpt-4o", name: "GPT-4o" }, { id: "claude-3", name: "Claude 3.5 Sonnet" }, { id: "moonshot", name: "Kimi Moonshot" } ];
     const ACCENT_PALETTE = ["#8FB2D9", "#D4A574", "#B7A0D9", "#8FC9A9", "#D99B8F", "#C9C08F"];
-
-    function norm360(x) { if (isNaN(x)) return 0; let v = x % 360; return v < 0 ? v + 360 : v; }
-    function toRad(d) { return (d * Math.PI) / 180; }
-    function toDeg(r) { return (r * 180) / Math.PI; }
-    function signOf(lon) { return SIGNS[Math.floor(norm360(lon) / 30)] || "Aries"; }
-    function addDays(date, days) { const result = new Date(date); result.setDate(result.getDate() + days); return result; }
-    
     const WEEKDAY_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
-    function planetOfDay(date) { if (!date || isNaN(date)) return "Sun"; return WEEKDAY_ORDER[date.getDay()] || "Sun"; }
-    function ordinalSuffix(n) { if ([11, 12, 13].includes(n % 100)) return "th"; switch (n % 10) { case 1: return "st"; case 2: return "nd"; case 3: return "rd"; default: return "th"; } }
 
     const PLANET_INFO = {
       Sun: { symbol: "☉", name: "Surya", day: "Sunday", deity: "Lord Rama", mantra: "Om Hraam Hreem Hroom Sah Suryaya Namah", color: "#E8A33D", themes: ["clarity", "leadership"], remedy: "Offer Arghya (water) in a copper vessel at dawn." },
@@ -169,13 +136,21 @@
       Ketu: { symbol: "☋", name: "Ketu", day: "Tuesday", deity: "Lord Ganesha", mantra: "Om Sraam Sreem Sroom Sah Ketave Namah", color: "#72AAB2", themes: ["detachment", "spiritual depth"], remedy: "Chant 'Om Gam Ganapataye Namah'." }
     };
 
-    const HOUSE_THEME = { 1: "vitality", 2: "wealth", 3: "courage", 4: "home", 5: "intellect", 6: "discipline", 7: "partnerships", 8: "transformations", 9: "fortune", 10: "career", 11: "gains", 12: "rest" };
     const DOMAINS = [
-      { key: "health", label: "Health & Vitality", icon: Heart, houses: [1, 6, 8], tag: "Stamina, routine & recovery" },
-      { key: "wealth", label: "Wealth & Finance", icon: Wallet, houses: [2, 9, 11], tag: "Assets, liquidity & gains" },
-      { key: "career", label: "Career & Work", icon: Briefcase, houses: [10, 2, 6], tag: "Status, leadership & output" },
-      { key: "lifestyle", label: "Home & Relationships", icon: Home, houses: [4, 7, 3, 12], tag: "Domestic peace & harmony" },
+      { key: "health", label: "Health & Vitality", icon: "heart-beat", houses: [1, 6, 8], tag: "Stamina, routine & recovery" },
+      { key: "wealth", label: "Wealth & Finance", icon: "wallet", houses: [2, 9, 11], tag: "Assets, liquidity & gains" },
+      { key: "career", label: "Career & Work", icon: "briefcase", houses: [10, 2, 6], tag: "Status, leadership & output" },
+      { key: "lifestyle", label: "Home & Relationships", icon: "house", houses: [4, 7, 3, 12], tag: "Domestic peace & harmony" },
     ];
+
+    function norm360(x) { if (isNaN(x)) return 0; let v = x % 360; return v < 0 ? v + 360 : v; }
+    function toRad(d) { return (d * Math.PI) / 180; }
+    function toDeg(r) { return (r * 180) / Math.PI; }
+    function signOf(lon) { return SIGNS[Math.floor(norm360(lon) / 30)] || "Aries"; }
+    function addDays(date, days) { const result = new Date(date); result.setDate(result.getDate() + days); return result; }
+    function planetOfDay(date) { if (!date || isNaN(date)) return "Sun"; return WEEKDAY_ORDER[date.getDay()] || "Sun"; }
+    function ordinalSuffix(n) { if ([11, 12, 13].includes(n % 100)) return "th"; switch (n % 10) { case 1: return "st"; case 2: return "nd"; case 3: return "rd"; default: return "th"; } }
+    function formatTimeOnly(date) { return date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: false }); }
 
     function julianDay(isoDate, timeStr, utcOffset) {
       try {
@@ -296,8 +271,6 @@
       return { lagna: lagnaSign, lagnaLon, lagnaIdx, moonSign: signOf(sidereal.Moon), nakshatra: NAKSHATRAS[moonNakIdx] || "Ashwini", nakshatraPada: moonNakPada, sunSign: signOf(sidereal.Sun), houses, lords, placements, kpDetails, longitudes: sidereal, ayanamsaUsed: ayanamsa };
     }
 
-    function formatTimeOnly(date) { return date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: false }); }
-
     function calculateMuhurta(date, lat, lon) {
       const d = new Date(date);
       d.setHours(6, 0, 0, 0); const sunrise = new Date(d);
@@ -328,44 +301,86 @@
       return { days: elapsedDays, physical: Math.sin((2 * Math.PI * elapsedDays) / 23), emotional: Math.sin((2 * Math.PI * elapsedDays) / 28), intellectual: Math.sin((2 * Math.PI * elapsedDays) / 33) };
     }
 
-    function AuthModal({ onLogin, error: extError }) {
-      const [email, setEmail] = useState("");
-      const [isSignup, setIsSignup] = useState(false);
-      const [loading, setLoading] = useState(false);
-      const [error, setError] = useState(extError || "");
-      const [genPass, setGenPass] = useState("");
+    function DBSetupModal({ onConfigured }) {
+      const [owner, setOwner] = useState("");
+      const [repo, setRepo] = useState("AstroGrah");
+      const [token, setToken] = useState("");
+      const [error, setError] = useState("");
 
       const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true); setError(""); setGenPass("");
+        setError("");
+        GitHubDB.setConfig(owner, repo, token);
+        try {
+          const res = await GitHubDB.callApi('GET', ''); // test repo access
+          onConfigured();
+        } catch(err) {
+          setError("Cannot access repository. Check Owner, Repo name, and Token permissions.");
+          localStorage.removeItem('gh_db_config');
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-3xl border border-white/10 bgcard2 p-6">
+            <div className="text-center mb-6">
+              <Icon name="database" size={32} className="mx-auto text-amber-400 mb-2" />
+              <h2 className="font-serif text-2xl t100">Database Setup</h2>
+              <p className="text-xs t60 mt-2">To save your profiles and chats securely to your own GitHub repository, configure your connection below.</p>
+            </div>
+            {error && <div className="p-2 text-[10px] text-red-300 bg-red-950/40 rounded border border-red-500/20">{error}</div>}
+            
+            <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">GitHub Username / Owner</label><input required value={owner} onChange={e=>setOwner(e.target.value)} placeholder="e.g. dsupercooldude" className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
+            <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Repository Name</label><input required value={repo} onChange={e=>setRepo(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
+            <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Personal Access Token (PAT)</label><input required type="password" value={token} onChange={e=>setToken(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
+            
+            <button type="submit" className="w-full rounded-full py-3 text-sm font-semibold bg-amber-400 text-black mt-4 transition hover:bg-amber-300">Connect to GitHub DB</button>
+          </form>
+        </div>
+      );
+    }
+
+    function AuthModal({ onLogin }) {
+      const [email, setEmail] = useState("");
+      const [isSignup, setIsSignup] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState("");
+      const [genPass, setGenPass] = useState("");
+      const [pwd, setPwd] = useState("");
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true); setError("");
         
         try {
+          const db = await GitHubDB.getDB();
+          if(!db.content.users) db.content.users = {};
+
           if (isSignup) {
-            // Auto-Generate a secure password as requested
-            const generated = Math.random().toString(36).slice(-8) + "A1!";
-            await window.fbDocs.createUserWithEmailAndPassword(window.fbAuth, email, generated);
+            if (db.content.users[email]) throw new Error("Email already registered.");
+            const generated = "Astro-" + Math.random().toString(36).slice(-6) + "!";
+            db.content.users[email] = { password: generated, needsPasswordChange: true, profiles: [], chatHistory: [], settings: { aiModel: "gemini-1.5-flash", monthSystem: "amanta" } };
+            await GitHubDB.saveDB(db.content, db.sha);
             setGenPass(generated);
           } else {
-            const pwd = e.target.password.value;
-            await window.fbDocs.signInWithEmailAndPassword(window.fbAuth, email, pwd);
+            const user = db.content.users[email];
+            if (!user) throw new Error("User not found.");
+            if (user.password !== pwd) throw new Error("Incorrect password.");
+            onLogin(email, user);
           }
-        } catch(err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+        } catch(err) { setError(err.message); } finally { setLoading(false); }
       };
 
       if (genPass) {
           return (
              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
                <div className="w-full max-w-sm space-y-4 rounded-3xl border border-emerald-500/30 bgcard2 p-6 text-center">
-                 <Shield size={36} className="mx-auto text-emerald-400 mb-2"/>
+                 <Icon name="shield-check" size={36} className="mx-auto text-emerald-400 mb-2"/>
                  <h2 className="font-serif text-xl t100">Account Created!</h2>
                  <p className="text-sm t75">Your secure, auto-generated password is:</p>
                  <div className="p-3 bg-black/40 rounded-xl font-mono text-lg tracking-widest text-emerald-300 border border-emerald-500/20">{genPass}</div>
-                 <p className="text-xs t50">Please copy and save this password before continuing. You can change it later in settings.</p>
-                 <button onClick={() => setGenPass("")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-4">I have saved my password</button>
+                 <p className="text-xs t50">Please copy this password. You will be asked to change it on your first login.</p>
+                 <button onClick={() => { setGenPass(""); setIsSignup(false); }} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-4">I have saved my password</button>
                </div>
              </div>
           );
@@ -375,39 +390,60 @@
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-3xl border border-white/10 bgcard2 p-6">
             <div className="text-center mb-6">
-              <Compass size={32} className="mx-auto text-amber-400 mb-2" />
-              <h2 className="font-serif text-2xl t100">{isSignup ? "Create Account" : "Welcome Back"}</h2>
-              <p className="text-sm t60">{isSignup ? "A secure password will be auto-generated for you." : "Sign in to access your cloud-synced profiles."}</p>
+              <SageLogo size={64} className="mx-auto mb-2" />
+              <h2 className="font-serif text-2xl t100">{isSignup ? "Create Account" : "Welcome to Graha Ledger"}</h2>
+              <p className="text-xs t60 mt-1">{isSignup ? "A secure password will be auto-generated." : "Sign in to access your cloud-synced profiles."}</p>
             </div>
             {error && <div className="p-2 text-xs text-red-300 bg-red-950/40 rounded border border-red-500/20">{error}</div>}
             
-            <div>
-              <label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Email Address</label>
-              <input required type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/>
-            </div>
+            <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Email Address</label><input required type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
             
             {!isSignup && (
-              <div>
-                <label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Password</label>
-                <input required type="password" name="password" className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/>
-              </div>
+              <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Password</label><input required type="password" value={pwd} onChange={e=>setPwd(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
             )}
             
             <button type="submit" disabled={loading} className="w-full rounded-full py-3 text-sm font-semibold bg-amber-400 text-black mt-2 transition hover:bg-amber-300 disabled:opacity-50">
-              {loading ? "Authenticating..." : (isSignup ? "Auto-Generate Account" : "Sign In")}
+              {loading ? "Syncing..." : (isSignup ? "Auto-Generate Account" : "Sign In")}
             </button>
-            
-            <button type="button" onClick={() => { setIsSignup(!isSignup); setError(""); }} className="w-full text-xs t60 hover:t100 mt-4 transition">
-              {isSignup ? "Already have an account? Sign In" : "Need an account? Quick Sign Up"}
-            </button>
+            <button type="button" onClick={() => { setIsSignup(!isSignup); setError(""); }} className="w-full text-xs t60 hover:t100 mt-4 transition">{isSignup ? "Already have an account? Sign In" : "Need an account? Quick Sign Up"}</button>
           </form>
         </div>
       );
     }
 
+    function ChangePasswordModal({ email, onComplete }) {
+        const [pwd, setPwd] = useState("");
+        const [loading, setLoading] = useState(false);
+        const [error, setError] = useState("");
+
+        const handleSubmit = async (e) => {
+            e.preventDefault(); setLoading(true); setError("");
+            if(pwd.length < 6) { setError("Password too short."); setLoading(false); return; }
+            try {
+                const db = await GitHubDB.getDB();
+                db.content.users[email].password = pwd;
+                db.content.users[email].needsPasswordChange = false;
+                await GitHubDB.saveDB(db.content, db.sha);
+                onComplete();
+            } catch(err) { setError(err.message); } finally { setLoading(false); }
+        };
+
+        return (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4">
+              <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-3xl border border-white/10 bgcard2 p-6">
+                <h2 className="font-serif text-xl t100 text-center mb-2">Change Your Password</h2>
+                <p className="text-xs t60 text-center mb-4">Please set a custom password for your account.</p>
+                {error && <div className="p-2 text-xs text-red-300 bg-red-950/40 rounded border border-red-500/20">{error}</div>}
+                <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">New Password</label><input required type="password" value={pwd} onChange={e=>setPwd(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50"/></div>
+                <button type="submit" disabled={loading} className="w-full rounded-full py-3 text-sm font-semibold bg-amber-400 text-black mt-2">{loading ? "Updating..." : "Update Password"}</button>
+              </form>
+            </div>
+        );
+    }
+
     function Meter({ value, color }) { return <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${(value || 0) * 10}%`, background: color }} /></div>; }
 
-    function KundliVisualizer({ chart, name, accent, style = "north" }) {
+    function KundliVisualizer({ chart, name, accent }) {
       if (!chart) return null;
       const planetAbbr = { Sun: "Sun", Moon: "Mon", Mars: "Mar", Mercury: "Mer", Jupiter: "Jup", Venus: "Ven", Saturn: "Sat", Rahu: "Rah", Ketu: "Ket" };
       const housePlanets = {}; for (let h = 1; h <= 12; h++) housePlanets[h] = [];
@@ -416,7 +452,7 @@
       return (
         <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2"><Grid size={16} style={{ color: accent }} /><span className="font-serif fs15 t100">Natal Chart</span></div>
+            <div className="flex items-center gap-2"><Icon name="squares-four" size={16} style={{ color: accent }} /><span className="font-serif fs15 t100">Natal Chart</span></div>
             <span className="font-mono fs10 uppercase t40 tracking-wider text-right">{name}<br/>{chart.lagna} Lagna</span>
           </div>
           
@@ -454,7 +490,7 @@
       const dayRuler = PLANET_INFO[planetOfDay(date)];
 
       return (
-        <div className="space-y-5 pb-10">
+        <div className="space-y-5 pb-10 gl-fadein">
           <div className="rounded-3xl border border-white/10 p-5" style={{ background: "linear-gradient(135deg, rgba(143,201,169,0.12), transparent 70%)" }}>
             <div className="font-mono fs10 uppercase tr25 t40">Daily Almanac</div>
             <h2 className="font-serif text-2xl t100 mt-1">Panchang & Muhurta</h2>
@@ -462,7 +498,7 @@
           </div>
 
           <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-3 flex items-center gap-2"><Layers size={16} className="text-emerald-400" /><span className="font-serif fs15 t100">The 5 Limbs (Panchānga)</span></div>
+            <div className="mb-3 flex items-center gap-2"><Icon name="stack" size={16} className="text-emerald-400" /><span className="font-serif fs15 t100">The 5 Limbs (Panchānga)</span></div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="p-3 rounded-xl border border-white/10 bg-black/20">
                 <div className="font-mono text-[10px] uppercase t50 mb-0.5">1. Vaar (Day)</div>
@@ -487,7 +523,7 @@
           </div>
 
           <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-3 flex items-center gap-2"><AlertTriangle size={16} className="text-amber-400" /><span className="font-serif fs15 t100">Inauspicious Kaals</span></div>
+            <div className="mb-3 flex items-center gap-2"><Icon name="warning" size={16} className="text-amber-400" /><span className="font-serif fs15 t100">Inauspicious Kaals</span></div>
             <div className="grid gap-2 sm:grid-cols-3">
               <div className="p-3 rounded-xl border border-white/10 bg-red-950/20">
                 <div className="font-mono text-xs t60 mb-1">Rahu Kaal</div>
@@ -505,7 +541,7 @@
           </div>
           
           <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-3 flex items-center gap-2"><Sun size={16} className="text-amber-400" /><span className="font-serif fs15 t100">Day Choghadiya</span></div>
+            <div className="mb-3 flex items-center gap-2"><Icon name="sun" size={16} className="text-amber-400" /><span className="font-serif fs15 t100">Day Choghadiya</span></div>
             <div className="space-y-1.5">
               {muhurta.dayChog.map((c, i) => (
                 <div key={i} className="flex items-center justify-between p-2.5 rounded-xl border border-white/5 bg-black/20">
@@ -534,7 +570,7 @@
       if (!chart) return <div className="p-4 border border-white/10 rounded-2xl t50 text-sm text-center">Calculating chart...</div>;
 
       return (
-        <div className="space-y-5 pb-10">
+        <div className="space-y-5 pb-10 gl-fadein">
           <div className="rounded-3xl border border-white/10 p-5" style={{ background: `linear-gradient(135deg, ${profile.accent}22, transparent 65%)` }}>
             <div className="flex items-start justify-between">
               <div>
@@ -556,13 +592,12 @@
 
           <div className="grid gap-4 sm:grid-cols-2">
             {DOMAINS.map(d => {
-              const Icon = d.icon;
               const rules = Object.entries(chart.lords||{}).filter(([h,l])=>l===pKey && d.houses.includes(Number(h))).map(([h])=>h);
               let score = 7; let txt = `Planet ${p.name} supports your baseline routine. `;
               if(rules.length) { score+=2; txt = `Ruler ${p.name} directly governs your ${rules.join(' & ')} house, making this prime for ${d.label.toLowerCase()} action.`; }
               return (
                 <div key={d.key} className="rounded-2xl border border-white/10 bgfaint3 p-4">
-                  <div className="mb-2 flex items-center gap-2"><Icon size={16} style={{color: profile.accent}}/><span className="font-serif fs15 t100">{d.label}</span></div>
+                  <div className="mb-2 flex items-center gap-2"><Icon name={d.icon} size={16} style={{color: profile.accent}}/><span className="font-serif fs15 t100">{d.label}</span></div>
                   <p className="mb-3 text-xs t75">{txt}</p>
                   <Meter value={score} color={profile.accent} />
                 </div>
@@ -571,7 +606,7 @@
           </div>
 
           <div className="rounded-2xl border border-white/10 p-4" style={{ background: `${profile.accent}1f` }}>
-            <div className="mb-2 flex items-center gap-2"><Flame size={16} style={{color: profile.accent}}/><span className="font-serif fs15 t100">Presiding Deity & Remedies</span></div>
+            <div className="mb-2 flex items-center gap-2"><Icon name="fire" size={16} style={{color: profile.accent}}/><span className="font-serif fs15 t100">Presiding Deity & Remedies</span></div>
             <div className="space-y-2 text-sm">
                <div><span className="font-mono text-[10px] uppercase t40 block">Deity</span><span className="font-medium t100">{p.deity}</span></div>
                <div><span className="font-mono text-[10px] uppercase t40 block">Mantra</span><span className="font-mono text-xs" style={{color: p.color}}>{p.mantra}</span></div>
@@ -580,7 +615,7 @@
           </div>
 
           <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-2"><span className="font-serif fs15 t100">Biorhythms</span></div>
+            <div className="mb-2 flex items-center gap-2"><Icon name="chart-line-up" size={16} className="t60"/><span className="font-serif fs15 t100">Biorhythms</span></div>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={bSeries} margin={{ top:5, right:5, left:-25, bottom:0 }}>
                 <XAxis dataKey="label" tick={{fill:"#666", fontSize:10}} interval={1} />
@@ -596,226 +631,182 @@
       );
     }
 
-    function AskTab({ db, user, profile, settings }) {
+    function AskTab({ email, userData, activeProfile, settings }) {
       const [question, setQuestion] = useState("");
-      const [history, setHistory] = useState([]);
       const [loading, setLoading] = useState(false);
 
-      useEffect(() => {
-        if (!user || !db) return;
-        const q = window.fbDocs.collection(db, 'artifacts', window.AppId, 'users', user.uid, 'chatHistory');
-        const unsub = window.fbDocs.onSnapshot(q, (snap) => {
-          const data = snap.docs.map(d => d.data()).sort((a,b) => a.timestamp - b.timestamp);
-          setHistory(data);
-        });
-        return unsub;
-      }, [user, db]);
+      const history = userData.chatHistory || [];
 
       async function ask(e) {
         e.preventDefault();
-        if(!question.trim() || loading || !user) return;
+        if(!question.trim() || loading) return;
         setLoading(true);
         const qText = question.trim();
-        const model = LLM_PROVIDERS.find(m => m.id === settings?.aiModel) || LLM_PROVIDERS[4];
+        const model = LLM_PROVIDERS.find(m => m.id === settings?.aiModel) || LLM_PROVIDERS[0];
         
-        // Simulating LLM call (or using actual fetch if keys provided)
-        let answer = `Based on your chart (${profile?.lagna} Lagna), focus on daily discipline. The transits activate your planetary rulers for the day. (Configured Model: ${model.name})`;
+        let answer = "I apologize, but API Keys must be configured to process real-time Astrological synthesis. Please add a valid key in settings.";
+        if (settings.apiKeys && settings.apiKeys[model.id]) {
+            // Placeholder for real fetch logic
+            answer = `Based on your chart (${activeProfile?.lagna} Lagna), focus on daily discipline. The transits activate your planetary rulers for the day. (Simulated via ${model.name})`;
+        }
         
-        const id = Date.now().toString();
-        const docRef = window.fbDocs.doc(db, 'artifacts', window.AppId, 'users', user.uid, 'chatHistory', id);
-        await window.fbDocs.setDoc(docRef, { id, q: qText, a: answer, via: model.name, timestamp: Date.now(), profileId: profile?.id });
+        const newHistory = [...history, { id: Date.now().toString(), q: qText, a: answer, via: model.name, timestamp: Date.now() }];
+        
+        await GitHubDB.syncUserData(email, { chatHistory: newHistory });
         
         setQuestion("");
         setLoading(false);
       }
 
       return (
-        <div className="space-y-5 pb-10">
+        <div className="space-y-5 pb-10 gl-fadein">
           <div className="rounded-3xl border border-white/10 p-5" style={{ background: "linear-gradient(135deg, rgba(212,165,116,0.12), transparent 70%)" }}>
             <div className="font-mono fs10 uppercase tr25 t40 mb-1">Ask the Astrologer</div>
             <h2 className="font-serif text-2xl t100">Cloud AI Jyotish</h2>
-            <p className="text-xs t50 mt-1">Chat history securely synced to your account.</p>
+            <p className="text-xs t50 mt-1">Chat history securely synced to your GitHub Database.</p>
           </div>
 
           <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
             {history.map((h) => (
               <div key={h.id} className="space-y-2">
-                <div className="flex items-start gap-2"><MessageCircleQuestion size={16} className="mt-0.5 shrink-0 tgold" /><p className="text-sm t85">{h.q}</p></div>
+                <div className="flex items-start gap-2"><Icon name="question" size={16} className="mt-0.5 shrink-0 tgold" /><p className="text-sm t85">{h.q}</p></div>
                 <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed t75">{h.a}</p>
                   <p className="mt-2 font-mono text-[9px] uppercase tracking-wide t30">via {h.via}</p>
                 </div>
               </div>
             ))}
-            {loading && <div className="t50 text-sm text-center">Consulting the stars...</div>}
+            {loading && <div className="t50 text-sm flex items-center gap-2"><Icon name="spinner" className="animate-spin" /> Consulting the stars...</div>}
           </div>
 
           <form onSubmit={ask} className="flex items-center gap-2 rounded-2xl border border-white/10 bgfaint3 p-2">
             <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask about career, marriage..." className="flex-1 bg-transparent px-3 py-2 text-sm t100 placeholder:t30 focus:outline-none" />
-            <button type="submit" disabled={loading || !question.trim()} className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-black disabled:opacity-40 transition" style={{ background: "#D4A574" }}><Send size={14} /> Ask</button>
+            <button type="submit" disabled={loading || !question.trim()} className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-black disabled:opacity-40 transition" style={{ background: "#D4A574" }}><Icon name="paper-plane-right" size={14} /> Ask</button>
           </form>
         </div>
       );
     }
 
     function GrahaLedgerContent() {
-      const [user, setUser] = useState(null);
-      const [authLoading, setAuthLoading] = useState(true);
-      const [authError, setAuthError] = useState("");
+      const [dbConfigured, setDbConfigured] = useState(false);
+      const [user, setUser] = useState(null); // { email, data }
       
-      const [profiles, setProfiles] = useState([]);
-      const [settings, setSettings] = useState({ aiModel: "gemini-1.5-flash", monthSystem: "amanta" });
       const [activeProfileId, setActiveProfileId] = useState(null);
       const [activeTab, setActiveTab] = useState("person");
       const [date, setDate] = useState(new Date());
       const [editingProfile, setEditingProfile] = useState(null);
       const [showSettings, setShowSettings] = useState(false);
 
-      // 1. Handle Authentication Initialization
       useEffect(() => {
-        if (!window.fbAuth) {
-            setAuthError("Cloud Database Initialization Failed. Ensure Firebase Config is present.");
-            setAuthLoading(false);
-            return;
-        }
-
-        const unsubscribe = window.fbDocs.onAuthStateChanged(window.fbAuth, (u) => {
-          if (u) {
-            setUser(u);
-            setAuthLoading(false);
-          } else {
-            // Check for injected token from platform
-            if (window.InitialAuthToken) {
-              window.fbDocs.signInWithCustomToken(window.fbAuth, window.InitialAuthToken)
-                .catch(err => { setAuthError("Token login failed: " + err.message); setAuthLoading(false); });
-            } else {
-              // Show our Email/Password Auth Modal
-              setUser(null);
-              setAuthLoading(false);
-            }
-          }
-        });
-        return unsubscribe;
+        if (GitHubDB.loadConfig()) setDbConfigured(true);
       }, []);
 
-      // 2. Sync Firestore Data once Logged In
-      useEffect(() => {
-        if (!user || !window.fbDb) return;
-        
-        // Sync Profiles
-        const qProf = window.fbDocs.collection(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'profiles');
-        const unsubProf = window.fbDocs.onSnapshot(qProf, (snap) => {
-            const data = snap.docs.map(d => d.data());
-            setProfiles(data);
-            if (data.length > 0 && !activeProfileId) setActiveProfileId(data[0].id);
-        }, err => console.error("Profile sync error", err));
+      if (!dbConfigured) return <DBSetupModal onConfigured={() => setDbConfigured(true)} />;
+      if (!user) return <AuthModal onLogin={(email, data) => setUser({ email, data })} />;
+      if (user.data.needsPasswordChange) return <ChangePasswordModal email={user.email} onComplete={() => setUser({...user, data: {...user.data, needsPasswordChange: false}})}/>;
 
-        // Sync Settings
-        const dSet = window.fbDocs.doc(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'settings', 'userSettings');
-        const unsubSet = window.fbDocs.onSnapshot(dSet, (snap) => {
-            if(snap.exists()) setSettings(snap.data());
-        }, err => console.error("Settings sync error", err));
+      const profiles = user.data.profiles || [];
+      const settings = user.data.settings || { aiModel: "gemini-1.5-flash", monthSystem: "amanta", apiKeys: {} };
+      
+      let activeProfile = profiles.find(p => p.id === activeProfileId);
+      if (!activeProfile && profiles.length > 0) activeProfile = profiles[0];
 
-        return () => { unsubProf(); unsubSet(); };
-      }, [user, activeProfileId]);
+      const activeChart = activeProfile ? computeKundli(activeProfile) : null;
 
-      // 3. Handlers for Database Mutations
       const handleSaveProfile = async (e) => {
-          e.preventDefault();
-          const form = e.target;
-          const data = {
+          e.preventDefault(); const form = e.target;
+          const profData = {
               name: form.name.value, dob: form.dob.value, time: form.time.value,
               place: form.place.value, lat: parseFloat(form.lat.value), lon: parseFloat(form.lon.value),
               utcOffset: parseFloat(form.utcOffset.value), id: editingProfile.id || Date.now().toString(),
               accent: editingProfile.accent || ACCENT_PALETTE[profiles.length % ACCENT_PALETTE.length]
           };
-          const docRef = window.fbDocs.doc(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'profiles', data.id);
-          await window.fbDocs.setDoc(docRef, data);
-          setActiveProfileId(data.id);
-          setEditingProfile(null);
+          
+          let newProfiles = [...profiles];
+          if(editingProfile.id) {
+              const idx = newProfiles.findIndex(p => p.id === editingProfile.id);
+              if(idx > -1) newProfiles[idx] = profData;
+          } else { newProfiles.push(profData); }
+
+          await GitHubDB.syncUserData(user.email, { profiles: newProfiles });
+          setUser({ ...user, data: { ...user.data, profiles: newProfiles } });
+          setActiveProfileId(profData.id); setEditingProfile(null);
       };
 
-      const handleDeleteProfile = async (id) => {
-          await window.fbDocs.deleteDoc(window.fbDocs.doc(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'profiles', id));
-          if(activeProfileId === id) setActiveProfileId(profiles[0]?.id || null);
-          setEditingProfile(null);
+      const handleUpdateSettings = async (newSettings) => {
+          await GitHubDB.syncUserData(user.email, { settings: newSettings });
+          setUser({ ...user, data: { ...user.data, settings: newSettings } });
       };
-
-      const handleUpdateSettings = async (e) => {
-          const newSettings = { ...settings, aiModel: e.target.value };
-          await window.fbDocs.setDoc(window.fbDocs.doc(window.fbDb, 'artifacts', window.AppId, 'users', user.uid, 'settings', 'userSettings'), newSettings);
-      };
-
-      const handleLogout = () => { window.fbDocs.signOut(window.fbAuth); };
-
-      if (authLoading) return <div className="min-h-screen flex items-center justify-center text-amber-400"><RefreshCw className="animate-spin mr-2"/> Connecting to Cloud...</div>;
-      if (!user) return <AuthModal error={authError} />;
-
-      const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
-      const activeChart = activeProfile ? getChart(activeProfile) : null;
 
       return (
         <div className="min-h-screen w-full font-sans pb-10" style={{ background: "#14162B" }}>
           <div className="mx-auto max-w-md sm:max-w-2xl px-4 py-6">
             
-            {/* Header Area */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <div className="font-mono fs10 uppercase tr30 t40 mb-1 flex items-center gap-2">Graha Cloud <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded text-[8px]">Synced</span></div>
+                <div className="font-mono fs10 uppercase tr30 t40 mb-1 flex items-center gap-2"><SageLogo size={16}/> Graha Ledger</div>
                 {profiles.length > 0 ? (
-                  <select value={activeProfileId||''} onChange={(e) => setActiveProfileId(e.target.value)} className="bg-transparent font-serif text-2xl text-amber-300 focus:outline-none appearance-none cursor-pointer">
+                  <select value={activeProfile?.id||''} onChange={(e) => setActiveProfileId(e.target.value)} className="bg-transparent font-serif text-2xl text-amber-300 focus:outline-none appearance-none cursor-pointer">
                     {profiles.map(p => <option key={p.id} value={p.id} className="bg-slate-900 text-base">{p.name}</option>)}
                   </select>
                 ) : <h1 className="font-serif text-2xl text-amber-300">Welcome</h1>}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setEditingProfile({})} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70 transition"><Plus size={14}/></button>
-                <button onClick={() => setShowSettings(!showSettings)} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70 transition"><Settings size={14}/></button>
-                <button onClick={handleLogout} className="p-2 rounded-full border border-red-500/30 hover:bg-red-500/20 text-red-400 transition" title="Logout"><LogOut size={14}/></button>
+                <button onClick={() => setEditingProfile({})} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70 transition"><Icon name="plus" size={14}/></button>
+                <button onClick={() => setShowSettings(!showSettings)} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70 transition"><Icon name="gear" size={14}/></button>
+                <button onClick={() => { setUser(null); setActiveProfileId(null); }} className="p-2 rounded-full border border-red-500/30 hover:bg-red-500/20 text-red-400 transition" title="Logout"><Icon name="sign-out" size={14}/></button>
               </div>
             </div>
 
             {profiles.length === 0 ? (
                 <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10">
-                    <Compass size={48} className="mx-auto text-amber-400/50 mb-4"/>
+                    <SageLogo size={64} className="mx-auto mb-4 opacity-50"/>
                     <h2 className="font-serif text-xl t100">No Profiles Found</h2>
-                    <p className="text-sm t50 mt-2 mb-6">Create your first astrology profile to begin generating insights synced securely to the cloud.</p>
+                    <p className="text-sm t50 mt-2 mb-6">Create your first astrology profile to begin generating insights synced securely to your GitHub Repo.</p>
                     <button onClick={() => setEditingProfile({})} className="px-6 py-2.5 rounded-full bg-amber-400 text-black text-sm font-semibold">Create Profile</button>
                 </div>
             ) : (
               <>
                 <div className="flex justify-between items-center bgfaint3 border border-white/10 p-3 rounded-2xl mb-4">
-                   <button onClick={() => setDate(addDays(date, -1))} className="p-1 t50 hover:t100"><ChevronLeft size={18}/></button>
+                   <button onClick={() => setDate(addDays(date, -1))} className="p-1 t50 hover:t100"><Icon name="caret-left" size={18}/></button>
                    <div className="text-center">
                      <div className="text-[10px] font-mono t40 uppercase tracking-widest">{date.toLocaleDateString("en-US", {weekday: 'long'})}</div>
                      <div className="font-serif t100">{date.toLocaleDateString("en-US", {month: 'short', day: 'numeric', year: 'numeric'})}</div>
                    </div>
-                   <button onClick={() => setDate(addDays(date, 1))} className="p-1 t50 hover:t100"><ChevronRight size={18}/></button>
+                   <button onClick={() => setDate(addDays(date, 1))} className="p-1 t50 hover:t100"><Icon name="caret-right" size={18}/></button>
                 </div>
 
                 <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bgfaint2 p-1 mb-6">
-                  {[{id:"person", label:"Astrology"}, {id:"panchang", label:"Panchang & Time"}, {id:"ask", label:"Ask Cloud AI"}].map(t => (
+                  {[{id:"person", label:"Astrology"}, {id:"panchang", label:"Panchang & Time"}, {id:"ask", label:"Ask AI"}].map(t => (
                     <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === t.id ? "bg-white/10 text-white" : "t50"}`}>{t.label}</button>
                   ))}
                 </div>
 
-                <div className="gl-fadein">
-                  {activeTab === "person" && <PersonTab profile={activeProfile} chart={activeChart} date={date} settings={settings} />}
-                  {activeTab === "panchang" && <PanchangTab date={date} profile={activeProfile} settings={settings} />}
-                  {activeTab === "ask" && <AskTab db={window.fbDb} user={user} profile={activeProfile} settings={settings} />}
-                </div>
+                {activeTab === "person" && <PersonTab profile={activeProfile} chart={activeChart} date={date} settings={settings} />}
+                {activeTab === "panchang" && <PanchangTab date={date} profile={activeProfile} settings={settings} />}
+                {activeTab === "ask" && <AskTab email={user.email} userData={user.data} activeProfile={activeProfile} settings={settings} />}
               </>
             )}
 
             {/* Quick Settings Inline Drawer */}
             {showSettings && (
-                <div className="mt-6 p-4 rounded-2xl border border-white/10 bgfaint3 gl-fadein">
-                    <h3 className="font-serif text-lg mb-3">Cloud AI Settings</h3>
-                    <label className="text-xs t50 block mb-1 uppercase font-mono tracking-wide">Select AI Engine</label>
-                    <select value={settings.aiModel} onChange={handleUpdateSettings} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
-                        {LLM_PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                    <p className="text-[10px] t40 mt-2">API keys and interactions are bound to your secure account: <span className="font-mono text-emerald-400">{user.email || user.uid.substring(0,8)}</span></p>
+                <div className="mt-6 p-4 rounded-2xl border border-white/10 bgfaint3 gl-fadein space-y-4">
+                    <h3 className="font-serif text-lg mb-1">Vault & Engine Settings</h3>
+                    
+                    <div>
+                        <label className="text-xs t50 block mb-1 uppercase font-mono tracking-wide">Select AI Engine</label>
+                        <select value={settings.aiModel} onChange={e => handleUpdateSettings({...settings, aiModel: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
+                            {LLM_PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="text-xs t50 block mb-1 uppercase font-mono tracking-wide">API Keys Vault</label>
+                        <div className="space-y-2">
+                           <input placeholder="Gemini API Key" value={settings.apiKeys?.['gemini-1.5-flash']||""} onChange={e => handleUpdateSettings({...settings, apiKeys: {...settings.apiKeys, 'gemini-1.5-flash': e.target.value}})} type="password" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:t30"/>
+                           <input placeholder="OpenAI API Key" value={settings.apiKeys?.['gpt-4o']||""} onChange={e => handleUpdateSettings({...settings, apiKeys: {...settings.apiKeys, 'gpt-4o': e.target.value}})} type="password" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:t30"/>
+                        </div>
+                    </div>
                 </div>
             )}
           </div>
@@ -824,7 +815,7 @@
           {editingProfile && (
              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
                <form onSubmit={handleSaveProfile} className="w-full max-w-sm bgcard2 rounded-3xl border border-white/10 p-5 space-y-3">
-                 <div className="flex justify-between items-center mb-2"><h3 className="font-serif text-lg t100">{editingProfile.id ? "Edit Profile" : "New Profile"}</h3><button type="button" onClick={()=>setEditingProfile(null)} className="t50 hover:t100"><X size={16}/></button></div>
+                 <div className="flex justify-between items-center mb-2"><h3 className="font-serif text-lg t100">{editingProfile.id ? "Edit Profile" : "New Profile"}</h3><button type="button" onClick={()=>setEditingProfile(null)} className="t50 hover:t100"><Icon name="x" size={16}/></button></div>
                  
                  <div><label className="text-[10px] t40 uppercase font-mono ml-1">Name</label><input required name="name" defaultValue={editingProfile.name||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1"/></div>
                  <div className="grid grid-cols-2 gap-2">
@@ -839,8 +830,7 @@
                  </div>
                  
                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/10">
-                    {editingProfile.id ? <button type="button" onClick={()=>handleDeleteProfile(editingProfile.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button> : <span></span>}
-                    <button type="submit" className="bg-amber-400 text-black font-semibold text-sm px-5 py-2 rounded-full">Save Profile</button>
+                    <button type="submit" className="bg-amber-400 text-black font-semibold text-sm px-5 py-2 rounded-full ml-auto">Save Profile</button>
                  </div>
                </form>
              </div>
@@ -851,7 +841,7 @@
 
     const rootElement = document.getElementById('root');
     const root = window.ReactDOM.createRoot(rootElement);
-    root.render(<GrahaErrorBoundary><GrahaLedgerContent /></GrahaErrorBoundary>);
+    root.render(<GrahaLedgerContent />);
   </script>
 </body>
 </html>
