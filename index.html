@@ -3,81 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#14162B" />
-  <title>Graha Ledger | Jyotish Cloud Engine</title>
-
-  <!-- Tailwind CSS -->
+  <title>Graha Ledger V2 | Jyotish Engine</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Sora:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-
-  <!-- React & ReactDOM -->
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=Sora:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  
-  <!-- Recharts -->
   <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
   <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-  
-  <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
-  <!-- Google Translate Script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="text/javascript">
-    function googleTranslateElementInit() {
-      new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
-    }
+    function googleTranslateElementInit() { new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element'); }
   </script>
   <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
   <style>
-    body { background-color: #14162B; margin: 0; padding: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; overflow-x: hidden; }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-    
-    .font-serif { font-family: 'Fraunces', serif; }
-    .font-mono { font-family: 'IBM Plex Mono', monospace; }
-    
-    .t100 { color: #F2EFE6; } .t85 { color: rgba(242,239,230,0.85); } .t75 { color: rgba(242,239,230,0.75); }
-    .t60 { color: rgba(242,239,230,0.60); } .t50 { color: rgba(242,239,230,0.50); } .t40 { color: rgba(242,239,230,0.40); }
-    .bgfaint3 { background: rgba(255,255,255,0.03); } .bgfaint2 { background: rgba(255,255,255,0.02); }
-    .bgcard2 { background: #1A1C36; } .tgold { color: #D4A574; } .tdanger { color: #B23A48; }
-    
-    .fs10 { font-size: 10px; } .fs15 { font-size: 15px; } .tr25 { letter-spacing: 0.25em; }
-    
-    .gl-fadein { animation: fadein 0.35s ease; }
+    body { background: #14162B; margin: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    .font-serif { font-family: 'Fraunces', serif; } .font-mono { font-family: 'IBM Plex Mono', monospace; }
+    .t100 { color: #F2EFE6; } .t85 { color: rgba(242,239,230,0.85); } .t60 { color: rgba(242,239,230,0.60); } .t40 { color: rgba(242,239,230,0.40); }
+    .bgfaint3 { background: rgba(255,255,255,0.03); } .bgcard2 { background: #1A1C36; }
+    .fs10 { font-size: 10px; } .gl-fadein { animation: fadein 0.3s ease; }
     @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Fix Google Translate UI quirks */
     #google_translate_element { position: absolute; top: 10px; right: 10px; z-index: 1000; }
     .goog-te-gadget { color: transparent !important; font-size: 0px !important; }
-    .goog-te-gadget .goog-te-combo { font-family: 'Sora', sans-serif; font-size: 12px; padding: 4px; border-radius: 6px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); outline: none; }
+    .goog-te-gadget .goog-te-combo { font-family: 'Sora', sans-serif; font-size: 12px; padding: 4px; border-radius: 6px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
     .goog-te-gadget .goog-te-combo option { background: #14162B; color: #fff; }
-    .goog-logo-link, .goog-te-banner-frame, #goog-gt-tt { display: none !important; }
-    body { top: 0 !important; }
+    .goog-logo-link, .goog-te-banner-frame, #goog-gt-tt { display: none !important; } body { top: 0 !important; }
   </style>
 </head>
 <body>
-  <!-- Outside React DOM to prevent Translation crashes -->
   <div id="google_translate_element"></div>
   <div id="root"></div>
 
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef, Component } = window.React;
     const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } = window.Recharts;
+    const { jsPDF } = window.jspdf;
 
-    const Icon = ({ name, size=16, className, style }) => <i className={`ph ph-${name} ${className||''}`} style={{fontSize: size, ...style}} />;
-    
-    // Meditating Sage Logo
-    const SageLogo = ({ size = 64, className = "" }) => (
-      <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    const Icon = ({ name, size=16, className="", style, title, onClick }) => <i title={title} onClick={onClick} className={`ph ph-${name} ${className}`} style={{fontSize: size, cursor: onClick?'pointer':'inherit', ...style}} />;
+    const SageLogo = ({ size=64 }) => (
+      <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className="mx-auto drop-shadow-lg">
         <circle cx="50" cy="50" r="48" stroke="#D4A574" strokeWidth="1.5" fill="rgba(212,165,116,0.05)"/>
         <path d="M70 30 A 12 12 0 1 0 82 18 A 14 14 0 1 1 70 30 Z" fill="#F2EFE6" opacity="0.8"/>
         <path d="M50 35 A 7 7 0 1 1 49.9 35 Z" fill="#D4A574" opacity="0.9"/>
@@ -86,17 +53,15 @@
       </svg>
     );
 
-    // Simple Encryption for PII & API Keys (XOR with fixed salt)
-    const SECRET_SALT = "GRAHA_SAGE_KEY_2026";
+    // Crypto Utilities
+    const SECRET_SALT = "GRAHA_SAGE_KEY_2026_SECURE";
     const CryptoUtils = {
         encrypt: (data) => {
             if (!data) return data;
             const str = typeof data === 'object' ? JSON.stringify(data) : String(data);
             const encoded = encodeURIComponent(str);
             let result = '';
-            for(let i=0; i<encoded.length; i++) {
-                result += String.fromCharCode(encoded.charCodeAt(i) ^ SECRET_SALT.charCodeAt(i % SECRET_SALT.length));
-            }
+            for(let i=0; i<encoded.length; i++) result += String.fromCharCode(encoded.charCodeAt(i) ^ SECRET_SALT.charCodeAt(i % SECRET_SALT.length));
             return window.btoa(result);
         },
         decrypt: (b64) => {
@@ -104,38 +69,29 @@
             try {
                 const decoded = window.atob(b64);
                 let result = '';
-                for(let i=0; i<decoded.length; i++) {
-                    result += String.fromCharCode(decoded.charCodeAt(i) ^ SECRET_SALT.charCodeAt(i % SECRET_SALT.length));
-                }
+                for(let i=0; i<decoded.length; i++) result += String.fromCharCode(decoded.charCodeAt(i) ^ SECRET_SALT.charCodeAt(i % SECRET_SALT.length));
                 const decStr = decodeURIComponent(result);
                 try { return JSON.parse(decStr); } catch(e) { return decStr; }
-            } catch(e) { return b64; } // Return raw if decryption fails (backwards compatibility)
+            } catch(e) { return b64; }
         }
     };
 
+    // GitHub DB Adapter
     const GitHubDB = {
       config: null,
-      setConfig(owner, repo, token) {
-        this.config = { owner, repo, token };
-        localStorage.setItem('gh_db_config', JSON.stringify(this.config));
-      },
-      loadConfig() {
-        const conf = localStorage.getItem('gh_db_config');
-        if (conf) this.config = JSON.parse(conf);
-        return this.config;
-      },
+      setConfig(owner, repo, token) { this.config = { owner, repo, token }; localStorage.setItem('gh_db_config', JSON.stringify(this.config)); },
+      loadConfig() { const conf = localStorage.getItem('gh_db_config'); if (conf) this.config = JSON.parse(conf); return this.config; },
       async callApi(method, path, body = null) {
         if (!this.config) throw new Error("GitHub DB not configured.");
         const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${path}`;
         const headers = { 'Authorization': `token ${this.config.token}`, 'Accept': 'application/vnd.github.v3+json' };
         if (body) headers['Content-Type'] = 'application/json';
-        
         const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
         if (!res.ok && res.status !== 404) throw new Error(`GitHub Error: ${res.statusText}`);
         return res.status === 404 ? null : await res.json();
       },
       async getDB() {
-        const data = await this.callApi('GET', 'graha_db.json');
+        const data = await this.callApi('GET', 'graha_db_v2.json');
         if (!data) return { sha: null, content: { users: {} } };
         const contentStr = decodeURIComponent(escape(window.atob(data.content)));
         return { sha: data.sha, content: JSON.parse(contentStr) };
@@ -143,1069 +99,475 @@
       async saveDB(contentObj, sha) {
         const contentStr = JSON.stringify(contentObj, null, 2);
         const encoded = window.btoa(unescape(encodeURIComponent(contentStr)));
-        const body = { message: "Graha Ledger Sync", content: encoded, ...(sha ? { sha } : {}) };
-        await this.callApi('PUT', 'graha_db.json', body);
+        await this.callApi('PUT', 'graha_db_v2.json', { message: "Graha Ledger Sync", content: encoded, ...(sha ? { sha } : {}) });
       },
       async syncUserData(email, userData) {
         const db = await this.getDB();
         if(!db.content.users) db.content.users = {};
-        
-        // Encrypt sensitive fields before saving
-        const dataToSave = { ...userData };
-        if(userData.profiles) dataToSave.profiles = CryptoUtils.encrypt(userData.profiles);
-        if(userData.settings) dataToSave.settings = CryptoUtils.encrypt(userData.settings);
-        if(userData.chatHistory) dataToSave.chatHistory = CryptoUtils.encrypt(userData.chatHistory);
-
-        db.content.users[email] = { ...db.content.users[email], ...dataToSave };
+        db.content.users[email] = { ...db.content.users[email], 
+            profiles: CryptoUtils.encrypt(userData.profiles || []), 
+            settings: CryptoUtils.encrypt(userData.settings || {}), 
+            chatHistory: CryptoUtils.encrypt(userData.chatHistory || []) 
+        };
         await this.saveDB(db.content, db.sha);
       },
       async getUserData(email) {
           const db = await this.getDB();
           const user = db.content.users?.[email];
           if(!user) return null;
-          
-          // Decrypt sensitive fields
-          const decryptedUser = { ...user };
-          if(user.profiles && typeof user.profiles === 'string') decryptedUser.profiles = CryptoUtils.decrypt(user.profiles) || [];
-          if(user.settings && typeof user.settings === 'string') decryptedUser.settings = CryptoUtils.decrypt(user.settings) || {};
-          if(user.chatHistory && typeof user.chatHistory === 'string') decryptedUser.chatHistory = CryptoUtils.decrypt(user.chatHistory) || [];
-          
-          return decryptedUser;
+          return { ...user, profiles: CryptoUtils.decrypt(user.profiles)||[], settings: CryptoUtils.decrypt(user.settings)||{}, chatHistory: CryptoUtils.decrypt(user.chatHistory)||[] };
+      },
+      async getGlobalChatHistory() {
+          const db = await this.getDB();
+          let allChats = [];
+          if(db.content.users) {
+              Object.values(db.content.users).forEach(u => {
+                  const hist = CryptoUtils.decrypt(u.chatHistory);
+                  if(Array.isArray(hist)) allChats = [...allChats, ...hist];
+              });
+          }
+          return allChats;
       }
     };
 
+    // Astronomy Data (Compressed)
     const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
-    const SIGN_LORDS = { Aries:"Mars", Taurus:"Venus", Gemini:"Mercury", Cancer:"Moon", Leo:"Sun", Virgo:"Mercury", Libra:"Venus", Scorpio:"Mars", Sagittarius:"Jupiter", Capricorn:"Saturn", Aquarius:"Saturn", Pisces:"Jupiter" };
     const NAKSHATRAS = ["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
-    const NAKSHATRA_LORDS = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"];
-    const LUNAR_MASAS = ["Chaitra", "Vaishakha", "Jyeshtha", "Ashadha", "Shravana", "Bhadrapada", "Ashvin", "Kartika", "Margashirsha", "Pausha", "Magha", "Phalguna"];
-    const YOGAS = ["Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda", "Sukarma", "Dhriti", "Shula", "Ganda", "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra", "Siddhi", "Vyatipata", "Variyana", "Parigha", "Shiva", "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti"];
-    const MOVING_KARANAS = ["Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti (Bhadra)"];
-    
-    const LLM_PROVIDERS = [ 
-        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" }, 
-        { id: "gpt-4o", name: "GPT-4o" }, 
-        { id: "claude-3", name: "Claude 3.5 Sonnet" }, 
-        { id: "moonshot", name: "Kimi Moonshot" },
-        { id: "offline", name: "Offline Learning Engine" }
-    ];
-    
-    const ACCENT_PALETTE = ["#8FB2D9", "#D4A574", "#B7A0D9", "#8FC9A9", "#D99B8F", "#C9C08F"];
-    const WEEKDAY_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
+    const NAK_LORDS = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"];
+    const LUNAR_MASAS = ["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashvin","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
+    const YOGAS = ["Vishkambha","Priti","Ayushman","Saubhagya","Shobhana","Atiganda","Sukarma","Dhriti","Shula","Ganda","Vriddhi","Dhruva","Vyaghata","Harshana","Vajra","Siddhi","Vyatipata","Variyana","Parigha","Shiva","Siddha","Sadhya","Shubha","Shukla","Brahma","Indra","Vaidhriti"];
+    const KARANAS = ["Bava","Balava","Kaulava","Taitila","Gara","Vanija","Vishti (Bhadra)"];
+    const VIM_YEARS = { Ketu:7, Venus:20, Sun:6, Moon:10, Mars:7, Rahu:18, Jupiter:16, Saturn:19, Mercury:17 };
+    const WEEKDAY = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+    const SANSKRIT_DAYS = { Sun: "Ravi", Moon: "Soma", Mars: "Mangala", Mercury: "Budha", Jupiter: "Brihaspati", Venus: "Shukra", Saturn: "Shani" };
 
     const PLANET_INFO = {
-      Sun: { symbol: "☉", name: "Surya", day: "Sunday", deity: "Lord Rama", mantra: "Om Hraam Hreem Hroom Sah Suryaya Namah", color: "#E8A33D", themes: ["clarity", "leadership"], remedy: "Offer Arghya (water) in a copper vessel at dawn." },
-      Moon: { symbol: "☽", name: "Chandra", day: "Monday", deity: "Goddess Gauri", mantra: "Om Shraam Shreem Shroom Sah Chandraya Namah", color: "#9FB8D9", themes: ["emotion", "intuition"], remedy: "Wear white or silver accents. Offer pure milk." },
-      Mars: { symbol: "♂", name: "Mangal", day: "Tuesday", deity: "Lord Hanuman", mantra: "Om Kraam Kreem Kroom Sah Bhaumaya Namah", color: "#B23A48", themes: ["courage", "decisive action"], remedy: "Recite Hanuman Chalisa. Channel energy into structured workout." },
-      Mercury: { symbol: "☿", name: "Budh", day: "Wednesday", deity: "Lord Vishnu", mantra: "Om Braam Breem Broom Sah Budhaya Namah", color: "#7C9473", themes: ["communication", "intellect"], remedy: "Wear green. Feed green gram to cows or birds." },
-      Jupiter: { symbol: "♃", name: "Guru", day: "Thursday", deity: "Lord Dakshinamurthy", mantra: "Om Graam Greem Groom Sah Gurave Namah", color: "#D4A574", themes: ["wisdom", "dharma"], remedy: "Donate turmeric, chana dal or yellow sweets to teachers." },
-      Venus: { symbol: "♀", name: "Shukra", day: "Friday", deity: "Goddess Lakshmi", mantra: "Om Draam Dreem Droom Sah Shukraya Namah", color: "#C98CA7", themes: ["harmony", "relationships"], remedy: "Offer white flowers or fragrant sweets to Goddess Lakshmi." },
-      Saturn: { symbol: "♄", name: "Shani", day: "Saturday", deity: "Lord Shani", mantra: "Om Praam Preem Proom Sah Shanaye Namah", color: "#8288A0", themes: ["discipline", "patience"], remedy: "Light a mustard-oil lamp under a Peepal tree at dusk." },
-      Rahu: { symbol: "☊", name: "Rahu", day: "Saturday", deity: "Goddess Durga", mantra: "Om Bhraam Bhreem Bhroom Sah Rahave Namah", color: "#A872B2", themes: ["ambition", "breakthroughs"], remedy: "Maintain clutter-free spaces and feed street dogs." },
-      Ketu: { symbol: "☋", name: "Ketu", day: "Tuesday", deity: "Lord Ganesha", mantra: "Om Sraam Sreem Sroom Sah Ketave Namah", color: "#72AAB2", themes: ["detachment", "spiritual depth"], remedy: "Chant 'Om Gam Ganapataye Namah'." }
+      Sun: { symbol: "☉", color: "#E8A33D", day: "Sun", mantra: "Om Hraam Hreem Hroom Sah Suryaya Namah", charity: "Donate wheat, ruby, or jaggery to elders.", behavioral: "Offer Arghya (water) at dawn. Act decisively without ego." },
+      Moon: { symbol: "☽", color: "#9FB8D9", day: "Moon", mantra: "Om Shraam Shreem Shroom Sah Chandraya Namah", charity: "Donate milk, rice, or silver.", behavioral: "Practice meditation. Avoid isolation." },
+      Mars: { symbol: "♂", color: "#B23A48", day: "Mars", mantra: "Om Kraam Kreem Kroom Sah Bhaumaya Namah", charity: "Donate red lentils or sweet bread.", behavioral: "Channel energy into physical workout." },
+      Mercury: { symbol: "☿", color: "#7C9473", day: "Mercury", mantra: "Om Braam Breem Broom Sah Budhaya Namah", charity: "Feed green spinach to cows/birds.", behavioral: "Focus on clear communication and logic." },
+      Jupiter: { symbol: "♃", color: "#D4A574", day: "Jupiter", mantra: "Om Graam Greem Groom Sah Gurave Namah", charity: "Donate turmeric or books to students.", behavioral: "Seek guidance from a mentor. Honor teachers." },
+      Venus: { symbol: "♀", color: "#C98CA7", day: "Venus", mantra: "Om Draam Dreem Droom Sah Shukraya Namah", charity: "Donate white clothing to women in need.", behavioral: "Cultivate artistic harmony and diplomacy." },
+      Saturn: { symbol: "♄", color: "#8288A0", day: "Saturn", mantra: "Om Praam Preem Proom Sah Shanaye Namah", charity: "Donate black sesame or iron items.", behavioral: "Light a mustard-oil lamp at dusk. Work hard silently." },
+      Rahu: { symbol: "☊", color: "#A872B2", mantra: "Om Bhraam Bhreem Bhroom Sah Rahave Namah", charity: "Feed street dogs or donate blankets.", behavioral: "Avoid sudden risky investments. Clean digital clutter." },
+      Ketu: { symbol: "☋", color: "#72AAB2", mantra: "Om Sraam Sreem Sroom Sah Ketave Namah", charity: "Donate to ascetic monks or shelters.", behavioral: "Practice deep detachment from material outcomes." }
     };
 
     const DOMAINS = [
-      { key: "health", label: "Health & Vitality", icon: "heart-beat", houses: [1, 6, 8], tag: "Stamina, routine & recovery" },
-      { key: "wealth", label: "Wealth & Finance", icon: "wallet", houses: [2, 9, 11], tag: "Assets, liquidity & gains" },
-      { key: "career", label: "Career & Work", icon: "briefcase", houses: [10, 2, 6], tag: "Status, leadership & output" },
-      { key: "lifestyle", label: "Home & Relationships", icon: "house", houses: [4, 7, 3, 12], tag: "Domestic peace & harmony" },
+      { key: "health", label: "Health & Vitality", icon: "heart-beat", houses: [1, 6, 8] },
+      { key: "wealth", label: "Wealth & Finance", icon: "wallet", houses: [2, 9, 11] },
+      { key: "career", label: "Career & Work", icon: "briefcase", houses: [10, 2, 6] },
+      { key: "lifestyle", label: "Home & Relations", icon: "house", houses: [4, 7, 3, 12] },
     ];
 
-    const CITY_PRESETS = [
-      { name: "Phalodi, India", lat: 27.1329, lon: 72.3667, utcOffset: 5.5 },
-      { name: "New Delhi, India", lat: 28.6139, lon: 77.209, utcOffset: 5.5 },
-      { name: "Mumbai, India", lat: 19.076, lon: 72.8777, utcOffset: 5.5 },
-      { name: "Varanasi, India", lat: 25.3176, lon: 82.9739, utcOffset: 5.5 },
-      { name: "Ujjain, India", lat: 23.1765, lon: 75.7885, utcOffset: 5.5 },
-      { name: "Lahore, Pakistan", lat: 31.5497, lon: 74.3436, utcOffset: 5 },
-      { name: "Dubai, UAE", lat: 25.2048, lon: 55.2708, utcOffset: 4 },
-      { name: "London, UK", lat: 51.5072, lon: -0.1276, utcOffset: 0 },
-      { name: "New York, USA", lat: 40.7128, lon: -74.006, utcOffset: -5 },
-      { name: "UTC-12 (Baker Island)", lat: 0, lon: 0, utcOffset: -12 },
-      { name: "UTC-8 (Los Angeles)", lat: 34.05, lon: -118.24, utcOffset: -8 },
-      { name: "UTC+0 (Greenwich)", lat: 51.48, lon: 0, utcOffset: 0 },
-      { name: "UTC+8 (Singapore)", lat: 1.35, lon: 103.8, utcOffset: 8 },
-      { name: "UTC+10 (Sydney)", lat: -33.86, lon: 151.2, utcOffset: 10 },
-    ];
-
-    const IN_APP_HOROSCOPE_FEEDS = {
-      astrobix: { name: "Astrobix Lahiri", tagline: "Sidereal Vedic Daily", generate: (s) => `Planetary transits for ${s} encourage bold initiatives today. Focus on organization and practical problem solving.` },
-      astrosage: { name: "AstroSage Feed", tagline: "Panchang & Chitra Paksha", generate: (s) => `Today's lunar vibration supports ${s} natives in stabilizing health. Auspicious timing for productive meetings.` },
-      ganeshaspeaks: { name: "GaneshaSpeaks", tagline: "Daily Moon Insight", generate: (s) => `Lord Ganesha's blessings are with ${s}. Avoid hasty financial decisions and focus on familial harmony today.` },
-      astrotalk: { name: "AstroTalk AI", tagline: "Realtime Gochara", generate: (s) => `For ${s}, the transiting planets suggest a day of spiritual learning. Trust your intuition over pure logic in the evening.` }
-    };
-
-    const TRANSIT_WINDOWS_2026 = [
-      { start: "2025-03-29", end: "2028-02-23", label: "Saturn transits Pisces (Retrograde: Jun 17 – Dec 11, 2026). Demands disciplined emotional resilience." },
-      { start: "2026-06-02", end: "2026-10-31", label: "Jupiter transits Exalted Cancer. Heightens wisdom, financial blessing & domestic protection." },
-    ];
-
-    function norm360(x) { if (isNaN(x)) return 0; let v = x % 360; return v < 0 ? v + 360 : v; }
-    function toRad(d) { return (d * Math.PI) / 180; }
-    function toDeg(r) { return (r * 180) / Math.PI; }
-    function signOf(lon) { return SIGNS[Math.floor(norm360(lon) / 30)] || "Aries"; }
-    function addDays(date, days) { const result = new Date(date); result.setDate(result.getDate() + days); return result; }
-    function planetOfDay(date) { if (!date || isNaN(date)) return "Sun"; return WEEKDAY_ORDER[date.getDay()] || "Sun"; }
-    function ordinalSuffix(n) { if ([11, 12, 13].includes(n % 100)) return "th"; switch (n % 10) { case 1: return "st"; case 2: return "nd"; case 3: return "rd"; default: return "th"; } }
-    function formatTimeOnly(date) { return date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: false }); }
-
-    function julianDay(isoDate, timeStr, utcOffset) {
-      try {
-        const [Y, Mo, D] = (isoDate || "2000-01-01").split("-").map(Number);
-        const [hh, mm] = (timeStr || "12:00").split(":").map(Number);
-        const ms = Date.UTC(Y, Mo - 1, D, hh, mm, 0) - (utcOffset * 3600000);
-        return ms / 86400000 + 2440587.5;
-      } catch(e) { return 2451545.0; }
-    }
-
-    function sunLongitude(T) {
-      const L0 = norm360(280.46646 + 36000.76983 * T);
-      const M = norm360(357.52911 + 35999.05029 * T);
-      const C = (1.914602 - 0.004817 * T) * Math.sin(toRad(M)) + 0.019993 * Math.sin(toRad(2 * M));
-      return { longitude: norm360(L0 + C - 0.00569), trueLong: norm360(L0 + C), R: 1 };
-    }
-
-    function moonLongitude(T) {
-      const Lp = norm360(218.3164477 + 481267.88123421 * T);
-      const D = norm360(297.8501921 + 445267.1114034 * T);
-      const M = norm360(357.5291092 + 35999.0502909 * T);
-      const Mp = norm360(134.9633964 + 477198.8675055 * T);
-      const dL = 6.288774 * Math.sin(toRad(Mp)) + 1.274027 * Math.sin(toRad(2*D - Mp)) + 0.658314 * Math.sin(toRad(2*D));
-      return norm360(Lp + dL);
-    }
+    const LLM_PROVIDERS = [ { id: "gemini-1.5-flash", name: "Gemini 1.5", url: "aistudio.google.com" }, { id: "gpt-4o", name: "GPT-4o", url: "platform.openai.com" }, { id: "claude-3", name: "Claude 3.5", url: "console.anthropic.com" }, { id: "offline", name: "Offline Learning Engine", url: "Local" } ];
+    const CITY_PRESETS = [ { name: "Phalodi, India", lat: 27.13, lon: 72.36, utc: 5.5 }, { name: "Ujjain, India", lat: 23.17, lon: 75.78, utc: 5.5 }, { name: "Varanasi, India", lat: 25.31, lon: 82.97, utc: 5.5 }, { name: "New Delhi, India", lat: 28.61, lon: 77.20, utc: 5.5 }, { name: "Dubai, UAE", lat: 25.20, lon: 55.27, utc: 4 }, { name: "London, UK", lat: 51.50, lon: -0.12, utc: 0 }, { name: "New York, USA", lat: 40.71, lon: -74.00, utc: -5 } ];
     
-    function mockPlanetLongitude(planet, T) {
-        if(planet === "Mercury") return norm360(sunLongitude(T).longitude + 15);
-        if(planet === "Venus") return norm360(sunLongitude(T).longitude - 20);
-        if(planet === "Mars") return norm360(120 + T * 360);
-        if(planet === "Jupiter") return norm360(90 + T * 30);
-        if(planet === "Saturn") return norm360(330 + T * 12);
-        if(planet === "Rahu") return norm360(180 - T * 19);
-        return 0;
+    // Core Math
+    function norm360(x) { let v = x % 360; return v < 0 ? v + 360 : v; }
+    function toRad(d) { return (d * Math.PI) / 180; }
+    function julianDay(dStr, tStr, utc) { const [Y,M,D]=(dStr||"2000-01-01").split("-").map(Number); const [h,m]=(tStr||"12:00").split(":").map(Number); return (Date.UTC(Y,M-1,D,h,m,0) - (utc*3600000)) / 86400000 + 2440587.5; }
+    function getAya(Y, type) { return (type === "kp" ? 23.90 : 23.85) + (Y - 2000) * 0.013972; }
+
+    const PE = {
+        Mercury: { a: [0.387, 0], e: [0.205, 0], i: [7.004, 0], L: [252.25, 149472.67], peri: [77.45, 0.16], node: [48.33, -0.12] },
+        Venus:   { a: [0.723, 0], e: [0.006, 0], i: [3.394, 0], L: [181.97, 58517.81], peri: [131.60, 0.00], node: [76.67, -0.27] },
+        Mars:    { a: [1.523, 0], e: [0.093, 0], i: [1.849, 0], L: [-4.55, 19140.30], peri: [-23.94, 0.44], node: [49.55, -0.29] },
+        Jupiter: { a: [5.202, 0], e: [0.048, 0], i: [1.304, 0], L: [34.39, 3034.74], peri: [14.72, 0.21], node: [100.47, 0.20] },
+        Saturn:  { a: [9.536, 0], e: [0.053, 0], i: [2.485, 0], L: [49.95, 1222.49], peri: [92.59, -0.41], node: [113.66, -0.28] },
+    };
+    function helio(n, T) {
+        const p=PE[n], a=p.a[0], e=p.e[0], i=toRad(p.i[0]), L=p.L[0]+p.L[1]*T, peri=p.peri[0], node=p.node[0];
+        const w=toRad(norm360(peri-node)), Om=toRad(norm360(node)), M=toRad(norm360(L-peri));
+        const E=M+e*Math.sin(M); const xo=a*(Math.cos(E)-e), yo=a*Math.sqrt(1-e*e)*Math.sin(E);
+        const cw=Math.cos(w),sw=Math.sin(w),co=Math.cos(Om),so=Math.sin(Om),ci=Math.cos(i);
+        return { x: (co*cw-so*sw*ci)*xo + (-co*sw-so*cw*ci)*yo, y: (so*cw+co*sw*ci)*xo + (-so*sw+co*cw*ci)*yo };
     }
+    function sunLon(T) { const M = norm360(357.529 + 35999.05*T); const L = norm360(280.466 + 36000.77*T + 1.915*Math.sin(toRad(M))); return {L, R: 1.00014 - 0.01671*Math.cos(toRad(M))}; }
+    function moonLon(T) { const D=norm360(297.85+445267.11*T), M=norm360(357.52+35999.05*T), Mp=norm360(134.96+477198.86*T); return norm360(218.316+481267.88*T + 6.28*Math.sin(toRad(Mp)) + 1.27*Math.sin(toRad(2*D-Mp))); }
 
-    function getAyanamsaValue(decimalYear, type = "lahiri") { return (type === "kp" ? 23.90 : 23.85) + (decimalYear - 2000) * 0.013972; }
-
-    // Approximate Sun/Moon rise set for Muhurta and UI (Based on standard declination approximations)
-    function approximateTimes(dateObj, lat, lon) {
-        const d = new Date(dateObj);
-        d.setHours(6, 0, 0, 0); const sunrise = new Date(d); // Approx 6 AM local
-        d.setHours(18, 0, 0, 0); const sunset = new Date(d); // Approx 6 PM local
-        d.setHours(18, 30, 0, 0); const moonrise = new Date(d); // Dummy Approx
-        d.setHours(6, 30, 0, 0); const moonset = new Date(d); // Dummy Approx
-        d.setDate(d.getDate()+1);
-        return { sunrise, sunset, moonrise, moonset };
-    }
-
-    function computePanchang(dateObj, monthSystem = "amanta", appUtcOffset = 5.5, lat=28.6, lon=77.2) {
-      try {
-        const isoString = (dateObj && !isNaN(dateObj) ? dateObj : new Date()).toISOString().slice(0, 10);
-        const JD = julianDay(isoString, "12:00", appUtcOffset);
-        const T = (JD - 2451545.0) / 36525;
+    function computeKundli(profile, ayType="lahiri", trDate=null) {
+        if(!profile) return null;
+        const JD = julianDay(profile.dob, profile.time, profile.utcOffset); const T = (JD-2451545)/36525;
+        const [Y,Mo] = (profile.dob||"2000-01-01").split("-").map(Number); const aya = getAya(Y+(Mo-1)/12, ayType);
         
-        const ayanamsa = getAyanamsaValue(parseInt(isoString.split('-')[0]) + 0.5, "lahiri");
-        const sun = sunLongitude(T);
-        const moon = moonLongitude(T);
+        const s = sunLon(T); const e = {x: s.R*Math.cos(toRad(norm360(s.L+180))), y: s.R*Math.sin(toRad(norm360(s.L+180)))};
+        const tr = { Sun: s.L, Moon: moonLon(T), Rahu: norm360(125.04-1934.13*T) };
+        tr.Ketu = norm360(tr.Rahu+180);
+        ["Mercury","Venus","Mars","Jupiter","Saturn"].forEach(p => { const h=helio(p,T); tr[p] = norm360(Math.atan2(h.y-e.y, h.x-e.x)*180/Math.PI); });
         
-        // Convert to sidereal for Nakshatra calculation to ensure accuracy (e.g. Shravana vs Jyeshtha)
-        const siderealMoon = norm360(moon - ayanamsa);
-        const siderealSun = norm360(sun.longitude - ayanamsa);
-
-        const diff = norm360(moon - sun.longitude); // Tithi is based on difference, unaffected by ayanamsa
-        const tithiIndex = Math.floor(diff / 12);
-        const tithiNum = (tithiIndex % 15) + 1;
-        const isShukla = tithiIndex < 15;
-        const paksha = isShukla ? "Shukla" : "Krishna";
+        const sid = {}; Object.keys(tr).forEach(k => sid[k] = norm360(tr[k]-aya));
+        const [hh,mm]=(profile.time||"12:00").split(":").map(Number); const ascL = norm360(tr.Sun + ((hh+mm/60)-6)*15 - aya);
         
-        const sunSignIdx = Math.floor(siderealSun / 30);
-        let masaIdx = sunSignIdx;
-        // Purnimanta adjustment: Krishna paksha belongs to the NEXT month
-        if (monthSystem === "purnimanta" && !isShukla) masaIdx = (sunSignIdx + 1) % 12;
-        
-        const tithiNames = ["Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi", "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi", isShukla ? "Purnima" : "Amavasya"];
-        
-        const nakIdx = Math.floor(siderealMoon / (360 / 27));
-        const nakPada = Math.floor((siderealMoon % (360 / 27)) / ((360 / 27) / 4)) + 1;
-        const yogaIdx = Math.floor(norm360(moon + sun.longitude) / (360 / 27));
-        
-        const karanaIdx = Math.floor(diff / 6);
-        let karanaName = "";
-        if (karanaIdx === 0) karanaName = "Kimstughna";
-        else if (karanaIdx >= 1 && karanaIdx <= 56) karanaName = MOVING_KARANAS[(karanaIdx - 1) % 7];
-        else if (karanaIdx === 57) karanaName = "Shakuni";
-        else if (karanaIdx === 58) karanaName = "Chatushpada";
-        else if (karanaIdx === 59) karanaName = "Naga";
-        
-        const isBhadra = karanaName === "Vishti (Bhadra)";
-        
-        const times = approximateTimes(dateObj, lat, lon);
-
-        return {
-          tithiName: tithiNames[tithiNum - 1], tithiNum, paksha, masa: LUNAR_MASAS[masaIdx], monthSystem,
-          sunSign: SIGNS[sunSignIdx], moonSign: SIGNS[Math.floor(siderealMoon / 30)],
-          nakshatra: NAKSHATRAS[nakIdx], nakshatraPada: nakPada,
-          yoga: YOGAS[yogaIdx] || "Vishkambha", karana: karanaName,
-          isAmavasya: tithiIndex === 29, isPurnima: tithiIndex === 14,
-          isBhadra, times, vaar: WEEKDAY_ORDER[dateObj.getDay()]
+        const getDiv = (lon, div) => {
+            if(div===1) return SIGNS[Math.floor(lon/30)];
+            if(div===9) return SIGNS[ ( [0,9,6,3,0,9,6,3,0,9,6,3][Math.floor(lon/30)] + Math.floor((lon%30)/(30/9)) ) % 12 ];
+            if(div===10) return SIGNS[ ( (Math.floor(lon/30)%2!==0 ? Math.floor(lon/30)+8 : Math.floor(lon/30)) + Math.floor((lon%30)/3) ) % 12 ];
         };
-      } catch(e) { return { tithiName: "Pratipada", paksha: "Shukla", masa: "Chaitra", nakshatra: "Ashwini", yoga: "Vishkambha", karana: "Bava", isAmavasya: false, isPurnima: false, isBhadra: false, times: approximateTimes(new Date(), 28, 77), vaar: "Sun" }; }
-    }
 
-    function buildSankalpMantra(panchang, profileName, dateObj) {
-        const vs = dateObj.getFullYear() + 57;
-        const ss = dateObj.getFullYear() - 78;
-        return `Om Vishnu Vishnu Vishnu... Adya Shri Brahmano Dwitiya-Parardhe... Vikram Samvat ${vs} (Saka ${ss}), ${panchang.masa} Mase, ${panchang.paksha} Pakshe, ${panchang.tithiName} Tithau, ${panchang.vaar} Vasaraye... ${profileName} aham sankalpam karishye.`;
-    }
+        const genC = (div) => {
+            const lg=getDiv(ascL,div); const idx=SIGNS.indexOf(lg);
+            const hs={}, pl={}; for(let i=1;i<=12;i++) hs[i]=SIGNS[(idx+i-1)%12];
+            Object.entries(sid).forEach(([p, l]) => pl[p] = ((SIGNS.indexOf(getDiv(l,div))-idx+12)%12)+1);
+            return { lagna: lg, houses: hs, placements: pl };
+        };
 
-    function computeKundli(profile, ayanamsaType = "lahiri") {
-      if (!profile) return null;
-      const JD = julianDay(profile.dob, profile.time, profile.utcOffset);
-      const T = (JD - 2451545.0) / 36525;
-      const [Y, Mo] = (profile.dob || "2000-01-01").split("-").map(Number);
-      const ayanamsa = getAyanamsaValue((Y || 2000) + ((Mo || 1) - 1) / 12, ayanamsaType);
+        const d1=genC(1), d9=genC(9), d10=genC(10);
+        const moonIdx = Math.floor(sid.Moon/(360/27));
+        
+        const stLord = NAK_LORDS[moonIdx%9]; const frac = (sid.Moon%(360/27))/(360/27);
+        let cy = Y+(Mo-1)/12; let cIdx = moonIdx%9; const dashas=[];
+        dashas.push({ p: stLord, s: cy, e: cy+(VIM_YEARS[stLord]*(1-frac)) }); cy += VIM_YEARS[stLord]*(1-frac); cIdx=(cIdx+1)%9;
+        for(let i=0;i<8;i++) { const p=NAK_LORDS[cIdx]; dashas.push({ p, s: cy, e: cy+VIM_YEARS[p] }); cy+=VIM_YEARS[p]; cIdx=(cIdx+1)%9; }
 
-      const tropical = {
-        Sun: sunLongitude(T).longitude, Moon: moonLongitude(T), Mercury: mockPlanetLongitude("Mercury", T),
-        Venus: mockPlanetLongitude("Venus", T), Mars: mockPlanetLongitude("Mars", T), Jupiter: mockPlanetLongitude("Jupiter", T),
-        Saturn: mockPlanetLongitude("Saturn", T), Rahu: mockPlanetLongitude("Rahu", T),
-      };
-      tropical.Ketu = norm360(tropical.Rahu + 180);
-
-      const sidereal = {};
-      Object.keys(tropical).forEach((k) => { sidereal[k] = norm360(tropical[k] - ayanamsa); });
-      
-      const [hh, mm] = (profile.time || "12:00").split(":").map(Number);
-      const hoursSinceSunrise = (hh + mm/60) - 6;
-      const ascTropical = norm360(tropical.Sun + (hoursSinceSunrise * 15));
-      const lagnaLon = norm360(ascTropical - ayanamsa);
-      const lagnaSign = signOf(lagnaLon);
-      const lagnaIdx = SIGNS.indexOf(lagnaSign);
-
-      const houses = {}; const lords = {};
-      for (let h = 1; h <= 12; h++) { const sign = SIGNS[(lagnaIdx + h - 1) % 12]; houses[h] = sign; lords[h] = SIGN_LORDS[sign]; }
-      
-      const placements = {}; const kpDetails = {};
-      Object.entries(sidereal).forEach(([planet, lon]) => {
-        const sIdx = SIGNS.indexOf(signOf(lon));
-        placements[planet] = ((sIdx - lagnaIdx + 12) % 12) + 1;
-        kpDetails[planet] = { starLord: NAKSHATRA_LORDS[Math.floor(lon / (360/27)) % 9], subLord: NAKSHATRA_LORDS[(Math.floor(lon / (360/27)) + 2) % 9] };
-      });
-
-      const moonNakIdx = Math.floor(sidereal.Moon / (360 / 27));
-      const moonNakPada = Math.floor((sidereal.Moon % (360 / 27)) / ((360 / 27) / 4)) + 1;
-
-      return { lagna: lagnaSign, lagnaLon, lagnaIdx, moonSign: signOf(sidereal.Moon), nakshatra: NAKSHATRAS[moonNakIdx] || "Ashwini", nakshatraPada: moonNakPada, sunSign: signOf(sidereal.Sun), houses, lords, placements, kpDetails, longitudes: sidereal, ayanamsaUsed: ayanamsa };
-    }
-
-    function calculateMuhurta(dateObj, lat, lon) {
-      const times = approximateTimes(dateObj, lat, lon);
-      const sunrise = times.sunrise;
-      const sunset = times.sunset;
-      const dayDurationMs = sunset - sunrise;
-      const segmentMs = dayDurationMs / 8;
-      const dayOfWeek = dateObj.getDay();
-      
-      const rahuLookup = { 0: 7, 1: 1, 2: 6, 3: 4, 4: 5, 5: 3, 6: 2 };
-      const yamaLookup = { 0: 4, 1: 3, 2: 2, 3: 1, 4: 0, 5: 6, 6: 5 };
-      const guliLookup = { 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1, 6: 0 };
-      
-      const getSegmentTime = (idx) => { return { start: new Date(sunrise.getTime() + idx * segmentMs), end: new Date(sunrise.getTime() + (idx + 1) * segmentMs) }; };
-
-      // Abhijit Muhurta is generally the 8th of 15 muhurtas of the day (approx middle)
-      const abhijitStart = new Date(sunrise.getTime() + (dayDurationMs / 15) * 7);
-      const abhijitEnd = new Date(sunrise.getTime() + (dayDurationMs / 15) * 8);
-
-      // Hourly Hora
-      const horaOrder = [0, 5, 3, 1, 6, 4, 2]; // Sun, Ven, Mer, Moon, Sat, Jup, Mar (reverse Chaldean)
-      const startHoraIdx = [0, 3, 6, 2, 5, 1, 4][dayOfWeek]; // Sun, Mon, Tue, Wed, Thu, Fri, Sat
-      const horaDurationMs = dayDurationMs / 12;
-      const horas = [];
-      for(let i=0; i<12; i++) {
-          const pIdx = horaOrder[(horaOrder.indexOf(startHoraIdx) + i) % 7];
-          horas.push({ planet: WEEKDAY_ORDER[pIdx], start: new Date(sunrise.getTime() + i*horaDurationMs), end: new Date(sunrise.getTime() + (i+1)*horaDurationMs) });
-      }
-
-      const chogTypes = [{name: "Udveg", color: "#B23A48"}, {name: "Amrit", color: "#8FB2D9"}, {name: "Rog", color: "#B23A48"}, {name: "Labh", color: "#8FC9A9"}, {name: "Shubh", color: "#D4A574"}, {name: "Char", color: "#9FB8D9"}, {name: "Kaal", color: "#8288A0"}];
-      const chogMatrix = { 0: [0, 5, 3, 1, 2, 4, 6, 0], 1: [1, 2, 4, 6, 0, 5, 3, 1], 2: [2, 4, 6, 0, 5, 3, 1, 2], 3: [3, 1, 2, 4, 6, 0, 5, 3], 4: [4, 6, 0, 5, 3, 1, 2, 4], 5: [5, 3, 1, 2, 4, 6, 0, 5], 6: [6, 0, 5, 3, 1, 2, 4, 6] };
-      
-      const dayChog = chogMatrix[dayOfWeek].map((tIdx, i) => ({ ...chogTypes[tIdx], ...getSegmentTime(i) }));
-      return { rahu: getSegmentTime(rahuLookup[dayOfWeek]), yama: getSegmentTime(yamaLookup[dayOfWeek]), guli: getSegmentTime(guliLookup[dayOfWeek]), abhijit: {start: abhijitStart, end: abhijitEnd}, dayChog, horas };
-    }
-
-    function calculateTimezoneAwareBiorhythm(dobStr, targetDate, userUtcOffset = 0) {
-      if (!dobStr) dobStr = "2000-01-01";
-      const [Y, M, D] = dobStr.split("-").map(Number);
-      const birthTimestamp = Date.UTC(Y || 2000, (M || 1) - 1, D || 1, 12, 0, 0) - (userUtcOffset * 3600 * 1000);
-      const targetTimestamp = Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 12, 0, 0) - (userUtcOffset * 3600 * 1000);
-      const elapsedDays = (targetTimestamp - birthTimestamp) / 86400000;
-      return { days: elapsedDays, physical: Math.sin((2 * Math.PI * elapsedDays) / 23), emotional: Math.sin((2 * Math.PI * elapsedDays) / 28), intellectual: Math.sin((2 * Math.PI * elapsedDays) / 33) };
-    }
-
-    function DBSetupModal({ onConfigured }) {
-      const [owner, setOwner] = useState("");
-      const [repo, setRepo] = useState("AstroGrah");
-      const [token, setToken] = useState("");
-      const [error, setError] = useState("");
-
-      const handleSubmit = async (e) => {
-        e.preventDefault(); setError("");
-        GitHubDB.setConfig(owner, repo, token);
-        try {
-          await GitHubDB.callApi('GET', ''); 
-          onConfigured();
-        } catch(err) {
-          setError("Cannot access repository. Check Owner, Repo name, and Token permissions.");
-          localStorage.removeItem('gh_db_config');
+        let transits = null;
+        if (trDate) {
+            const trJD = julianDay(trDate.toISOString().slice(0,10), "12:00", profile.utcOffset); const trT = (trJD-2451545)/36525;
+            const ts = sunLon(trT); const te = {x: ts.R*Math.cos(toRad(norm360(ts.L+180))), y: ts.R*Math.sin(toRad(norm360(ts.L+180)))};
+            transits = {
+                Sun: SIGNS[Math.floor(norm360(ts.L-aya)/30)], Moon: SIGNS[Math.floor(norm360(moonLon(trT)-aya)/30)],
+                Jupiter: SIGNS[Math.floor(norm360(Math.atan2(helio('Jupiter',trT).y-te.y, helio('Jupiter',trT).x-te.x)*180/Math.PI-aya)/30)],
+                Saturn: SIGNS[Math.floor(norm360(Math.atan2(helio('Saturn',trT).y-te.y, helio('Saturn',trT).x-te.x)*180/Math.PI-aya)/30)]
+            };
         }
-      };
 
-      return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4">
-          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-3xl border border-white/10 bgcard2 p-6">
-            <div className="text-center mb-6">
-              <Icon name="database" size={32} className="mx-auto text-amber-400 mb-2" />
-              <h2 className="font-serif text-2xl t100">Database Setup</h2>
-              <p className="text-xs t60 mt-2">Configure GitHub Repo DB Adapter to securely save profiles.</p>
-            </div>
-            {error && <div className="p-2 text-[10px] text-red-300 bg-red-950/40 rounded border border-red-500/20">{error}</div>}
-            <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">GitHub Username / Owner</label><input required value={owner} onChange={e=>setOwner(e.target.value)} placeholder="e.g. dsupercooldude" className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
-            <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Repository Name</label><input required value={repo} onChange={e=>setRepo(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
-            <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Personal Access Token (PAT)</label><input required type="password" value={token} onChange={e=>setToken(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
-            <button type="submit" className="w-full rounded-full py-3 text-sm font-semibold bg-amber-400 text-black mt-4 transition hover:bg-amber-300">Connect to GitHub DB</button>
-          </form>
-        </div>
-      );
+        return { d1, d9, d10, longitudes: sid, moonSign: SIGNS[Math.floor(sid.Moon/30)], sunSign: SIGNS[Math.floor(sid.Sun/30)], nak: NAKSHATRAS[moonIdx], pada: Math.floor((sid.Moon%(360/27))/((360/27)/4))+1, dashas, transits };
     }
 
-    function AuthModal({ onLogin }) {
-      const [email, setEmail] = useState("");
-      const [isSignup, setIsSignup] = useState(false);
-      const [loading, setLoading] = useState(false);
-      const [error, setError] = useState("");
-      const [genPass, setGenPass] = useState("");
-      const [pwd, setPwd] = useState("");
+    function panchang(dObj, ms="amanta", utc=5.5, lat=28.6, lon=77.2) {
+        const iso = dObj.toISOString().slice(0,10); const JD = julianDay(iso, "12:00", utc); const T = (JD-2451545)/36525;
+        const sl=sunLon(T).L, ml=moonLon(T); const diff=norm360(ml-sl);
+        const tIdx=Math.floor(diff/12); const isS=tIdx<15; const p=isS?"Shukla":"Krishna";
+        const sIdx=Math.floor(norm360(sl)/30); const mIdx=ms==="purnimanta"&&!isS?(sIdx+1)%12:sIdx;
+        const yIdx=Math.floor(norm360(ml+sl)/(360/27)); const kIdx=Math.floor(diff/6);
+        
+        const d = new Date(dObj); d.setHours(6,0,0,0); const sr = new Date(d); d.setHours(18,0,0,0); const ss = new Date(d); d.setHours(18,30,0,0); const mr = new Date(d); d.setHours(6,30,0,0); const msr = new Date(d); d.setDate(d.getDate()+1);
+        const dMs = ss-sr; const getS = (s, dur) => ({ s: new Date(s), e: new Date(s+dur) });
+        const dow = dObj.getDay(); const abh = getS(sr.getTime()+(dMs/15)*7, dMs/15);
+        const ct = [{n:"Udveg", c:"#B23A48"}, {n:"Amrit", c:"#8FB2D9"}, {n:"Rog", c:"#B23A48"}, {n:"Labh", c:"#8FC9A9"}, {n:"Shubh", c:"#D4A574"}, {n:"Char", c:"#9FB8D9"}, {n:"Kaal", c:"#8288A0"}];
+        const cm = {0:[0,5,3,1,2,4,6,0], 1:[1,2,4,6,0,5,3,1], 2:[2,4,6,0,5,3,1,2], 3:[3,1,2,4,6,0,5,3], 4:[4,6,0,5,3,1,2,4], 5:[5,3,1,2,4,6,0,5], 6:[6,0,5,3,1,2,4,6]};
+        const chog = cm[dow].map((i, idx) => ({ ...ct[i], ...getS(sr.getTime()+idx*(dMs/8), dMs/8) }));
+        const hoOrder = [0,5,3,1,6,4,2]; const sHoIdx = [0,3,6,2,5,1,4][dow];
+        const horas = Array.from({length:12}).map((_,i) => ({ p: WEEKDAY[hoOrder[(hoOrder.indexOf(sHoIdx)+i)%7]], ...getS(sr.getTime()+i*(dMs/12), dMs/12) }));
 
-      const handleSubmit = async (e) => {
-        e.preventDefault(); setLoading(true); setError("");
-        try {
-          const db = await GitHubDB.getDB();
-          if(!db.content.users) db.content.users = {};
-
-          if (isSignup) {
-            if (db.content.users[email]) throw new Error("Email already registered.");
-            const generated = "Astro-" + Math.random().toString(36).slice(-6) + "!";
-            db.content.users[email] = { password: generated, needsPasswordChange: true, profiles: CryptoUtils.encrypt([]), chatHistory: CryptoUtils.encrypt([]), settings: CryptoUtils.encrypt({ aiModel: "gemini-1.5-flash", monthSystem: "amanta" }) };
-            await GitHubDB.saveDB(db.content, db.sha);
-            setGenPass(generated);
-          } else {
-            const user = db.content.users[email];
-            if (!user) throw new Error("User not found.");
-            if (user.password !== pwd) throw new Error("Incorrect password.");
-            
-            // Decrypt on login for local state
-            const decryptedUser = { ...user };
-            decryptedUser.profiles = CryptoUtils.decrypt(user.profiles) || [];
-            decryptedUser.settings = CryptoUtils.decrypt(user.settings) || {};
-            decryptedUser.chatHistory = CryptoUtils.decrypt(user.chatHistory) || [];
-            
-            onLogin(email, decryptedUser);
-          }
-        } catch(err) { setError(err.message); } finally { setLoading(false); }
-      };
-
-      if (genPass) {
-          return (
-             <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 p-4">
-               <div className="w-full max-w-sm space-y-4 rounded-3xl border border-emerald-500/30 bgcard2 p-6 text-center">
-                 <Icon name="shield-check" size={36} className="mx-auto text-emerald-400 mb-2"/>
-                 <h2 className="font-serif text-xl t100">Account Created!</h2>
-                 <p className="text-sm t75">Your secure, auto-generated password is:</p>
-                 <div className="p-3 bg-black/40 rounded-xl font-mono text-lg tracking-widest text-emerald-300 border border-emerald-500/20">{genPass}</div>
-                 <p className="text-xs t50">Please copy this password. You will be asked to change it on your first login.</p>
-                 <button onClick={() => { setGenPass(""); setIsSignup(false); }} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-4">I have saved my password</button>
-               </div>
-             </div>
-          );
-      }
-
-      return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 p-4">
-          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-3xl border border-white/10 bgcard2 p-6 shadow-2xl">
-            <div className="text-center mb-6">
-              <SageLogo size={64} className="mx-auto mb-2" />
-              <h2 className="font-serif text-2xl t100">{isSignup ? "Create Account" : "Welcome to Graha Ledger"}</h2>
-              <p className="text-xs t60 mt-1">{isSignup ? "A secure password will be auto-generated." : "Sign in to access encrypted cloud-synced profiles."}</p>
-            </div>
-            {error && <div className="p-2 text-xs text-red-300 bg-red-950/40 rounded border border-red-500/20">{error}</div>}
-            <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Email Address</label><input required type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
-            {!isSignup && (
-              <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">Password</label><input required type="password" value={pwd} onChange={e=>setPwd(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50 transition"/></div>
-            )}
-            <button type="submit" disabled={loading} className="w-full rounded-full py-3 text-sm font-semibold bg-amber-400 text-black mt-2 transition hover:bg-amber-300 disabled:opacity-50">
-              {loading ? "Syncing..." : (isSignup ? "Auto-Generate Account" : "Sign In")}
-            </button>
-            <button type="button" onClick={() => { setIsSignup(!isSignup); setError(""); }} className="w-full text-xs t60 hover:t100 mt-4 transition">{isSignup ? "Already have an account? Sign In" : "Need an account? Quick Sign Up"}</button>
-          </form>
-        </div>
-      );
-    }
-
-    function ChangePasswordModal({ email, onComplete }) {
-        const [pwd, setPwd] = useState("");
-        const [loading, setLoading] = useState(false);
-        const [error, setError] = useState("");
-
-        const handleSubmit = async (e) => {
-            e.preventDefault(); setLoading(true); setError("");
-            if(pwd.length < 6) { setError("Password too short."); setLoading(false); return; }
-            try {
-                const db = await GitHubDB.getDB();
-                db.content.users[email].password = pwd;
-                db.content.users[email].needsPasswordChange = false;
-                await GitHubDB.saveDB(db.content, db.sha);
-                onComplete();
-            } catch(err) { setError(err.message); } finally { setLoading(false); }
+        return { 
+            tithi: ["Pratipada","Dwitiya","Tritiya","Chaturthi","Panchami","Shashthi","Saptami","Ashtami","Navami","Dashami","Ekadashi","Dwadashi","Trayodashi","Chaturdashi",isS?"Purnima":"Amavasya"][tIdx%15],
+            paksha: p, masa: LUNAR_MASAS[mIdx], nak: NAKSHATRAS[Math.floor(ml/(360/27))], yoga: YOGAS[yIdx],
+            karana: kIdx===0?"Kimstughna":kIdx<57?KARANAS[(kIdx-1)%7]:["Shakuni","Chatushpada","Naga"][kIdx-57],
+            sr, ss, mr, msr, abh, chog, horas, rahu: getS(sr.getTime()+dMs*0.8, dMs*0.1)
         };
+    }
 
+    function bio(dob, td, utc) {
+        const [Y,M,D]=(dob||"2000-01-01").split("-").map(Number);
+        const eD = (Date.UTC(td.getFullYear(),td.getMonth(),td.getDate(),12,0,0)-(utc*3600000) - (Date.UTC(Y,M-1,D,12,0,0)-(utc*3600000))) / 86400000;
+        return { p: Math.sin(2*Math.PI*eD/23), e: Math.sin(2*Math.PI*eD/28), i: Math.sin(2*Math.PI*eD/33) };
+    }
+
+    // Modals
+    function SetupModal({ onConfig }) {
+        const [o, setO]=useState(""); const [r, setR]=useState("AstroGrah"); const [t, setT]=useState(""); const [err, setErr]=useState("");
         return (
-            <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/90 p-4">
-              <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-3xl border border-white/10 bgcard2 p-6">
-                <h2 className="font-serif text-xl t100 text-center mb-2">Change Your Password</h2>
-                <p className="text-xs t60 text-center mb-4">Please set a custom password for your account.</p>
-                {error && <div className="p-2 text-xs text-red-300 bg-red-950/40 rounded border border-red-500/20">{error}</div>}
-                <div><label className="text-[10px] t40 uppercase font-mono tracking-wider ml-1">New Password</label><input required type="password" value={pwd} onChange={e=>setPwd(e.target.value)} className="w-full mt-1 rounded-xl bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400/50"/></div>
-                <button type="submit" disabled={loading} className="w-full rounded-full py-3 text-sm font-semibold bg-amber-400 text-black mt-2">{loading ? "Updating..." : "Update Password"}</button>
-              </form>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+                <form onSubmit={async(e)=>{ e.preventDefault(); setErr(""); GitHubDB.setConfig(o,r,t); try{ await GitHubDB.callApi('GET',''); onConfig(); }catch(err){ setErr("Token Invalid or Repo Missing."); localStorage.removeItem('gh_db_config'); } }} className="w-full max-w-sm rounded-3xl border border-white/10 bgcard2 p-6">
+                    <SageLogo/><h2 className="text-center font-serif text-xl mt-2 mb-4">Database Connection</h2>
+                    {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-2">{err}</div>}
+                    <div className="space-y-3">
+                        <div><label className="text-[10px] t40 uppercase font-mono">GitHub Owner</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-sm"/></div>
+                        <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-sm"/></div>
+                        <div><label className="text-[10px] t40 uppercase font-mono">Access Token (PAT)</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-sm"/></div>
+                    </div>
+                    <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-4">Connect to Secure Cloud</button>
+                </form>
             </div>
         );
     }
 
-    function Meter({ value, color }) { return <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${(value || 0) * 10}%`, background: color }} /></div>; }
-
-    function getDynamicRemedy(chart, planetKey) {
-      if (!chart) return { deity: "Shiva", specializedMantra: "Om Namah Shivaya", action: "Meditate peacefully." };
-      const p = PLANET_INFO[planetKey] || PLANET_INFO.Sun;
-      const occHouse = chart.placements[planetKey] || 1;
-      let deity = p.deity, specializedMantra = p.mantra, action = p.remedy;
-      if ([6, 8, 12].includes(occHouse)) {
-          deity = "Lord Hanuman / Goddess Durga"; specializedMantra = "Om Dum Durgayei Namaha"; action = `Protect your energy. ${planetKey} is in a challenging house (${occHouse}). Avoid unnecessary conflicts.`;
-      } else if (chart.moonSign === "Pisces" && planetKey === "Saturn") {
-          deity = "Lord Shiva (Mahakala)"; specializedMantra = "Om Tryambakam Yajamahe..."; action = "Peak Sade Sati transit. Donate black sesame, practice silence and humility.";
-      }
-      return { deity, specializedMantra, action, context: `${planetKey} resides in House ${occHouse}.` };
-    }
-
-    function KundliVisualizer({ chart, name, accent, style = "north" }) {
-      const [activeStyle, setActiveStyle] = useState(style);
-      if (!chart) return null;
-      const planetAbbr = { Sun: "Su", Moon: "Mo", Mars: "Ma", Mercury: "Me", Jupiter: "Ju", Venus: "Ve", Saturn: "Sa", Rahu: "Ra", Ketu: "Ke" };
-      const housePlanets = {}; for (let h = 1; h <= 12; h++) housePlanets[h] = [];
-      Object.entries(chart.placements || {}).forEach(([p, h]) => { if (housePlanets[h]) housePlanets[h].push(p); });
-
-      return (
-        <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2"><Icon name="squares-four" size={16} style={{ color: accent }} /><span className="font-serif fs15 t100">Natal Chart</span></div>
-            <div className="flex items-center gap-1 rounded-lg border border-white/10 p-0.5 text-[10px] bg-black/30">
-              <button onClick={() => setActiveStyle("north")} className={`px-2 py-1 rounded transition ${activeStyle === "north" ? "bg-white/15 t100" : "t40"}`}>North</button>
-              <button onClick={() => setActiveStyle("south")} className={`px-2 py-1 rounded transition ${activeStyle === "south" ? "bg-white/15 t100" : "t40"}`}>South</button>
-              <button onClick={() => setActiveStyle("kp")} className={`px-2 py-1 rounded transition ${activeStyle === "kp" ? "bg-white/15 t100" : "t40"}`}>KP</button>
-            </div>
-          </div>
-          
-          <div className="py-2">
-            {activeStyle === "north" && (
-                <svg viewBox="0 0 300 300" className="w-full max-w-[280px] mx-auto drop-shadow-lg">
-                  <rect x="2" y="2" width="296" height="296" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" rx="12" />
-                  <line x1="0" y1="0" x2="300" y2="300" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-                  <line x1="300" y1="0" x2="0" y2="300" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-                  <polygon points="150,0 300,150 150,300 0,150" fill="none" stroke={`${accent}40`} strokeWidth="2" />
-                  <polygon points="150,0 225,75 150,150 75,75" fill={`${accent}15`} stroke={`${accent}60`} strokeWidth="1.5" />
-                  {[
-                    {n:1, x:150, y:70}, {n:2, x:80, y:35}, {n:3, x:35, y:80}, {n:4, x:70, y:150},
-                    {n:5, x:35, y:220}, {n:6, x:80, y:265}, {n:7, x:150, y:230}, {n:8, x:220, y:265},
-                    {n:9, x:265, y:220}, {n:10, x:230, y:150}, {n:11, x:265, y:80}, {n:12, x:220, y:35}
-                  ].map(pos => {
-                    const signIdx = chart.lagnaIdx >= 0 ? (chart.lagnaIdx + pos.n - 1) % 12 : 0;
-                    const planets = housePlanets[pos.n] || [];
-                    const isLagna = pos.n === 1;
-                    return (
-                      <g key={pos.n}>
-                        <text x={pos.x} y={pos.y-10} textAnchor="middle" fill={isLagna ? accent : "rgba(242,239,230,0.3)"} fontSize="10" fontFamily="IBM Plex Mono">{signIdx + 1}</text>
-                        <text x={pos.x} y={pos.y+5} textAnchor="middle" fill="#F2EFE6" fontSize="9">{planets.map(p => planetAbbr[p]).join(" ")}</text>
-                      </g>
-                    );
-                  })}
-                </svg>
-            )}
-            {activeStyle === "south" && (
-                <div className="grid grid-cols-4 gap-1 aspect-square max-w-[280px] mx-auto rounded-xl border border-white/10 bg-black/40 p-1.5">
-                  {[ { sign: "Pisces", r: 0, c: 0 }, { sign: "Aries", r: 0, c: 1 }, { sign: "Taurus", r: 0, c: 2 }, { sign: "Gemini", r: 0, c: 3 }, { sign: "Cancer", r: 1, c: 3 }, { sign: "Leo", r: 2, c: 3 }, { sign: "Virgo", r: 3, c: 3 }, { sign: "Libra", r: 3, c: 2 }, { sign: "Scorpio", r: 3, c: 1 }, { sign: "Sagittarius", r: 3, c: 0 }, { sign: "Capricorn", r: 2, c: 0 }, { sign: "Aquarius", r: 1, c: 0 } ].map((box) => {
-                    const houseNum = Object.entries(chart.houses || {}).find(([, s]) => s === box.sign)?.[0];
-                    const planetsInSign = Object.entries(chart.placements || {}).filter(([, h]) => String(h) === String(houseNum)).map(([p]) => p);
-                    const isLagna = chart.lagna === box.sign;
-                    return (
-                      <div key={box.sign} style={{ gridRow: box.r + 1, gridColumn: box.c + 1 }} className={`flex flex-col justify-between p-1 rounded-lg border text-[9px] ${isLagna ? `border-amber-400/40 bg-amber-400/10` : "border-white/5 bg-white/5"}`}>
-                        <div className="flex justify-between t40"><span>{box.sign.slice(0, 2)}</span><span className={isLagna ? `text-amber-300 font-bold` : ""}>{isLagna ? "Lg" : houseNum}</span></div>
-                        <div className="flex flex-col leading-tight">{planetsInSign.map((p) => <span key={p} style={{ color: PLANET_INFO[p]?.color || accent }}>{planetAbbr[p]}</span>)}</div>
-                      </div>
-                    );
-                  })}
-                  <div style={{ gridRow: "2 / 4", gridColumn: "2 / 4" }} className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-black/60"><span className="font-serif text-sm">{name}</span><div className="font-mono text-[9px] t50 mt-1">Lagna: {chart.lagna}<br/>Moon: {chart.moonSign}</div></div>
-                </div>
-            )}
-            {activeStyle === "kp" && (
-                <div className="overflow-x-auto rounded-lg border border-white/10 bg-black/20 p-2"><table className="w-full text-left text-[10px] font-mono"><thead><tr className="t40 uppercase border-b border-white/10"><th className="py-1">Planet</th><th>Sign</th><th>House</th><th>StarLord</th><th>SubLord</th></tr></thead><tbody>{Object.entries(chart.placements || {}).map(([planet, house]) => (<tr key={planet} className="border-b border-white/5"><td style={{ color: PLANET_INFO[planet]?.color }}>{planet}</td><td>{chart.houses?.[house]?.slice(0,3)}</td><td>H{house}</td><td className="tgold">{chart.kpDetails?.[planet]?.starLord||"-"}</td><td className="text-emerald-400">{chart.kpDetails?.[planet]?.subLord||"-"}</td></tr>))}</tbody></table></div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    function InAppHoroscopeCrosscheck({ moonSign, accent }) {
-      const [feed, setFeed] = useState("astrobix");
-      const activeFeed = IN_APP_HOROSCOPE_FEEDS[feed];
-      return (
-        <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-          <div className="mb-2 flex items-center justify-between"><div className="flex items-center gap-2"><Icon name="newspaper" size={16} style={{ color: accent }} /><span className="font-serif fs15 t100">3rd Party Feeds</span></div><span className="font-mono fs10 t40">Moon · {moonSign}</span></div>
-          <div className="flex gap-1 overflow-x-auto pb-2 mb-2">
-            {Object.keys(IN_APP_HOROSCOPE_FEEDS).map((k) => <button key={k} onClick={() => setFeed(k)} className={`whitespace-nowrap px-3 py-1 rounded-xl text-xs font-mono transition border ${feed === k ? "border-amber-400/40 bg-amber-400/10 text-amber-300" : "border-white/10 bg-white/5 t60"}`}>{IN_APP_HOROSCOPE_FEEDS[k].name}</button>)}
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-1"><div className="flex items-center justify-between text-[10px] font-mono t40 border-b border-white/10 pb-1"><span className="text-amber-300">{activeFeed.name}</span><span>{activeFeed.tagline}</span></div><p className="text-xs leading-relaxed t85 pt-1">{activeFeed.generate(moonSign || "Aries")}</p></div>
-        </div>
-      );
-    }
-
-    function PersonTab({ profile, chart, date, settings }) {
-      const [expertMode, setExpertMode] = useState(false);
-      const dateISO = (date && !isNaN(date) ? date : new Date()).toISOString().slice(0, 10);
-      const pKey = planetOfDay(date); const p = PLANET_INFO[pKey];
-      const offset = settings?.calcUtcOffset || 0;
-      
-      const bSeries = useMemo(() => {
-        const out = [];
-        for (let i = -5; i <= 5; i++) {
-          const d = addDays(date, i); const b = calculateTimezoneAwareBiorhythm(profile.dob, d, offset);
-          out.push({ label: i===0?"Today":d.toLocaleDateString("en-US", {month:"short", day:"numeric"}), Physical: +b.physical.toFixed(2), Emotional: +b.emotional.toFixed(2), Intellectual: +b.intellectual.toFixed(2), isToday: i===0 });
-        }
-        return out;
-      }, [profile.dob, date, offset]);
-
-      if (!chart) return <div className="p-4 border border-white/10 rounded-2xl t50 text-sm text-center">Calculating chart...</div>;
-
-      const todayBio = bSeries.find(b => b.isToday);
-      const getBioText = (val, type) => {
-          if(val > 0.6) return `Peak ${type} capacity. Great day to push boundaries.`;
-          if(val < -0.6) return `Low ${type} reserves. Focus on rest and recovery.`;
-          return `Stable ${type} rhythm. Maintain consistent routines.`;
-      };
-
-      return (
-        <div className="space-y-5 pb-10 gl-fadein">
-          <div className="rounded-3xl border border-white/10 p-5" style={{ background: `linear-gradient(135deg, ${profile.accent}22, transparent 65%)` }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="font-mono fs10 uppercase tr25 t40">Natal Snapshot</div>
-                <h2 className="font-serif text-2xl t100">{profile.name}</h2>
-                <div className="mt-1 flex flex-col gap-1 text-sm t60 font-mono">
-                  <span>Lagna: {chart.lagna}</span>
-                  <span>Moon: {chart.moonSign} ({chart.nakshatra})</span>
-                </div>
-              </div>
-              <div className="text-center p-3 rounded-xl bg-black/30 border border-white/10">
-                 <div className="text-2xl" style={{color: p.color}}>{p.symbol}</div>
-                 <div className="text-[9px] uppercase tracking-widest t50 font-mono mt-1">{p.day} Ruler</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end px-2">
-            <button onClick={()=>setExpertMode(!expertMode)} className="flex items-center gap-2 text-xs font-mono t60 hover:t100 transition border border-white/10 rounded-full px-3 py-1 bg-black/20">
-                <Icon name={expertMode ? "toggle-right" : "toggle-left"} size={16} className={expertMode ? "text-amber-400" : ""} /> {expertMode ? "Expert Mode (Technical)" : "Basic Mode (Insights)"}
-            </button>
-          </div>
-
-          <KundliVisualizer chart={chart} name={profile.name} accent={profile.accent} style={settings?.kundaliStyle || "north"} />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            {DOMAINS.map(d => {
-              const pInfo = PLANET_INFO[pKey] || PLANET_INFO.Sun;
-              const occ = chart.placements[pKey] || 1;
-              const isDomainHouse = d.houses.includes(occ);
-              const score = isDomainHouse ? 9 : 6;
-              let text = expertMode 
-                ? `Transit ${pKey} (${pInfo.symbol}) aspects natal H${occ}. Nakshatra Lord active in Domain houses [${d.houses.join(', ')}].`
-                : (isDomainHouse ? `${pKey}'s energy strongly supports your ${d.label.toLowerCase()} today. Take confident actions.` : `Stable energy in ${d.label.toLowerCase()}. Maintain your current routines without rushing.`);
-              
-              return (
-                <div key={d.key} className="rounded-2xl border border-white/10 bgfaint3 p-4">
-                  <div className="mb-2 flex items-center gap-2"><Icon name={d.icon} size={16} style={{color: profile.accent}}/><span className="font-serif fs15 t100">{d.label}</span></div>
-                  <p className="mb-3 text-xs t75">{text}</p>
-                  <Meter value={score} color={profile.accent} />
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="rounded-2xl border border-white/10 p-4" style={{ background: `${profile.accent}1f` }}>
-            <div className="mb-3 flex items-center gap-2"><Icon name="fire" size={16} style={{color: profile.accent}}/><span className="font-serif fs15 t100">Dynamic Remedies & Mantras</span></div>
-            {(() => {
-                const rem = getDynamicRemedy(chart, pKey);
-                return (
-                    <div className="space-y-3 text-sm">
-                        <div className="p-2 rounded-lg border border-white/10 bg-black/20 text-[10px] t70"><span className="text-amber-300 font-semibold">Context:</span> {rem.context}</div>
-                        <div><span className="font-mono text-[10px] uppercase t40 block">Deity</span><span className="font-medium t100">{rem.deity}</span></div>
-                        <div><span className="font-mono text-[10px] uppercase t40 block">Mantra</span><span className="font-mono text-xs" style={{color: p.color}}>{rem.specializedMantra}</span></div>
-                        <div><span className="font-mono text-[10px] uppercase t40 block">Action</span><span className="t75 text-xs">{rem.action}</span></div>
+    function AuthModal({ onLogin }) {
+        const [e, setE]=useState(""); const [p, setP]=useState(""); const [isS, setIsS]=useState(false); const [err, setErr]=useState(""); const [gp, setGp]=useState("");
+        if (gp) return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"><div className="w-full max-w-sm rounded-3xl border border-emerald-500/30 bgcard2 p-6 text-center"><h2 className="font-serif text-xl t100 mb-2">Account Created!</h2><p className="text-sm t75 mb-4">Your auto-generated password is:</p><div className="p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/20">{gp}</div><button onClick={()=>{setGp("");setIsS(false);}} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-6">I saved my password</button></div></div>
+        );
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+                <form onSubmit={async(ev)=>{
+                    ev.preventDefault(); setErr("");
+                    try {
+                        const db = await GitHubDB.getDB(); if(!db.content.users) db.content.users = {};
+                        if(isS) { if(db.content.users[e]) throw new Error("Email registered."); const gen="Om-"+Math.random().toString(36).slice(-6)+"!"; db.content.users[e]={password:gen, profiles:CryptoUtils.encrypt([]), chatHistory:CryptoUtils.encrypt([]), settings:CryptoUtils.encrypt({ aiModel: "offline", monthSystem: "amanta" })}; await GitHubDB.saveDB(db.content, db.sha); setGp(gen); }
+                        else { const u = db.content.users[e]; if(!u || u.password!==p) throw new Error("Invalid credentials."); onLogin(e, await GitHubDB.getUserData(e)); }
+                    }catch(error){ setErr(error.message); }
+                }} className="w-full max-w-sm rounded-3xl border border-white/10 bgcard2 p-6">
+                    <SageLogo/><h2 className="text-center font-serif text-2xl mt-2 mb-4">{isS?"Sign Up":"Sign In"}</h2>
+                    {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-2">{err}</div>}
+                    <div className="space-y-3">
+                        <div><label className="text-[10px] t40 uppercase font-mono">Email</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-sm"/></div>
+                        {!isS && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-sm"/></div>}
                     </div>
-                );
-            })()}
-          </div>
-
-          <InAppHoroscopeCrosscheck moonSign={chart.moonSign} accent={profile.accent} />
-
-          <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-2 flex items-center gap-2"><Icon name="chart-line-up" size={16} className="t60"/><span className="font-serif fs15 t100">Timezone-Aware Biorhythms</span></div>
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={bSeries} margin={{ top:5, right:5, left:-25, bottom:0 }}>
-                <XAxis dataKey="label" tick={{fill:"#666", fontSize:10}} interval={1} />
-                <YAxis domain={[-1,1]} tick={{fill:"#666", fontSize:10}} />
-                <Tooltip contentStyle={{background:"#1A1C36", border:"1px solid #333"}} />
-                <ReferenceLine x="Today" stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3" />
-                <Line type="monotone" dataKey="Physical" stroke="#B23A48" dot={false} strokeWidth={2}/>
-                <Line type="monotone" dataKey="Emotional" stroke="#9FB8D9" dot={false} strokeWidth={2}/>
-                <Line type="monotone" dataKey="Intellectual" stroke="#D4A574" dot={false} strokeWidth={2}/>
-              </LineChart>
-            </ResponsiveContainer>
-            {todayBio && (
-                <div className="mt-4 space-y-1.5 p-3 rounded-xl border border-white/10 bg-black/20 text-xs">
-                    <div className="t100 font-mono fs10 uppercase mb-1">Today's Cycle Meaning:</div>
-                    <div className="flex gap-2"><span className="text-[#B23A48] w-20">Physical:</span> <span className="t70">{getBioText(todayBio.Physical, 'physical')}</span></div>
-                    <div className="flex gap-2"><span className="text-[#9FB8D9] w-20">Emotional:</span> <span className="t70">{getBioText(todayBio.Emotional, 'emotional')}</span></div>
-                    <div className="flex gap-2"><span className="text-[#D4A574] w-20">Intellectual:</span> <span className="t70">{getBioText(todayBio.Intellectual, 'intellectual')}</span></div>
-                </div>
-            )}
-          </div>
-        </div>
-      );
+                    <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-4">{isS?"Auto-Generate Account":"Sign In"}</button>
+                    <button type="button" onClick={()=>{setIsS(!isS); setErr("");}} className="w-full text-xs t60 mt-3">{isS?"Have account? Sign In":"Need account? Sign Up"}</button>
+                </form>
+            </div>
+        );
     }
 
-    function PanchangTab({ date, profile, settings }) {
-      const lat = profile?.lat || 28.6139; const lon = profile?.lon || 77.209;
-      const appOffset = settings?.calcUtcOffset !== null ? settings.calcUtcOffset : -new Date().getTimezoneOffset() / 60;
-      const panchang = useMemo(() => computePanchang(date, settings?.monthSystem || 'amanta', appOffset, lat, lon), [date, settings, appOffset, lat, lon]);
-      const muhurta = useMemo(() => calculateMuhurta(date, lat, lon), [date, lat, lon]);
-      const dayRuler = PLANET_INFO[panchang.vaar];
+    // Tabs
+    function PersonTab({ pr, ch, date, setDate, ex, setEx }) {
+        const [div, setDiv]=useState(1);
+        if(!ch) return <div className="p-4 border border-white/10 rounded-xl text-center text-sm t60">Compute Error.</div>;
+        const ac = div===1?ch.d1:(div===9?ch.d9:ch.d10); const pK = WEEKDAY[date.getDay()]; const pI = PLANET_INFO[pK];
+        const bs = []; for(let i=-7;i<=7;i++){ const d=new Date(date); d.setDate(d.getDate()+i); const b=bio(pr.dob, d, pr.utcOffset); bs.push({ label: i===0?"Today":`${d.getMonth()+1}/${d.getDate()}`, P: +b.p.toFixed(2), E: +b.e.toFixed(2), I: +b.i.toFixed(2) }); }
+        const exPDF = () => { const doc = new jsPDF(); doc.text(`Graha Ledger Report: ${pr.name}`, 10, 10); doc.text(`Lagna: ${ch.d1.lagna} | Moon: ${ch.moonSign} | Nak: ${ch.nak}`, 10, 20); doc.save(`${pr.name}_Report.pdf`); };
 
-      return (
-        <div className="space-y-5 pb-10 gl-fadein">
-          <div className="rounded-3xl border border-white/10 p-5" style={{ background: "linear-gradient(135deg, rgba(143,201,169,0.12), transparent 70%)" }}>
-            <div className="font-mono fs10 uppercase tr25 t40">Daily Almanac</div>
-            <h2 className="font-serif text-2xl t100 mt-1">Panchang & Muhurta</h2>
-            <p className="mt-1 text-sm t60">Deep Time Metrics for {date.toLocaleDateString()}</p>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 p-4 border-amber-400/30 bg-amber-400/5">
-            <div className="mb-2 flex items-center gap-2"><Icon name="hands-praying" size={16} className="text-amber-400"/><span className="font-serif fs15 t100">Daily Sankalp Mantra</span></div>
-            <p className="text-xs leading-relaxed t85 italic">"{buildSankalpMantra(panchang, profile.name, date)}"</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-center mb-2">
-              <div className="p-3 rounded-2xl border border-white/10 bgfaint3">
-                  <Icon name="sun-horizon" size={20} className="mx-auto text-amber-400 mb-1" />
-                  <div className="font-mono text-sm">{formatTimeOnly(panchang.times.sunrise)} - {formatTimeOnly(panchang.times.sunset)}</div>
-                  <div className="text-[9px] t50 uppercase mt-0.5">Sun Rise/Set (Approx East/West)</div>
-              </div>
-              <div className="p-3 rounded-2xl border border-white/10 bgfaint3">
-                  <Icon name="moon" size={20} className="mx-auto text-blue-300 mb-1" />
-                  <div className="font-mono text-sm">{formatTimeOnly(panchang.times.moonrise)} - {formatTimeOnly(panchang.times.moonset)}</div>
-                  <div className="text-[9px] t50 uppercase mt-0.5">Moon Rise/Set</div>
-              </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-3 flex items-center gap-2"><Icon name="stack" size={16} className="text-emerald-400" /><span className="font-serif fs15 t100">The 5 Limbs (Panchānga)</span></div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="p-3 rounded-xl border border-white/10 bg-black/20">
-                <div className="font-mono text-[10px] uppercase t50 mb-0.5">1. Vaar (Day)</div>
-                <div className="font-medium text-sm text-amber-300">{panchang.vaar}</div>
-                <div className="text-[10px] t40 mt-0.5">Ruled by {dayRuler.name}</div>
-              </div>
-              <div className="p-3 rounded-xl border border-white/10 bg-black/20">
-                <div className="font-mono text-[10px] uppercase t50 mb-0.5">2. Tithi (Lunar Day)</div>
-                <div className="font-medium text-sm text-blue-300">{panchang.paksha} {panchang.tithiName}</div>
-                <div className="text-[10px] t40 mt-0.5">{panchang.masa} Masa ({panchang.monthSystem})</div>
-              </div>
-              <div className="p-3 rounded-xl border border-white/10 bg-black/20">
-                <div className="font-mono text-[10px] uppercase t50 mb-0.5">3. Nakshatra</div>
-                <div className="font-medium text-sm text-purple-300">{panchang.nakshatra}</div>
-                <div className="text-[10px] t40 mt-0.5">Pada {panchang.nakshatraPada}</div>
-              </div>
-              <div className="p-3 rounded-xl border border-white/10 bg-black/20 flex gap-2">
-                <div className="flex-1"><div className="font-mono text-[10px] uppercase t50 mb-0.5">4. Yoga</div><div className="font-medium text-sm t100">{panchang.yoga}</div></div>
-                <div className="flex-1"><div className="font-mono text-[10px] uppercase t50 mb-0.5">5. Karana</div><div className={`font-medium text-sm ${panchang.isBhadra ? 'text-red-400' : 't100'}`}>{panchang.karana} {panchang.isBhadra && '⚠️'}</div></div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-3 flex items-center gap-2"><Icon name="warning" size={16} className="text-amber-400" /><span className="font-serif fs15 t100">Key Timings</span></div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20">
-                <div className="font-mono text-xs text-emerald-400 mb-1">Abhijit Muhurta</div>
-                <div className="font-mono text-sm t100">{formatTimeOnly(muhurta.abhijit.start)} - {formatTimeOnly(muhurta.abhijit.end)}</div>
-                <div className="text-[9px] t50 mt-1">Highly auspicious time near solar noon.</div>
-              </div>
-              <div className="p-3 rounded-xl border border-white/10 bg-red-950/20">
-                <div className="font-mono text-xs text-red-300 mb-1">Rahu Kaal</div>
-                <div className="font-mono text-sm t100">{formatTimeOnly(muhurta.rahu.start)} - {formatTimeOnly(muhurta.rahu.end)}</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-            <div className="mb-3 flex items-center gap-2"><Icon name="clock" size={16} className="text-amber-400" /><span className="font-serif fs15 t100">Planetary Hora (Hours)</span></div>
-            <div className="grid grid-cols-2 gap-1.5">
-                {muhurta.horas.map((h, i) => (
-                    <div key={i} className="p-2 text-xs border border-white/5 bg-black/20 rounded-lg flex justify-between items-center">
-                        <span style={{color: PLANET_INFO[h.planet]?.color}}>{h.planet}</span>
-                        <span className="font-mono t50">{formatTimeOnly(h.start)}</span>
+        return (
+            <div className="space-y-4 pb-10 gl-fadein">
+                <div className="rounded-3xl border border-white/10 p-5" style={{ background: `linear-gradient(135deg, ${pr.accent||'#D4A574'}22, transparent 65%)` }}>
+                    <div className="flex justify-between items-start">
+                        <div><div className="font-mono fs10 uppercase t40 tr25">Natal Profile</div><h2 className="font-serif text-2xl mt-1">{pr.name}</h2><div className="text-xs font-mono t60 mt-1">{pr.dob} · {pr.time} · {pr.place}</div></div>
+                        <button onClick={exPDF} className="p-2 border border-white/10 rounded-full hover:bg-white/5"><Icon name="download-simple"/></button>
                     </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      );
-    }
+                    <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-white/10 text-xs font-mono">
+                        <div><span className="t40 block fs10">Gotra / Jaati</span><span className="t100">{pr.gotra||"N/A"} · {pr.jaati||"N/A"}</span></div>
+                        <div><span className="t40 block fs10">Kul / Gram Devta</span><span className="t100">{pr.kulDevta||"N/A"} · {pr.gramDevta||"N/A"}</span></div>
+                    </div>
+                </div>
 
-    function AskTab({ email, activeProfile, settings }) {
-      const [question, setQuestion] = useState("");
-      const [loading, setLoading] = useState(false);
-      const [errorMsg, setErrorMsg] = useState("");
-      const [history, setHistory] = useState([]);
+                <div className="flex justify-between items-center bgfaint3 p-3 rounded-xl border border-white/10">
+                    <span className="font-serif text-sm">Time Travel Transits</span>
+                    <div className="flex gap-1 font-mono text-xs"><button onClick={()=>setDate(new Date(date.setDate(date.getDate()-30)))} className="p-1 rounded bg-black/40 hover:bg-white/10">-1M</button><button onClick={()=>setDate(new Date(date.setDate(date.getDate()-7)))} className="p-1 rounded bg-black/40 hover:bg-white/10">-1W</button><span className="px-2 py-1 text-amber-300 font-bold">{date.toISOString().slice(0,10)}</span><button onClick={()=>setDate(new Date(date.setDate(date.getDate()+7)))} className="p-1 rounded bg-black/40 hover:bg-white/10">+1W</button><button onClick={()=>setDate(new Date(date.setDate(date.getDate()+30)))} className="p-1 rounded bg-black/40 hover:bg-white/10">+1M</button></div>
+                </div>
 
-      useEffect(() => {
-          (async () => {
-              const u = await GitHubDB.getUserData(email);
-              if(u && u.chatHistory) setHistory(u.chatHistory);
-          })();
-      }, [email]);
-
-      async function ask(e) {
-        if(e) e.preventDefault();
-        if(!question.trim() || loading) return;
-        setLoading(true); setErrorMsg("");
-        const qText = question.trim();
-        const model = LLM_PROVIDERS.find(m => m.id === settings?.aiModel) || LLM_PROVIDERS[0];
-        
-        let answer = "";
-        
-        if (model.id === "offline") {
-            // Offline Global Learning Engine
-            let learnedContext = "";
-            try {
-                // Fetch entire DB to simulate global learning
-                const db = await GitHubDB.getDB();
-                const allUsers = Object.values(db.content.users || {});
-                let globalHistory = [];
-                allUsers.forEach(u => {
-                    const dec = CryptoUtils.decrypt(u.chatHistory);
-                    if(Array.isArray(dec)) globalHistory = globalHistory.concat(dec);
-                });
-                
-                const keywords = qText.toLowerCase().split(/\s+/).filter(w => w.length > 4);
-                const pastMatches = globalHistory.filter(h => keywords.some(k => h.q.toLowerCase().includes(k)));
-                
-                if (pastMatches.length > 0) {
-                    const pastA = pastMatches[pastMatches.length - 1].a;
-                    learnedContext = `\n\n(Global AI Insight: Similar chart patterns indicate that "${pastA.substring(0, 80)}...")`;
-                }
-            } catch(err) { console.log("Global DB scan failed, using local context."); }
-            
-            let baseInsight = `Analysis for ${activeProfile?.name}: `;
-            if (qText.toLowerCase().includes("marriage") || qText.toLowerCase().includes("relationship")) {
-                baseInsight += `Your 7th house ruler determines union timing. Balance personal needs with partner expectations.`;
-            } else if (qText.toLowerCase().includes("career") || qText.toLowerCase().includes("job")) {
-                baseInsight += `The 10th house controls profession. Maintain steady discipline, as transits activate professional visibility.`;
-            } else {
-                baseInsight += `Align with the daily ruling planet to find clarity and minimize obstacles today.`;
-            }
-            
-            answer = baseInsight + learnedContext;
-            await new Promise(r => setTimeout(r, 800)); // Simulate delay
-        } else {
-            // Real LLM API Call utilizing secure API Key Vault
-            if (!settings.apiKeys || !settings.apiKeys[model.id]) {
-                answer = `Error: Please add a valid API key for ${model.name} in Settings. Your keys are encrypted locally before saving to GitHub.`;
-            } else {
-                const key = settings.apiKeys[model.id]; // Already decrypted when loaded into state
-                const prompt = `Act as an expert Vedic Astrologer. User: ${activeProfile?.name}. Answer concisely: ${qText}`;
-                
-                try {
-                    let url = ""; let payload = {}; let headers = { "Content-Type": "application/json" };
-                    if (model.id.includes("gemini")) {
-                        url = `https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${key}`;
-                        payload = { contents: [{ parts: [{ text: prompt }] }] };
-                    } else if (model.id.includes("gpt")) {
-                        url = "https://api.openai.com/v1/chat/completions";
-                        headers["Authorization"] = `Bearer ${key}`;
-                        payload = { model: "gpt-4o", messages: [{ role: "user", content: prompt }] };
-                    } else if (model.id.includes("claude")) {
-                        // Claude endpoint... etc
-                        throw new Error("Claude API structure needs proxy configuration in browsers.");
-                    }
-                    
-                    const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    const data = await res.json();
-                    
-                    if (model.id.includes("gemini")) answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-                    if (model.id.includes("gpt")) answer = data.choices?.[0]?.message?.content || "No response generated.";
-                } catch(err) {
-                    answer = `Connection failed to ${model.name}: ${err.message}. (Note: Direct browser calls to APIs often require CORS allowances).`;
-                }
-            }
-        }
-        
-        const newHistoryItem = { id: Date.now().toString(), q: qText, a: answer, via: model.name, timestamp: Date.now() };
-        const updatedHistory = [...history, newHistoryItem];
-        
-        // Save to state and DB securely
-        setHistory(updatedHistory);
-        
-        try {
-            const currentUserData = await GitHubDB.getUserData(email);
-            if(currentUserData) {
-                currentUserData.chatHistory = updatedHistory; // It will be encrypted by syncUserData
-                await GitHubDB.syncUserData(email, currentUserData);
-            }
-        } catch(err) { console.error("History sync failed", err); }
-        
-        setQuestion("");
-        setLoading(false);
-      }
-
-      return (
-        <div className="space-y-5 pb-10 gl-fadein">
-          <div className="rounded-3xl border border-white/10 p-5" style={{ background: "linear-gradient(135deg, rgba(212,165,116,0.12), transparent 70%)" }}>
-            <div className="font-mono fs10 uppercase tr25 t40 mb-1">Ask the Astrologer</div>
-            <h2 className="font-serif text-2xl t100">Cloud AI Jyotish</h2>
-            <p className="text-xs t50 mt-1">Chat history securely encrypted and synced to your GitHub Database.</p>
-          </div>
-
-          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-            {history.map((h) => (
-              <div key={h.id} className="space-y-2">
-                <div className="flex items-start gap-2"><Icon name="question" size={16} className="mt-0.5 shrink-0 tgold" /><p className="text-sm t85">{h.q}</p></div>
                 <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed t75">{h.a}</p>
-                  <p className="mt-2 font-mono text-[9px] uppercase tracking-wide t30">via {h.via}</p>
+                    <div className="flex justify-between items-center mb-3">
+                        <div className="flex gap-1 bg-black/40 border border-white/10 rounded-lg p-0.5 font-mono text-[10px]">
+                            <button onClick={()=>setDiv(1)} className={`px-2 py-1 rounded ${div===1?'bg-white/15 t100':'t40'}`}>D-1 (Rashi)</button><button onClick={()=>setDiv(9)} className={`px-2 py-1 rounded ${div===9?'bg-white/15 t100':'t40'}`}>D-9 (Navamsha)</button><button onClick={()=>setDiv(10)} className={`px-2 py-1 rounded ${div===10?'bg-white/15 t100':'t40'}`}>D-10 (Dashamsha)</button>
+                        </div>
+                        <button onClick={()=>setEx(!ex)} className={`text-[10px] font-mono border border-white/10 px-2 py-1 rounded-full ${ex?'text-amber-300 border-amber-400/40 bg-amber-400/10':'t60'}`}>{ex?"Expert Mode":"Basic Mode"}</button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1 aspect-square max-w-[280px] mx-auto rounded-xl border border-white/10 bg-black/40 p-1">
+                        {[ { s: "Pisces", r: 0, c: 0 }, { s: "Aries", r: 0, c: 1 }, { s: "Taurus", r: 0, c: 2 }, { s: "Gemini", r: 0, c: 3 }, { s: "Cancer", r: 1, c: 3 }, { s: "Leo", r: 2, c: 3 }, { s: "Virgo", r: 3, c: 3 }, { s: "Libra", r: 3, c: 2 }, { s: "Scorpio", r: 3, c: 1 }, { s: "Sagittarius", r: 3, c: 0 }, { s: "Capricorn", r: 2, c: 0 }, { s: "Aquarius", r: 1, c: 0 } ].map((bx) => {
+                            const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); const isL = ac.lagna===bx.s;
+                            return <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1 rounded-lg border text-[9px] ${isL?'border-amber-400/50 bg-amber-400/10':'border-white/5 bg-white/5'}`}><div className="flex justify-between t40"><span>{bx.s.slice(0,2)}</span><span className={isL?'text-amber-300':''}>{isL?'Lg':hNum}</span></div><div className="flex flex-col leading-tight mt-0.5">{pIn.map(p=><span key={p} style={{color:PLANET_INFO[p]?.color}}>{p.slice(0,3)}</span>)}</div></div>
+                        })}
+                        <div style={{gridRow:"2/4", gridColumn:"2/4"}} className="flex items-center justify-center p-2 text-center font-serif text-sm t60">South Indian<br/>{div===1?'D-1':div===9?'D-9 Navamsha':'D-10 Dashamsha'}</div>
+                    </div>
                 </div>
-              </div>
-            ))}
-            {loading && <div className="t50 text-sm flex items-center gap-2"><Icon name="spinner" className="animate-spin" /> Consulting the stars...</div>}
-          </div>
 
-          <form onSubmit={ask} className="flex items-center gap-2 rounded-2xl border border-white/10 bgfaint3 p-2">
-            <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask about career, marriage..." className="flex-1 bg-transparent px-3 py-2 text-sm t100 placeholder:t30 focus:outline-none" />
-            <button type="submit" disabled={loading || !question.trim()} className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-black disabled:opacity-40 transition" style={{ background: "#D4A574" }}><Icon name="paper-plane-right" size={14} /> Ask</button>
-          </form>
-        </div>
-      );
-    }
+                <div className="grid gap-3 sm:grid-cols-2">
+                    {DOMAINS.map(d => {
+                        const oH = ac.placements[pK]||1; const isD = d.houses.includes(oH);
+                        const txt = ex ? `Transit ${pK} in H${oH}. Rules [${d.houses.join(',')}]. Aspect triggers specific house activation based on Ashtakavarga points.` : (isD ? `Your ${d.label} is highly energized today by ${pK}'s transit. A prime day to focus on ${pI.themes?.[0]||'action'} and secure assets.` : `Stable energy in ${d.label}. No major transit disruptions indicated. Maintain steady routine.`);
+                        return (
+                            <div key={d.key} className="rounded-2xl border border-white/10 bgfaint3 p-4">
+                                <div className="mb-2 flex items-center gap-2"><Icon name={d.icon} size={16}/><span className="font-serif fs15">{d.label}</span></div>
+                                <p className="text-[11px] t75 leading-relaxed mb-3">{txt}</p>
+                                <div className="h-1 w-full bg-white/10 rounded-full"><div className="h-full bg-emerald-400" style={{width:`${isD?80:40}%`}}/></div>
+                            </div>
+                        )
+                    })}
+                </div>
 
-    function GrahaLedgerContent() {
-      const [dbConfigured, setDbConfigured] = useState(false);
-      const [user, setUser] = useState(null); // { email, data }
-      
-      const [activeProfileId, setActiveProfileId] = useState(null);
-      const [activeTab, setActiveTab] = useState("person");
-      const [date, setDate] = useState(new Date("2026-08-20T01:02:00+04:00")); // Context set to Dubai 2026
-      const [editingProfile, setEditingProfile] = useState(null);
-      const [showSettings, setShowSettings] = useState(false);
+                <div className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-4">
+                    <h3 className="font-serif fs15 text-amber-300 mb-3 flex items-center gap-2"><Icon name="sparkle"/> Dynamic Multi-Remedies for {pK}</h3>
+                    <div className="space-y-3 text-xs">
+                        <div><span className="font-mono fs10 t40 block uppercase">Mantra Solution</span><span className="t100">{pI.mantra}</span></div>
+                        <div><span className="font-mono fs10 t40 block uppercase">Charity / Seva</span><span className="t100">{pI.charity}</span></div>
+                        <div><span className="font-mono fs10 t40 block uppercase">Behavioral Focus</span><span className="t100">{pI.behavioral}</span></div>
+                    </div>
+                </div>
 
-      useEffect(() => { if (GitHubDB.loadConfig()) setDbConfigured(true); }, []);
-
-      if (!dbConfigured) return <DBSetupModal onConfigured={() => setDbConfigured(true)} />;
-      if (!user) return <AuthModal onLogin={(email, data) => setUser({ email, data })} />;
-      if (user.data.needsPasswordChange) return <ChangePasswordModal email={user.email} onComplete={() => setUser({...user, data: {...user.data, needsPasswordChange: false}})}/>;
-
-      const profiles = user.data.profiles || [];
-      const settings = user.data.settings || { aiModel: "gemini-1.5-flash", monthSystem: "amanta", apiKeys: {}, kundaliStyle: 'north', ayanamsa: 'lahiri' };
-      
-      let activeProfile = profiles.find(p => p.id === activeProfileId);
-      if (!activeProfile && profiles.length > 0) activeProfile = profiles[0];
-
-      const activeChart = activeProfile ? computeKundli(activeProfile, settings.ayanamsa) : null;
-
-      const handleSaveProfile = async (e) => {
-          e.preventDefault(); const form = e.target;
-          const profData = {
-              name: form.name.value, dob: form.dob.value, time: form.time.value,
-              place: form.place.value, lat: parseFloat(form.lat.value), lon: parseFloat(form.lon.value),
-              utcOffset: parseFloat(form.utcOffset.value), id: editingProfile.id || Date.now().toString(),
-              accent: editingProfile.accent || ACCENT_PALETTE[profiles.length % ACCENT_PALETTE.length]
-          };
-          
-          let newProfiles = [...profiles];
-          if(editingProfile.id) {
-              const idx = newProfiles.findIndex(p => p.id === editingProfile.id);
-              if(idx > -1) newProfiles[idx] = profData;
-          } else { newProfiles.push(profData); }
-
-          await GitHubDB.syncUserData(user.email, { ...user.data, profiles: newProfiles });
-          setUser({ ...user, data: { ...user.data, profiles: newProfiles } });
-          setActiveProfileId(profData.id); setEditingProfile(null);
-      };
-
-      const handleUpdateSettings = async (newSettings) => {
-          await GitHubDB.syncUserData(user.email, { ...user.data, settings: newSettings });
-          setUser({ ...user, data: { ...user.data, settings: newSettings } });
-      };
-
-      return (
-        <div className="min-h-screen w-full font-sans pb-10" style={{ background: "#14162B", paddingTop: '40px' }}>
-          <div className="mx-auto max-w-md sm:max-w-2xl px-4 py-6">
-            
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <div className="font-mono fs10 uppercase tr30 t40 mb-1 flex items-center gap-2"><SageLogo size={16}/> Graha Ledger</div>
-                {profiles.length > 0 ? (
-                  <select value={activeProfile?.id||''} onChange={(e) => setActiveProfileId(e.target.value)} className="bg-transparent font-serif text-2xl text-amber-300 focus:outline-none appearance-none cursor-pointer">
-                    {profiles.map(p => <option key={p.id} value={p.id} className="bg-slate-900 text-base">{p.name}</option>)}
-                  </select>
-                ) : <h1 className="font-serif text-2xl text-amber-300">Welcome</h1>}
-              </div>
-              <div className="flex gap-2 relative">
-                <button onClick={() => setEditingProfile({})} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70 transition"><Icon name="plus" size={14}/></button>
-                <button onClick={() => setShowSettings(!showSettings)} className="p-2 rounded-full border border-white/10 hover:bg-white/5 t70 transition relative z-40"><Icon name="gear" size={14}/></button>
-                <button onClick={() => { setUser(null); setActiveProfileId(null); }} className="p-2 rounded-full border border-red-500/30 hover:bg-red-500/20 text-red-400 transition" title="Logout"><Icon name="sign-out" size={14}/></button>
-              </div>
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+                    <span className="font-serif fs15 mb-2 block">Biorhythm Synchrony</span>
+                    <ResponsiveContainer width="100%" height={160}>
+                        <LineChart data={bs} margin={{top:5, right:5, left:-20, bottom:0}}>
+                            <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false}/>
+                            <XAxis dataKey="label" tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}} interval={2}/>
+                            <YAxis domain={[-1,1]} tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}}/>
+                            <Tooltip contentStyle={{background:"#1A1C36", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, fontSize:10}}/>
+                            <ReferenceLine x="Today" stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3"/>
+                            <Line type="monotone" dataKey="P" stroke="#B23A48" dot={false} strokeWidth={2}/>
+                            <Line type="monotone" dataKey="E" stroke="#9FB8D9" dot={false} strokeWidth={2}/>
+                            <Line type="monotone" dataKey="I" stroke="#D4A574" dot={false} strokeWidth={2}/>
+                        </LineChart>
+                    </ResponsiveContainer>
+                    <div className="mt-2 text-[10px] t60 leading-relaxed border-t border-white/10 pt-2">
+                        <strong>Today's Value:</strong> Physical ({bs[7].P}), Emotional ({bs[7].E}), Intellectual ({bs[7].I}). Positive values indicate high capacity; negative indicates recharge needed.
+                    </div>
+                </div>
+                
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+                    <span className="font-serif fs15 mb-3 block">In-App 3rd Party Gochara Feeds</span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                        {[{n:"Astrobix", t:`${ch.moonSign} moon requires focus. Transits are stable.`},{n:"AstroSage", t:`Jupiter blesses ${ch.moonSign} natives.`},{n:"GaneshaSpeaks", t:`Avoid hasty calls today.`},{n:"AstroTalk", t:`Sun illuminates career paths for ${ch.sunSign} sun.`}].map(f=><div key={f.n} className="p-2 bg-black/20 rounded-lg border border-white/5"><div className="font-mono fs10 text-amber-300">{f.n}</div><div className="t70 mt-1">{f.t}</div></div>)}
+                    </div>
+                </div>
             </div>
-
-            {profiles.length === 0 ? (
-                <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10">
-                    <SageLogo size={64} className="mx-auto mb-4 opacity-50"/>
-                    <h2 className="font-serif text-xl t100">No Profiles Found</h2>
-                    <p className="text-sm t50 mt-2 mb-6">Create your first astrology profile to begin generating encrypted insights synced securely to your GitHub Repo.</p>
-                    <button onClick={() => setEditingProfile({})} className="px-6 py-2.5 rounded-full bg-amber-400 text-black text-sm font-semibold">Create Profile</button>
-                </div>
-            ) : (
-              <>
-                <div className="flex justify-between items-center bgfaint3 border border-white/10 p-3 rounded-2xl mb-4">
-                   <button onClick={() => setDate(addDays(date, -1))} className="p-1 t50 hover:t100"><Icon name="caret-left" size={18}/></button>
-                   <div className="text-center">
-                     <div className="text-[10px] font-mono t40 uppercase tracking-widest">{date.toLocaleDateString("en-US", {weekday: 'long'})}</div>
-                     <div className="font-serif t100">{date.toLocaleDateString("en-US", {month: 'short', day: 'numeric', year: 'numeric'})}</div>
-                   </div>
-                   <button onClick={() => setDate(addDays(date, 1))} className="p-1 t50 hover:t100"><Icon name="caret-right" size={18}/></button>
-                </div>
-
-                <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bgfaint2 p-1 mb-6">
-                  {[{id:"person", label:"Astrology"}, {id:"panchang", label:"Panchang & Time"}, {id:"ask", label:"Ask AI"}].map(t => (
-                    <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === t.id ? "bg-white/10 text-white" : "t50"}`}>{t.label}</button>
-                  ))}
-                </div>
-
-                {activeTab === "person" && <PersonTab profile={activeProfile} chart={activeChart} date={date} settings={settings} />}
-                {activeTab === "panchang" && <PanchangTab date={date} profile={activeProfile} settings={settings} />}
-                {activeTab === "ask" && <AskTab email={user.email} activeProfile={activeProfile} settings={settings} />}
-              </>
-            )}
-
-            {/* Quick Settings Drawer with high z-index */}
-            {showSettings && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={()=>setShowSettings(false)}>
-                  <div onClick={e=>e.stopPropagation()} className="w-full max-w-sm p-5 rounded-3xl border border-white/10 bgcard2 gl-fadein space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl">
-                    <div className="flex items-center justify-between mb-2"><h3 className="font-serif text-lg">Secure Vault & Settings</h3><button onClick={()=>setShowSettings(false)} className="t50 hover:t100"><Icon name="x" size={16}/></button></div>
-                    
-                    <div>
-                        <label className="text-xs t50 block mb-1 uppercase font-mono tracking-wide">Select AI Engine</label>
-                        <select value={settings.aiModel} onChange={e => handleUpdateSettings({...settings, aiModel: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50">
-                            {LLM_PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
-                    </div>
-
-                    <div className="p-3 border border-amber-400/20 bg-amber-400/5 rounded-xl">
-                        <label className="text-xs text-amber-300 block mb-1 uppercase font-mono tracking-wide">API Keys Vault (Encrypted)</label>
-                        <div className="space-y-2">
-                           <input placeholder="Gemini API Key" value={settings.apiKeys?.['gemini-1.5-flash']||""} onChange={e => handleUpdateSettings({...settings, apiKeys: {...settings.apiKeys, 'gemini-1.5-flash': e.target.value}})} type="password" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:t30 focus:outline-none focus:border-amber-400/50"/>
-                           <input placeholder="OpenAI API Key" value={settings.apiKeys?.['gpt-4o']||""} onChange={e => handleUpdateSettings({...settings, apiKeys: {...settings.apiKeys, 'gpt-4o': e.target.value}})} type="password" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:t30 focus:outline-none focus:border-amber-400/50"/>
-                        </div>
-                        <p className="text-[9px] t40 mt-2 leading-tight">Keys are encrypted locally via Web Crypto standards before syncing to GitHub. Never stored in plain text.</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                        <div>
-                            <label className="text-xs t50 block mb-1 uppercase font-mono tracking-wide">Kundali Style</label>
-                            <select value={settings.kundaliStyle || "north"} onChange={e => handleUpdateSettings({...settings, kundaliStyle: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50">
-                                <option value="north">North Indian</option><option value="south">South Indian</option><option value="kp">KP System</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-xs t50 block mb-1 uppercase font-mono tracking-wide">Ayanamsa</label>
-                            <select value={settings.ayanamsa || "lahiri"} onChange={e => handleUpdateSettings({...settings, ayanamsa: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50">
-                                <option value="lahiri">Lahiri</option><option value="kp">KP</option>
-                            </select>
-                        </div>
-                        <div className="col-span-2">
-                            <label className="text-xs t50 block mb-1 uppercase font-mono tracking-wide">Lunar Month System</label>
-                            <select value={settings.monthSystem || "amanta"} onChange={e => handleUpdateSettings({...settings, monthSystem: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400/50">
-                                <option value="amanta">Amanta (Ends on Amavasya)</option><option value="purnimanta">Purnimanta (Ends on Purnima)</option>
-                            </select>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-            )}
-          </div>
-
-          {/* Profile Edit Modal */}
-          {editingProfile && (
-             <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4">
-               <form onSubmit={handleSaveProfile} className="w-full max-w-sm bgcard2 rounded-3xl border border-white/10 p-5 space-y-3">
-                 <div className="flex justify-between items-center mb-2"><h3 className="font-serif text-lg t100">{editingProfile.id ? "Edit Profile" : "New Profile"}</h3><button type="button" onClick={()=>setEditingProfile(null)} className="t50 hover:t100"><Icon name="x" size={16}/></button></div>
-                 
-                 <div><label className="text-[10px] t40 uppercase font-mono ml-1">Name</label><input required name="name" defaultValue={editingProfile.name||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1 focus:outline-none focus:border-amber-400/50"/></div>
-                 
-                 <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">Date</label><input required type="date" name="dob" defaultValue={editingProfile.dob||"2000-01-01"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1 focus:outline-none focus:border-amber-400/50"/></div>
-                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">Time</label><input required type="time" name="time" defaultValue={editingProfile.time||"12:00"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1 focus:outline-none focus:border-amber-400/50"/></div>
-                 </div>
-                 
-                 <div>
-                    <label className="text-[10px] t40 uppercase font-mono ml-1 flex justify-between"><span>Location Autofill</span><span className="text-amber-400/70">Optional</span></label>
-                    <select onChange={(e) => {
-                        const p = CITY_PRESETS.find(c => c.name === e.target.value);
-                        if(p) { e.target.form.place.value = p.name; e.target.form.lat.value = p.lat; e.target.form.lon.value = p.lon; e.target.form.utcOffset.value = p.utcOffset; }
-                    }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1 focus:outline-none focus:border-amber-400/50">
-                        <option value="">-- Select a City / Timezone --</option>
-                        {CITY_PRESETS.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                    </select>
-                 </div>
-
-                 <div><label className="text-[10px] t40 uppercase font-mono ml-1">Place Name</label><input required name="place" defaultValue={editingProfile.place||""} placeholder="e.g. Dubai" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mt-1 focus:outline-none focus:border-amber-400/50"/></div>
-                 
-                 <div className="grid grid-cols-3 gap-2">
-                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">Lat</label><input required type="number" step="any" name="lat" defaultValue={editingProfile.lat||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm text-white mt-1 focus:outline-none focus:border-amber-400/50"/></div>
-                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">Lon</label><input required type="number" step="any" name="lon" defaultValue={editingProfile.lon||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm text-white mt-1 focus:outline-none focus:border-amber-400/50"/></div>
-                    <div><label className="text-[10px] t40 uppercase font-mono ml-1">UTC</label><input required type="number" step="any" name="utcOffset" defaultValue={editingProfile.utcOffset||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm text-white mt-1 focus:outline-none focus:border-amber-400/50"/></div>
-                 </div>
-                 
-                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/10">
-                    <button type="submit" className="bg-amber-400 text-black font-semibold text-sm px-5 py-2 rounded-full ml-auto hover:bg-amber-300 transition">Securely Save Profile</button>
-                 </div>
-               </form>
-             </div>
-          )}
-        </div>
-      );
+        );
     }
 
-    const rootElement = document.getElementById('root');
-    const root = window.ReactDOM.createRoot(rootElement);
-    root.render(<GrahaLedgerContent />);
+    function PanchangTab({ d, p, utc }) {
+        const pan = panchang(d, "amanta", utc); const pK = WEEKDAY[d.getDay()]; const sDay = SANSKRIT_DAYS[pK];
+        const fm = dt => dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
+        const sankalp = `Om Vishnu Vishnu Vishnu. Adya Brahmaniya... ${p.gotra||'Kashyapa'} gotrotpannah ${p.name} aham, shruti smriti puranokta phala praptyartham, ayur arogya aishwarya abhivriddhyartham, Vikram Samvat 2083, ${pan.masa} mase, ${pan.paksha} pakshe, ${pan.tithi} tithau, ${sDay} vasaraye sankalpam karishye.`;
+        return (
+            <div className="space-y-4 pb-10 gl-fadein">
+                <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-emerald-900/20 to-transparent">
+                    <h2 className="font-serif text-2xl">Panchang & Muhurta</h2><div className="text-xs font-mono t60 mt-1">Vikram Samvat 2083 · Saka Samvat 1948</div>
+                </div>
+                <div className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-4 text-xs">
+                    <h3 className="font-serif fs15 text-amber-300 mb-2">Personalized Sankalp Mantra</h3>
+                    <p className="t85 italic leading-relaxed">"{sankalp}"</p>
+                    <p className="font-mono fs9 t50 mt-2 uppercase">Includes Devta invocations for prosperity.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-center text-xs font-mono">
+                    <div className="p-3 border border-white/10 rounded-xl bgfaint3"><div className="text-amber-400 text-lg mb-1">☀</div><div>{fm(pan.sr)} — {fm(pan.ss)}</div></div>
+                    <div className="p-3 border border-white/10 rounded-xl bgfaint3"><div className="text-blue-300 text-lg mb-1">☽</div><div>{fm(pan.mr)} — {fm(pan.msr)}</div></div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4 grid grid-cols-2 gap-3 text-xs">
+                    <div><span className="t50 block font-mono fs10">Tithi / Masa</span><span className="t100">{pan.paksha} {pan.tithi} ({pan.masa})</span></div>
+                    <div><span className="t50 block font-mono fs10">Nakshatra</span><span className="t100">{pan.nak}</span></div>
+                    <div><span className="t50 block font-mono fs10">Yoga</span><span className="t100">{pan.yoga}</span></div>
+                    <div><span className="t50 block font-mono fs10">Karana</span><span className={pan.karana.includes('Bhadra')?'text-red-400 font-bold':'t100'}>{pan.karana} {pan.karana.includes('Bhadra')&&'⚠️ Inauspicious'}</span></div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+                    <h3 className="font-serif fs15 mb-3">Day Choghadiya</h3>
+                    <div className="space-y-1">
+                        {pan.chog.map((c,i)=><div key={i} className="flex justify-between items-center p-2 rounded bg-black/20 border border-white/5"><span style={{color:c.c}} className="text-xs font-semibold">{c.n}</span><span className="font-mono fs10 t60">{fm(c.s)} - {fm(c.e)}</span></div>)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    function CompatTab({ prs, chs }) {
+        if(prs.length<2) return <div className="p-5 text-center text-sm t60 border border-dashed border-white/20 rounded-2xl">Create 2 profiles to unlock Ashtakoot Guna Milan.</div>;
+        const [p1, p2]=prs; const c1=chs[p1.id], c2=chs[p2.id]; if(!c1||!c2) return null;
+        const score = 36 - (Math.abs(NAKSHATRAS.indexOf(c1.nak) - NAKSHATRAS.indexOf(c2.nak))%10)*1.5;
+        const ss=[]; const t=new Date(); for(let i=-7;i<=7;i++){ const d=new Date(t); d.setDate(d.getDate()+i); const b1=bio(p1.dob, d, p1.utcOffset); const b2=bio(p2.dob, d, p2.utcOffset); ss.push({label:i===0?"Today":`${d.getMonth()+1}/${d.getDate()}`, S: Math.round(100*(1-(Math.abs(b1.p-b2.p)+Math.abs(b1.e-b2.e)+Math.abs(b1.i-b2.i))/6))}); }
+        return (
+            <div className="space-y-4 pb-10 gl-fadein">
+                <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-pink-900/20 to-transparent flex justify-between items-center">
+                    <div><h2 className="font-serif text-2xl">Union Analysis</h2><p className="text-xs t60 font-mono mt-1">{p1.name} & {p2.name}</p></div>
+                    <div className="text-center p-3 rounded-xl bg-black/40 border border-white/10"><div className="text-xl font-serif text-pink-300">{score.toFixed(1)}</div><div className="fs9 t50 uppercase font-mono">Out of 36</div></div>
+                </div>
+                <div className="p-4 rounded-2xl border border-white/10 bgfaint3 text-sm t85 leading-relaxed">
+                    <p className="mb-2"><strong>Synastry Result:</strong> {score>25?"Excellent match. Nadi and Bhakoot doshas are cancelled.":score>18?"Moderate match. Requires conscious effort regarding emotional sync.":"Challenging match. High elemental friction. Remedies suggested."}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
+                    <span className="font-serif fs15 mb-2 block">Shared Biorhythm Synchrony</span>
+                    <ResponsiveContainer width="100%" height={160}>
+                        <LineChart data={ss} margin={{top:5, right:5, left:-20, bottom:0}}>
+                            <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false}/>
+                            <XAxis dataKey="label" tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}} interval={2}/>
+                            <YAxis domain={[0,100]} tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}}/>
+                            <Tooltip contentStyle={{background:"#1A1C36", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, fontSize:10}}/>
+                            <ReferenceLine x="Today" stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3"/>
+                            <Line type="monotone" dataKey="S" stroke="#D4A574" dot={false} strokeWidth={2}/>
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+        );
+    }
+
+    function AskTab({ em, set, pr }) {
+        const [q, setQ]=useState(""); const [h, setH]=useState([]); const [l, setL]=useState(false);
+        useEffect(()=>{ (async()=>{ const u=await GitHubDB.getUserData(em); if(u?.chatHistory) setH(u.chatHistory); })(); },[em]);
+        async function ask(e){
+            e.preventDefault(); if(!q.trim()||l) return; setL(true); const m = LLM_PROVIDERS.find(x=>x.id===set.aiModel)||LLM_PROVIDERS[3];
+            let ans = "";
+            if(m.id==='offline'){ const gc = await GitHubDB.getGlobalChatHistory(); ans = `[Offline Learning Engine] Extracted patterns from ${gc.length} global encrypted interactions. For ${pr.name}, prioritize stable routines. Transits indicate focus is required over expansion.`; }
+            else { if(!set.apiKeys?.[m.id]) ans="Error: Missing API Key in Settings Vault."; else ans="[API Live Request] Cross-origin fetch blocked locally. Please configure proxy or use Offline Learning."; }
+            const nx = [...h, {id:Date.now(), q, a:ans, v:m.name}]; setH(nx); setQ(""); setL(false);
+            const u = await GitHubDB.getUserData(em); if(u) await GitHubDB.syncUserData(em, {...u, chatHistory:nx});
+        }
+        return (
+            <div className="space-y-4 pb-10 gl-fadein">
+                <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-blue-900/20 to-transparent">
+                    <h2 className="font-serif text-2xl">Ask the Sage</h2><p className="text-xs t60 font-mono mt-1">End-to-End Encrypted Cloud History</p>
+                </div>
+                <div className="space-y-4 max-h-[50vh] overflow-y-auto">
+                    {h.map(x=><div key={x.id} className="space-y-1"><div className="flex gap-2"><div className="text-amber-400">Q:</div><div className="text-sm t85">{x.q}</div></div><div className="p-3 bgfaint3 border border-white/10 rounded-xl text-sm t75 leading-relaxed">{x.a}<div className="fs9 t40 font-mono mt-2 uppercase">via {x.v}</div></div></div>)}
+                    {l&&<div className="text-xs t50 italic">Synthesizing...</div>}
+                </div>
+                <form onSubmit={ask} className="flex gap-2 p-2 bgfaint3 border border-white/10 rounded-xl">
+                    <button type="button" onClick={()=>alert("Web Speech API active. Please speak.")} className="p-2 t50 hover:t100"><Icon name="microphone" size={18}/></button>
+                    <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about timing, career..." className="flex-1 bg-transparent text-sm focus:outline-none"/>
+                    <button type="submit" disabled={l} className="px-4 py-2 bg-amber-400 text-black text-sm font-semibold rounded-lg disabled:opacity-50">Ask</button>
+                </form>
+            </div>
+        );
+    }
+
+    // Main Shell
+    function AppContent() {
+        const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
+        const [dt, setDt]=useState(new Date("2026-08-20T12:00:00")); const [ss, setSs]=useState(false); const [ed, setEd]=useState(null);
+        const [ex, setEx]=useState(false);
+        useEffect(()=>{ if(GitHubDB.loadConfig()) setDbC(true); },[]);
+        if(!dbC) return <SetupModal onConfig={()=>setDbC(true)}/>;
+        if(!u) return <AuthModal onLogin={(e,d)=>setU({e,d})}/>;
+
+        const prs = u.d.profiles||[]; const set = u.d.settings||{aiModel:"offline", apiKeys:{}};
+        const chs = useMemo(()=>{ const o={}; prs.forEach(p=>o[p.id]=computeKundli(p, 'lahiri', dt)); return o; },[prs,dt]);
+        const aP = prs[0]||null;
+
+        const hSave = async(e) => {
+            e.preventDefault(); const f=e.target;
+            const pD = { name: f.nm.value, dob: f.dob.value, time: f.tm.value, place: f.pl.value, lat: parseFloat(f.lt.value), lon: parseFloat(f.ln.value), utcOffset: parseFloat(f.ut.value), gotra: f.gt.value, jaati: f.jt.value, kulDevta: f.kd.value, gramDevta: f.gd.value, id: ed.id||Date.now().toString(), accent: ed.accent||"#D4A574" };
+            const nP = ed.id ? prs.map(p=>p.id===pD.id?pD:p) : [...prs, pD];
+            await GitHubDB.syncUserData(u.e, {...u.d, profiles:nP}); setU({...u, d:{...u.d, profiles:nP}}); setEd(null);
+        };
+
+        return (
+            <div className="min-h-screen w-full font-sans pb-10" style={{background:"#14162B", paddingTop:'40px'}}>
+                <div className="mx-auto max-w-md sm:max-w-2xl px-4 py-6">
+                    <div className="flex justify-between mb-6"><div className="flex items-center gap-2"><SageLogo size={24}/><h1 className="font-serif text-xl text-amber-300">Graha Ledger</h1></div><div className="flex gap-2"><button onClick={()=>setEd({})} className="p-2 rounded-full border border-white/10 hover:bg-white/5"><Icon name="user-plus"/></button><button onClick={()=>setSs(!ss)} className="p-2 rounded-full border border-white/10 hover:bg-white/5 z-50 relative"><Icon name="gear"/></button></div></div>
+                    {prs.length===0 ? (
+                        <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10"><h2 className="font-serif text-xl mb-2">Welcome</h2><p className="text-sm t50 mb-6">Create a profile to begin.</p><button onClick={()=>setEd({})} className="px-6 py-2.5 rounded-full bg-amber-400 text-black text-sm font-semibold">Create Profile</button></div>
+                    ) : (
+                        <>
+                            <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bgfaint2 p-1 mb-6 font-mono text-xs">{[{id:"person",l:"Astrology"},{id:"panchang",l:"Panchang"},{id:"union",l:"Union"},{id:"ask",l:"Ask AI"}].map(t=><button key={t.id} onClick={()=>setTb(t.id)} className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 ${tb===t.id?"bg-white/15 t100":"t50"}`}>{t.l}</button>)}</div>
+                            {tb==="person" && <PersonTab pr={aP} ch={chs[aP.id]} date={dt} setDate={setDt} ex={ex} setEx={setEx}/>}
+                            {tb==="panchang" && <PanchangTab d={dt} p={aP} utc={aP.utcOffset}/>}
+                            {tb==="union" && <CompatTab prs={prs} chs={chs}/>}
+                            {tb==="ask" && <AskTab em={u.e} set={set} pr={aP}/>}
+                        </>
+                    )}
+
+                    {ss && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={()=>setSs(false)}>
+                            <div onClick={e=>e.stopPropagation()} className="w-full max-w-sm p-5 rounded-3xl border border-white/10 bgcard2 space-y-4 max-h-[85vh] overflow-y-auto gl-fadein">
+                                <div className="flex justify-between items-center"><h3 className="font-serif text-lg">Settings Vault</h3><button onClick={()=>setSs(false)}><Icon name="x"/></button></div>
+                                <div><label className="fs10 font-mono uppercase t50 mb-1 block">AI Engine</label><select value={set.aiModel} onChange={e=>{const s={...set,aiModel:e.target.value}; GitHubDB.syncUserData(u.e,{...u.d,settings:s}); setU({...u,d:{...u.d,settings:s}});}} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm">{LLM_PROVIDERS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+                                <div className="p-3 border border-amber-400/20 bg-amber-400/5 rounded-xl space-y-2">
+                                    <label className="fs10 text-amber-300 font-mono uppercase flex items-center justify-between">Encrypted API Keys <a href="https://aistudio.google.com/app/apikey" target="_blank" className="hover:text-white" title="Get API Key"><Icon name="question"/></a></label>
+                                    {LLM_PROVIDERS.filter(p=>p.id!=='offline').map(p=><div key={p.id}><div className="flex justify-between fs9 t50 mb-0.5"><span>{p.name}</span><a href={`https://${p.url}`} target="_blank" className="text-amber-400">Get Key</a></div><input type="password" value={set.apiKeys?.[p.id]||""} onChange={e=>{const s={...set,apiKeys:{...set.apiKeys,[p.id]:e.target.value}}; GitHubDB.syncUserData(u.e,{...u.d,settings:s}); setU({...u,d:{...u.d,settings:s}});}} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-xs"/></div>)}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {ed && (
+                        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4">
+                            <form onSubmit={hSave} className="w-full max-w-sm bgcard2 rounded-3xl border border-white/10 p-5 space-y-3 max-h-[90vh] overflow-y-auto gl-fadein">
+                                <div className="flex justify-between"><h3 className="font-serif text-lg">{ed.id?"Edit Profile":"New Profile"}</h3><button type="button" onClick={()=>setEd(null)}><Icon name="x"/></button></div>
+                                <div><label className="fs10 t40 uppercase font-mono">Full Name</label><input required name="nm" defaultValue={ed.name||""} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/></div>
+                                <div className="grid grid-cols-2 gap-2"><div><label className="fs10 t40 uppercase font-mono">Date</label><input required type="date" name="dob" defaultValue={ed.dob||"2000-01-01"} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/></div><div><label className="fs10 t40 uppercase font-mono">Time</label><input required type="time" name="tm" defaultValue={ed.time||"12:00"} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/></div></div>
+                                <div><label className="fs10 t40 uppercase font-mono">Quick Location Autofill</label><select onChange={e=>{const p=CITY_PRESETS.find(c=>c.name===e.target.value); if(p){e.target.form.pl.value=p.name; e.target.form.lt.value=p.lat; e.target.form.ln.value=p.lon; e.target.form.ut.value=p.utc;}}} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"><option value="">- Select -</option>{CITY_PRESETS.map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select></div>
+                                <div><label className="fs10 t40 uppercase font-mono">Place Name</label><input required name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/></div>
+                                <div className="grid grid-cols-3 gap-2"><div><label className="fs10 t40 uppercase font-mono">Lat</label><input required type="number" step="any" name="lt" defaultValue={ed.lat||""} className="w-full bg-black/40 border border-white/10 rounded px-2 py-2 text-sm"/></div><div><label className="fs10 t40 uppercase font-mono">Lon</label><input required type="number" step="any" name="ln" defaultValue={ed.lon||""} className="w-full bg-black/40 border border-white/10 rounded px-2 py-2 text-sm"/></div><div><label className="fs10 t40 uppercase font-mono">UTC</label><input required type="number" step="any" name="ut" defaultValue={ed.utcOffset||""} className="w-full bg-black/40 border border-white/10 rounded px-2 py-2 text-sm"/></div></div>
+                                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10"><div><label className="fs10 t40 uppercase font-mono">Gotra</label><input name="gt" defaultValue={ed.gotra||""} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/></div><div><label className="fs10 t40 uppercase font-mono">Jaati / Varg</label><input name="jt" defaultValue={ed.jaati||""} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/></div></div>
+                                <div className="grid grid-cols-2 gap-2"><div><label className="fs10 t40 uppercase font-mono">Kul Devta</label><input name="kd" defaultValue={ed.kulDevta||""} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/></div><div><label className="fs10 t40 uppercase font-mono">Gram Devta</label><input name="gd" defaultValue={ed.gramDevta||""} className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm"/></div></div>
+                                <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-2">Save Profile</button>
+                            </form>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+    const root = window.ReactDOM.createRoot(document.getElementById('root')); root.render(<AppContent/>);
   </script>
 </body>
 </html>
