@@ -3,7 +3,19 @@
     "dsupercooldude@gmail.com": {
       "password": "D3ep@k8927",
       "needsPasswordChange": false,
-      "profiles": [],
+      "profiles": [
+        {
+          "name": "Girish Vyas",
+          "dob": "1988-07-02",
+          "time": "04:28",
+          "place": "Phalodi, Rajasthan",
+          "lat": 27.13,
+          "lon": 72.37,
+          "utcOffset": 5.5,
+          "id": "1787171430782",
+          "accent": "#8FB2D9"
+        }
+      ],
       "chatHistory": [],
       "settings": {
         "aiModel": "gemini-1.5-flash",
