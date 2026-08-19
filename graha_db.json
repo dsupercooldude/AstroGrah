@@ -1,0 +1,14 @@
+{
+  "users": {
+    "dsupercooldude@gmail.com": {
+      "password": "Astro-x7p3tx!",
+      "needsPasswordChange": true,
+      "profiles": [],
+      "chatHistory": [],
+      "settings": {
+        "aiModel": "gemini-1.5-flash",
+        "monthSystem": "amanta"
+      }
+    }
+  }
+}
