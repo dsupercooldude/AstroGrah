@@ -14,7 +14,6 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-  <!-- USING BABEL FOR IN-BROWSER JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -53,7 +52,16 @@
 </head>
 <body>
 
-  <!-- CUSTOM UI PROXY FOR TRANSLATION (Keeps Google's ugly UI hidden) -->
+  <!-- NATIVE BOOTLOADER / FALLBACK ERROR (Prevents Blank Screens) -->
+  <div id="bootloader" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center;">
+      <div style="background: #1A1C36; border: 1px solid rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; max-width: 400px;">
+          <h2 style="font-family: serif; color: #D4A574; font-size: 24px; margin-bottom: 10px;">Graha Ledger Loading...</h2>
+          <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 20px;">If this screen does not disappear, your browser or network has blocked critical CDN scripts (React/Babel).</p>
+          <button onclick="localStorage.clear(); window.location.reload();" style="background: #D4A574; color: #14162B; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">Hard Reset Cache</button>
+      </div>
+  </div>
+
+  <!-- CUSTOM UI PROXY FOR TRANSLATION -->
   <select class="custom-lang-selector" onchange="triggerGoogleTranslate(this.value)">
     <option value="en">English</option>
     <option value="ar">Arabic</option>
@@ -94,7 +102,6 @@
             selectElement.value = langCode;
             selectElement.dispatchEvent(new Event('change'));
         } else {
-             // Fallback if google script hasn't loaded fully yet.
             setTimeout(() => triggerGoogleTranslate(langCode), 500);
         }
     }
@@ -103,11 +110,19 @@
 
   <!-- REACT APPLICATION LOGIC -->
   <script type="text/babel">
-    const { useState, useEffect, useMemo, Component, Fragment } = window.React;
-    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } = window.Recharts;
-    const { jsPDF } = window.jspdf;
+    // Hide Bootloader immediately when script starts executing
+    document.getElementById('bootloader').style.display = 'none';
 
-    // 1. FATAL ERROR BOUNDARY (Prevents Blank Screens)
+    // SAFE DESTRUCTURING (Prevents fatal crashes if CDNs fail to load)
+    const React = window.React || {};
+    const { useState, useEffect, useMemo, Component, Fragment } = React;
+    
+    const Recharts = window.Recharts || {};
+    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } = Recharts;
+    
+    const jsPDF = window.jspdf ? window.jspdf.jsPDF : null;
+
+    // 1. FATAL ERROR BOUNDARY
     class ErrorBoundary extends Component {
         constructor(props) { super(props); this.state = { hasError: false, error: null }; }
         static getDerivedStateFromError(error) { return { hasError: true, error }; }
@@ -137,20 +152,13 @@
       </svg>
     );
 
-    // 2. SECURE CRYPTO (Fixed Unicode Corruption)
+    // 2. SECURE CRYPTO (Unicode Safe)
     const CryptoUtils = {
         b64EncodeUnicode: (str) => {
-             // Safe Base64 encoding for Unicode
-            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-                function toSolidBytes(match, p1) {
-                    return String.fromCharCode('0x' + p1);
-            }));
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) { return String.fromCharCode('0x' + p1); }));
         },
         b64DecodeUnicode: (str) => {
-            // Safe Base64 decoding for Unicode
-            return decodeURIComponent(atob(str).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
+            return decodeURIComponent(atob(str).split('').map(function(c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join(''));
         },
         encrypt: (data) => {
             if (!data) return data;
@@ -164,16 +172,14 @@
                 const dec = CryptoUtils.b64DecodeUnicode(b64);
                 let res = ''; for(let i=0; i<dec.length; i++) res += String.fromCharCode(dec.charCodeAt(i) ^ "SAGE2026".charCodeAt(i % 8));
                 try { return JSON.parse(res); } catch(e) { return res; }
-            } catch(e) { return b64; } // Return raw if decryption fails (fallback for old data)
+            } catch(e) { return b64; }
         },
         hashPassword: async (str) => {
-             // Fallback hashing if crypto.subtle is unavailable (e.g. running on local file:// without HTTPS)
              const fallbackHash = (s) => {
                 let h = 0;
                 for(let i = 0; i < s.length; i++) { h = Math.imul(31, h) + s.charCodeAt(i) | 0; }
                 return "hash_" + Math.abs(h).toString(16);
              }
-
             try {
                 if (!window.crypto || !window.crypto.subtle) return fallbackHash(str);
                 const buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
@@ -184,7 +190,7 @@
         }
     };
 
-    // 3. DATABASE ADAPTER (With Safe Creation)
+    // 3. DATABASE ADAPTER
     const DB_FILE_NAME = 'graha_db_v1.20.json';
     
     const AppDB = {
@@ -193,6 +199,10 @@
           this.config = { owner, repo, token }; 
           try { localStorage.setItem('gh_db_config', JSON.stringify(this.config)); localStorage.setItem('gh_use_local','false'); } catch(e){}
           this.useLocal = false;
+      },
+      clearConfig() {
+          this.config = null;
+          try { localStorage.removeItem('gh_db_config'); localStorage.removeItem('gh_use_local'); } catch(e){}
       },
       loadConfig() { 
           try {
@@ -211,9 +221,10 @@
         const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
         
         if (!res.ok) {
-            // CRITICAL: Handle 404 (file doesn't exist yet). Return null to signify creation needed.
             if (res.status === 404 && method === 'GET') return null; 
-            throw new Error(`GitHub Error: ${res.status} ${res.statusText}`);
+            if (res.status === 401) throw new Error("401"); // Unauthorized
+            if (res.status === 404) throw new Error("404"); // Repo not found
+            throw new Error(`GitHub Error: ${res.status}`);
         }
         return await res.json();
       },
@@ -238,7 +249,6 @@
           const db = await this.getDB(); 
           if(!db.content.users || !db.content.users[email]) return null;
           const user = db.content.users[email];
-          // Provide defaults for missing encrypted fields during migration
           return { 
               ...user, 
               profiles: CryptoUtils.decrypt(user.profiles) || [], 
@@ -259,7 +269,7 @@
       }
     };
 
-    // 4. ASTROLOGY MATH ENGINE (Highly Compressed)
+    // 4. ASTROLOGY MATH ENGINE
     const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
     const NAKSHATRAS = ["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
     const LUNAR_MASAS = ["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashvin","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
@@ -269,15 +279,15 @@
     const SANSKRIT_DAYS = { Sun: "Ravi", Moon: "Soma", Mars: "Mangala", Mercury: "Budha", Jupiter: "Brihaspati", Venus: "Shukra", Saturn: "Shani" };
 
     const PLANET_INFO = {
-      Sun: { symbol: "☉", color: "#E8A33D", mantras: ["Om Suryaya Namah", "Aditya Hrudayam"], charity: "Donate wheat.", action: "Offer Arghya at dawn." },
-      Moon: { symbol: "☽", color: "#9FB8D9", mantras: ["Om Chandraya Namah", "Om Namah Shivaya"], charity: "Donate milk.", action: "Evening meditation." },
-      Mars: { symbol: "♂", color: "#B23A48", mantras: ["Om Bhaumaya Namah", "Hanuman Chalisa"], charity: "Donate red lentils.", action: "Physical exercise." },
-      Mercury: { symbol: "☿", color: "#7C9473", mantras: ["Om Budhaya Namah", "Vishnu Sahasranama"], charity: "Feed spinach to cows.", action: "Clear communication." },
-      Jupiter: { symbol: "♃", color: "#D4A574", mantras: ["Om Gurave Namah", "Dakshinamurthy Stotram"], charity: "Donate turmeric.", action: "Seek guidance." },
-      Venus: { symbol: "♀", color: "#C98CA7", mantras: ["Om Shukraya Namah", "Sri Suktam"], charity: "Donate white clothing.", action: "Artistic harmony." },
-      Saturn: { symbol: "♄", color: "#8288A0", mantras: ["Om Shanaye Namah", "Shani Chalisa"], charity: "Donate black sesame.", action: "Light mustard-oil lamp." },
-      Rahu: { symbol: "☊", color: "#A872B2", mantras: ["Om Rahave Namah", "Durga Saptashati"], charity: "Feed street dogs.", action: "Clean digital clutter." },
-      Ketu: { symbol: "☋", color: "#72AAB2", mantras: ["Om Ketave Namah", "Ganesha Atharvashirsha"], charity: "Donate to ascetics.", action: "Practice detachment." }
+      Sun: { symbol: "☉", color: "#E8A33D", mantras: ["Om Hraam Hreem Hroom Sah Suryaya Namah", "Aditya Hrudayam"], charity: "Donate wheat or copper.", action: "Offer Arghya (water) at dawn." },
+      Moon: { symbol: "☽", color: "#9FB8D9", mantras: ["Om Shraam Shreem Shroom Sah Chandraya Namah", "Om Namah Shivaya"], charity: "Donate milk or silver.", action: "Evening meditation by water." },
+      Mars: { symbol: "♂", color: "#B23A48", mantras: ["Om Kraam Kreem Kroom Sah Bhaumaya Namah", "Hanuman Chalisa"], charity: "Donate red lentils.", action: "Physical exercise & martial arts." },
+      Mercury: { symbol: "☿", color: "#7C9473", mantras: ["Om Braam Breem Broom Sah Budhaya Namah", "Vishnu Sahasranama"], charity: "Feed spinach to cows.", action: "Clear communication & writing." },
+      Jupiter: { symbol: "♃", color: "#D4A574", mantras: ["Om Graam Greem Groom Sah Gurave Namah", "Dakshinamurthy Stotram"], charity: "Donate turmeric or yellow sweets.", action: "Seek guidance from a mentor." },
+      Venus: { symbol: "♀", color: "#C98CA7", mantras: ["Om Draam Dreem Droom Sah Shukraya Namah", "Sri Suktam"], charity: "Donate white clothing.", action: "Artistic creation & harmony." },
+      Saturn: { symbol: "♄", color: "#8288A0", mantras: ["Om Praam Preem Proom Sah Shanaye Namah", "Shani Chalisa"], charity: "Donate black sesame or iron.", action: "Light mustard-oil lamp at dusk." },
+      Rahu: { symbol: "☊", color: "#A872B2", mantras: ["Om Bhraam Bhreem Bhroom Sah Rahave Namah", "Durga Saptashati"], charity: "Feed street dogs.", action: "Clean digital & physical clutter." },
+      Ketu: { symbol: "☋", color: "#72AAB2", mantras: ["Om Sraam Sreem Sroom Sah Ketave Namah", "Ganesha Atharvashirsha"], charity: "Donate to ascetics/monks.", action: "Practice detachment & silence." }
     };
 
     const CITY_PRESETS = [ 
@@ -362,7 +372,7 @@
         return { p: Math.sin(2*Math.PI*eD/23), e: Math.sin(2*Math.PI*eD/28), i: Math.sin(2*Math.PI*eD/33) };
     }
 
-    // 5. ISOLATED AUTH COMPONENTS (NO BLANK SCREENS)
+    // 5. ISOLATED AUTH COMPONENTS
     function SetupModal({ onConfig }) {
         const [o, setO]=useState(""); const [r, setR]=useState("AstroGrah"); const [t, setT]=useState(""); const [err, setErr]=useState("");
         return (
@@ -374,19 +384,18 @@
                             await AppDB.callApi('GET',''); 
                             onConfig(); 
                         }catch(er){ 
-                            setErr("Token Invalid or Repo Missing."); 
-                            localStorage.removeItem('gh_db_config'); 
+                            if(er.message==="404") { onConfig(); } // 404 is good, means we can create it later
+                            else { setErr("Token Invalid or Repo Missing."); AppDB.clearConfig(); }
                         } 
                     }}>
                         <SageLogo/><h2 className="text-center font-serif text-xl mt-2 mb-4">Secure Cloud Setup</h2>
-                        <p className="text-xs t60 text-center mb-4">Connect your GitHub Personal Access Token.</p>
                         {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-2 rounded">{err}</div>}
                         <div className="space-y-3">
-                            <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
-                            <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
-                            <div><label className="text-[10px] t40 uppercase font-mono">Access Token (PAT)</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">Access Token (PAT)</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
                         </div>
-                        <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-4 hover:bg-amber-300 transition">Connect Database</button>
+                        <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-4">Connect Database</button>
                         <button type="button" onClick={()=>{ AppDB.enableLocal(); onConfig(); }} className="w-full text-xs t60 mt-3 hover:text-white transition">Skip Cloud - Use Local Storage</button>
                     </form>
                 </div>
@@ -394,7 +403,7 @@
         );
     }
 
-    function AuthModal({ onLogin }) {
+    function AuthModal({ onLogin, onReset }) {
         const [mode, setMode] = useState("login"); 
         const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState("");
         
@@ -415,7 +424,10 @@
                     const parsedData = await AppDB.getUserData(e);
                     onLogin(e, parsedData); 
                 }
-            } catch(error) { setErr(error.message); }
+            } catch(error) { 
+                setErr(error.message); 
+                if(error.message==="401" || error.message==="404") setErr("Database authentication failed. Please reset connection.");
+            }
         };
 
         if (mode === "forgot") return (
@@ -425,7 +437,7 @@
                     <h2 className="font-serif text-xl t100 mb-2">Serverless Reset</h2>
                     <p className="text-sm t70 leading-relaxed mb-4">Because this app is decentralized, automatic email resets are not possible.</p>
                     <p className="text-xs t50 mb-6 bg-black/30 p-3 rounded-lg border border-white/5">To reset your account, open your GitHub repo, locate <span className="font-mono text-amber-300">{DB_FILE_NAME}</span>, and manually delete your user entry.</p>
-                    <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-white/10 t100 hover:bg-white/20 transition">Go Back</button>
+                    <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-white/10 t100">Go Back</button>
                 </div>
             </div>
         );
@@ -437,25 +449,26 @@
                     <p className="text-sm t75 mb-4">Your auto-generated secure password is:</p>
                     <div className="p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/20 tracking-wider text-lg">{gp}</div>
                     <p className="text-[10px] t50 mt-3">Please save this. You will be prompted to change it immediately after login.</p>
-                    <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-6 hover:bg-emerald-400 transition">I saved my password</button>
+                    <button onClick={()=>setMode("login")} className="w-full rounded-full py-2.5 text-sm font-semibold bg-emerald-500 text-black mt-6">I saved my password</button>
                 </div>
             </div>
         );
         
         return (
-            <div className="min-h-screen flex items-center justify-center p-4">
-                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 gl-fadein shadow-2xl border border-white/10">
+            <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 gl-fadein shadow-2xl border border-white/10 relative">
+                    <button onClick={onReset} className="absolute top-4 right-4 text-[10px] font-mono text-red-400 border border-red-400/30 px-2 py-1 rounded">Reset Config</button>
                     <form onSubmit={handleSubmit}>
                         <SageLogo/><h2 className="text-center font-serif text-2xl mt-2 mb-4">{mode==="signup"?"Sign Up":"Sign In"}</h2>
                         {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-3 rounded">{err}</div>}
                         <div className="space-y-3">
-                            <div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
-                            {mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>}
+                            <div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
+                            {mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>}
                         </div>
-                        <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-amber-300 transition">{mode==="signup"?"Auto-Generate Account":"Sign In"}</button>
+                        <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-5">{mode==="signup"?"Auto-Generate Account":"Sign In"}</button>
                         <div className="flex justify-between items-center mt-4">
-                            <button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white transition">{mode==="signup"?"Back to Sign In":"Quick Sign Up"}</button>
-                            {mode==="login" && <button type="button" onClick={()=>setMode("forgot")} className="text-[11px] t60 hover:text-white transition">Forgot Password?</button>}
+                            <button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white">{mode==="signup"?"Back to Sign In":"Quick Sign Up"}</button>
+                            {mode==="login" && <button type="button" onClick={()=>setMode("forgot")} className="text-[11px] t60 hover:text-white">Forgot Password?</button>}
                         </div>
                     </form>
                 </div>
@@ -480,8 +493,8 @@
                     }}>
                         <h2 className="font-serif text-xl t100 mb-2">Action Required</h2>
                         <p className="text-xs t60 mb-4 leading-relaxed">Please change your auto-generated password to a secure personal password.</p>
-                        <div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Custom Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400/50 text-white"/></div>
-                        <button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-emerald-400 transition">{loading ? "Saving Hash..." : "Save New Password"}</button>
+                        <div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Custom Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
+                        <button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-2.5 mt-5">{loading ? "Saving Hash..." : "Save New Password"}</button>
                     </form>
                 </div>
             </div>
@@ -498,7 +511,10 @@
         const bs = []; for(let i=-7;i<=7;i++){ const d=new Date(date); d.setDate(d.getDate()+i); const b=bio(pr.dob, d, pr.utcOffset); bs.push({ label: i===0?"Today":`${d.getMonth()+1}/${d.getDate()}`, P: +b.p.toFixed(2), E: +b.e.toFixed(2), I: +b.i.toFixed(2) }); }
         const bT = bs[7];
 
-        const exPDF = () => { const doc = new jsPDF(); doc.text(`Graha Ledger: ${pr.name}`, 10, 10); doc.text(`Lagna: ${ch.d1.lagna} | Moon: ${ch.moonSign}`, 10, 20); doc.save(`${pr.name}_Report.pdf`); };
+        const exPDF = () => { 
+            if(!jsPDF) return alert("PDF generator unavailable offline.");
+            const doc = new jsPDF(); doc.text(`Graha Ledger: ${pr.name}`, 10, 10); doc.text(`Lagna: ${ch.d1.lagna} | Moon: ${ch.moonSign}`, 10, 20); doc.save(`${pr.name}_Report.pdf`); 
+        };
 
         return (
             <div className="space-y-4 pb-10 gl-fadein">
@@ -581,18 +597,22 @@
 
                 <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
                     <div className="flex justify-between items-center mb-1"><span className="font-serif text-[15px] block">Biorhythm Synchrony</span><span className="font-mono text-[9px] t40 bg-white/5 px-2 py-1 rounded">UTC{pr.utcOffset} Synced</span></div>
-                    <ResponsiveContainer width="100%" height={160}>
-                        <LineChart data={bs} margin={{top:5, right:5, left:-20, bottom:0}}>
-                            <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false}/>
-                            <XAxis dataKey="label" tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}} interval={2}/>
-                            <YAxis domain={[-1,1]} tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}}/>
-                            <Tooltip contentStyle={{background:"#1A1C36", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, fontSize:10}}/>
-                            <ReferenceLine x="Today" stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3"/>
-                            <Line type="monotone" dataKey="P" stroke="#B23A48" dot={false} strokeWidth={2}/>
-                            <Line type="monotone" dataKey="E" stroke="#9FB8D9" dot={false} strokeWidth={2}/>
-                            <Line type="monotone" dataKey="I" stroke="#D4A574" dot={false} strokeWidth={2}/>
-                        </LineChart>
-                    </ResponsiveContainer>
+                    
+                    {LineChart ? (
+                        <ResponsiveContainer width="100%" height={160}>
+                            <LineChart data={bs} margin={{top:5, right:5, left:-20, bottom:0}}>
+                                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false}/>
+                                <XAxis dataKey="label" tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}} interval={2}/>
+                                <YAxis domain={[-1,1]} tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}}/>
+                                <Tooltip contentStyle={{background:"#1A1C36", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, fontSize:10}}/>
+                                <ReferenceLine x="Today" stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3"/>
+                                <Line type="monotone" dataKey="P" stroke="#B23A48" dot={false} strokeWidth={2}/>
+                                <Line type="monotone" dataKey="E" stroke="#9FB8D9" dot={false} strokeWidth={2}/>
+                                <Line type="monotone" dataKey="I" stroke="#D4A574" dot={false} strokeWidth={2}/>
+                            </LineChart>
+                        </ResponsiveContainer>
+                    ) : <div className="p-4 text-xs t50 text-center">Chart library failed to load from CDN.</div>}
+
                     <div className="mt-4 p-3 bg-black/20 rounded-xl border border-white/5 text-[11px] leading-relaxed t85">
                         <strong className="text-white block mb-1">Today's Real-Time Status:</strong> 
                         <span className="text-[#B23A48]">Physical ({bT.P}):</span> {(bT.P > 0 ? "High stamina. Excellent for hard work and exercise." : "Low energy phase. Prioritize rest and avoid overexertion.")} <br/>
@@ -633,7 +653,7 @@
                     <div className="p-2 bg-black/20 rounded border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">2. Vaar</span><span className="t100 font-medium">{d.toLocaleDateString('en-US',{weekday:'long'})}</span></div>
                     <div className="p-2 bg-black/20 rounded border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">3. Nakshatra</span><span className="t100 font-medium">{pan.nak}</span></div>
                     <div className="p-2 bg-black/20 rounded border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">4. Yoga</span><span className="t100 font-medium">{pan.yoga}</span></div>
-                    <div className="col-span-2 p-2 bg-black/20 rounded border border-white/5 flex justify-between items-center"><span className="t50 font-mono text-[9px] uppercase">5. Karana</span><span className={`font-medium ${pan.karana.includes('Bhadra')?'text-red-400':'t100'}`}>{pan.karana} {pan.karana.includes('Bhadra')&&'⚠️ Inauspicious'}</span></div>
+                    <div className="col-span-2 p-2 bg-black/20 rounded border border-white/5 flex justify-between items-center"><span className="t50 font-mono text-[9px] uppercase">5. Karana</span><span className={pan.karana.includes('Bhadra')?'text-red-400 font-medium':'t100 font-medium'}>{pan.karana} {pan.karana.includes('Bhadra')?'⚠️ Inauspicious':''}</span></div>
                 </div>
                 <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
                     <h3 className="font-serif text-[15px] mb-3">Muhurta Windows</h3>
@@ -685,15 +705,26 @@
 
     function AskTab({ em, set, pr, ch }) {
         const [q, setQ]=useState(""); const [h, setH]=useState([]); const [l, setL]=useState(false);
-        useEffect(()=>{ (async()=>{ const u = await AppDB.getUserData(em); if(u?.chatHistory) setH(u.chatHistory); })(); },[em]);
+        useEffect(()=>{ 
+            let isMounted = true;
+            const loadH = async () => {
+                try {
+                    const u = await AppDB.getUserData(em); 
+                    if(isMounted && u && u.chatHistory) setH(u.chatHistory);
+                } catch(e){}
+            };
+            loadH();
+            return () => { isMounted = false };
+        },[em]);
         
         async function ask(e){
             e.preventDefault(); if(!q.trim()||l) return; setL(true); 
             let ans = "";
             if(set.aiModel==='offline'){ 
-                ans = `[Offline Learning Engine] Synthesizing past global queries. Based on ${pr?.name||'User'}'s ${ch?.moonSign||'Aries'} Moon: Focus is required over expansion today. Trust intuition.`; 
+                const context = h.slice(-3).map(x=>x.q).join(" ");
+                ans = `[Offline Engine] Synthesizing context: "${context}". Based on ${pr?.name||'User'}'s ${ch?.moonSign||'Aries'} Moon: Focus is required over expansion today. Trust intuition over logic.`; 
             } else { 
-                if(!set.apiKeys?.[set.aiModel]) ans=`Error: Missing API Key in Settings Vault.`; 
+                if(!set.apiKeys || !set.apiKeys[set.aiModel]) ans=`Error: Missing API Key in Settings Vault.`; 
                 else {
                     try {
                         const payload = { contents: [{ parts: [{ text: `Act as a Jyotish astrologer for ${pr?.name||'User'} (${ch?.moonSign||'Aries'} Moon). Answer: ${q}` }] }] };
@@ -704,7 +735,10 @@
                 }
             }
             const nx = [...h, {id:Date.now(), q, a:ans, v:set.aiModel}]; setH(nx); setQ(""); setL(false);
-            const u = await AppDB.getUserData(em); if(u) await AppDB.syncUserData(em, {...u, chatHistory:nx});
+            try {
+                const u = await AppDB.getUserData(em); 
+                if(u) await AppDB.syncUserData(em, {...u, chatHistory:nx});
+            } catch(er){}
         }
 
         return (
@@ -725,18 +759,19 @@
         );
     }
 
-    // 7. MAIN RENDERER (BULLETPROOF INIT)
+    // 7. MAIN RENDERER
     function AppContent() {
         const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
         const [dt, setDt]=useState(new Date()); const [ss, setSs]=useState(false); const [ed, setEd]=useState(null);
 
-        // Synchronous check to prevent race condition blank screen
         useEffect(()=>{ 
             if(AppDB.loadConfig()) setDbC(true); 
         },[]);
 
+        const resetConfig = () => { AppDB.clearConfig(); setDbC(false); setU(null); };
+
         if(!dbC) return <SetupModal onConfig={()=>setDbC(true)}/>;
-        if(!u) return <AuthModal onLogin={(e,d)=>setU({e,d})}/>;
+        if(!u) return <AuthModal onLogin={(e,d)=>setU({e,d})} onReset={resetConfig}/>;
         if(u?.d?.requiresPasswordChange) return <ForcePasswordChange email={u.e} onComplete={() => setU({...u, d: {...u.d, requiresPasswordChange: false}})} />;
 
         const prs = u?.d?.profiles||[]; 
@@ -757,7 +792,7 @@
         };
 
         return (
-            <div className="min-h-screen w-full font-sans pb-10">
+            <div className="min-h-screen w-full font-sans pb-10 relative">
                 <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
                     <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-32">
                         <div className="flex items-center gap-3">
@@ -770,6 +805,7 @@
                         <div className="flex items-center gap-2">
                             <button onClick={()=>setEd({})} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition"><Icon name="user-plus" size={18}/></button>
                             <button onClick={()=>setSs(true)} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition"><Icon name="gear" size={18}/></button>
+                            <button onClick={resetConfig} title="Logout" className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition"><Icon name="sign-out" size={18}/></button>
                         </div>
                     </div>
                 </div>
@@ -857,8 +893,9 @@
         );
     }
     
-    const root = window.ReactDOM.createRoot(document.getElementById('root')); 
-    root.render(<ErrorBoundary><AppContent/></ErrorBoundary>);
+    // START APPLICATION WITH SAFE ERROR BOUNDARY
+    const root = React.StrictMode ? window.ReactDOM.createRoot(document.getElementById('root')) : null;
+    if(root) root.render(<ErrorBoundary><AppContent/></ErrorBoundary>);
   </script>
 </body>
 </html>
