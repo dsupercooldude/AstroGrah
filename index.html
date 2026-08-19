@@ -84,6 +84,8 @@
     const Clock = (p) => <Icon name="clock" {...p} />;
     const Moon = (p) => <Icon name="moon" {...p} />;
     const Sun = (p) => <Icon name="sun" {...p} />;
+    const Shield = (p) => <Icon name="shield-halved" {...p} />;
+    const WifiOff = (p) => <Icon name="wifi-slash" {...p} />;
 
     class GrahaErrorBoundary extends Component {
       constructor(props) { super(props); this.state = { hasError: false, error: null }; }
@@ -96,7 +98,7 @@
                 <AlertTriangle size={36} className="mx-auto text-amber-400" />
                 <h2 className="font-serif text-xl font-semibold">Calculation Error</h2>
                 <p className="text-[10px] font-mono text-red-300 bg-red-950/40 p-2 rounded text-left overflow-auto">{this.state.error?.toString()}</p>
-                <button onClick={() => window.location.reload()} className="w-full rounded-full py-2.5 text-xs font-semibold bg-amber-400 text-black">Reload App</button>
+                <button onClick={() => window.location.reload()} className="w-full rounded-full py-2.5 text-xs font-semibold bg-amber-400 text-black mt-4">Reload App</button>
               </div>
             </div>
           );
@@ -132,6 +134,30 @@
     function toRad(d) { return (d * Math.PI) / 180; }
     function toDeg(r) { return (r * 180) / Math.PI; }
     
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    const WEEKDAY_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
+    function planetOfDay(date) {
+      if (!date || isNaN(date)) return "Sun";
+      return WEEKDAY_ORDER[date.getDay()] || "Sun";
+    }
+
+    const PLANET_INFO = {
+      Sun: { symbol: "☉", name: "Surya", day: "Sunday", color: "#E8A33D" },
+      Moon: { symbol: "☽", name: "Chandra", day: "Monday", color: "#9FB8D9" },
+      Mars: { symbol: "♂", name: "Mangal", day: "Tuesday", color: "#B23A48" },
+      Mercury: { symbol: "☿", name: "Budh", day: "Wednesday", color: "#7C9473" },
+      Jupiter: { symbol: "♃", name: "Guru", day: "Thursday", color: "#D4A574" },
+      Venus: { symbol: "♀", name: "Shukra", day: "Friday", color: "#C98CA7" },
+      Saturn: { symbol: "♄", name: "Shani", day: "Saturday", color: "#8288A0" },
+      Rahu: { symbol: "☊", name: "Rahu", day: "Saturday", color: "#A872B2" },
+      Ketu: { symbol: "☋", name: "Ketu", day: "Tuesday", color: "#72AAB2" }
+    };
+
     function julianDay(isoDate, timeStr, utcOffset) {
       try {
         const [Y, Mo, D] = (isoDate || "2000-01-01").split("-").map(Number);
@@ -219,7 +245,6 @@
 
     function calculateMuhurta(date, lat, lon) {
       // Simplified approximation assuming 06:00 Sunrise and 18:00 Sunset for generic calculation.
-      // Accurate geographical sunrise requires heavy astrodynamics library.
       const d = new Date(date);
       d.setHours(6, 0, 0, 0); const sunrise = new Date(d);
       d.setHours(18, 0, 0, 0); const sunset = new Date(d);
@@ -270,17 +295,6 @@
         dayChog
       };
     }
-
-    const WEEKDAY_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
-    const PLANET_INFO = {
-      Sun: { symbol: "☉", name: "Surya", day: "Sunday", color: "#E8A33D" },
-      Moon: { symbol: "☽", name: "Chandra", day: "Monday", color: "#9FB8D9" },
-      Mars: { symbol: "♂", name: "Mangal", day: "Tuesday", color: "#B23A48" },
-      Mercury: { symbol: "☿", name: "Budh", day: "Wednesday", color: "#7C9473" },
-      Jupiter: { symbol: "♃", name: "Guru", day: "Thursday", color: "#D4A574" },
-      Venus: { symbol: "♀", name: "Shukra", day: "Friday", color: "#C98CA7" },
-      Saturn: { symbol: "♄", name: "Shani", day: "Saturday", color: "#8288A0" }
-    };
 
     async function fetchLLMResponse(modelDef, apiKey, systemPrompt, userQuery) {
       if (!apiKey || apiKey.trim() === "") throw new Error("API Key is missing for " + modelDef.name);
@@ -433,8 +447,6 @@
               ))}
             </div>
           </div>
-          
-          <p className="fs10 leading-relaxed t30 text-center">Standard 06:00 to 18:00 base used. Exact local precision requires geocoded coordinate injection.</p>
         </div>
       );
     }
