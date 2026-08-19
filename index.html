@@ -31,32 +31,55 @@
     .gl-fadein { animation: fadein 0.3s ease; }
     @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Clean Google Translate Overrides */
+    /* --- IRONCLAD GOOGLE TRANSLATE OVERRIDES --- */
     .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget span, #goog-gt-tt { display: none !important; }
     body { top: 0px !important; }
-    #google_translate_element select {
-        background-color: #1A1C36; color: #D4A574; border: 1px solid rgba(212,165,116,0.3);
-        border-radius: 8px; padding: 6px 12px; font-family: 'Sora', sans-serif;
-        font-size: 12px; font-weight: 500; outline: none; cursor: pointer;
+    
+    #google_translate_container { 
+        position: fixed; top: 16px; right: 16px; z-index: 9999; 
     }
-    #google_translate_element select:focus { border-color: #D4A574; }
-    #google_translate_container { position: absolute; top: 16px; right: 16px; z-index: 1000; }
+    
+    /* Force the dropdown to be sleek and dark */
+    .goog-te-combo {
+        background-color: #1A1C36 !important; 
+        color: #D4A574 !important; 
+        border: 1px solid rgba(212,165,116,0.3) !important;
+        border-radius: 8px !important; 
+        padding: 6px 12px !important; 
+        font-family: 'Sora', sans-serif !important;
+        font-size: 12px !important; 
+        font-weight: 500 !important; 
+        outline: none !important; 
+        cursor: pointer !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+    }
+    .goog-te-combo:focus { border-color: #D4A574 !important; }
+    
+    /* Hide the default white background block Google tries to inject */
+    .goog-te-gadget { color: transparent !important; background: transparent !important; }
+    .goog-te-gadget .goog-te-combo { margin: 0 !important; }
   </style>
 </head>
 <body>
-  <div id="google_translate_container"><div id="google_translate_element"></div></div>
+  
+  <!-- ISOLATED TRANSLATE CONTAINER -->
+  <div id="google_translate_container">
+      <div id="google_translate_element"></div>
+  </div>
 
   <script type="text/javascript">
     function googleTranslateElementInit() { 
         new google.translate.TranslateElement({
             pageLanguage: 'en', 
-            includedLanguages: 'en,hi,sa,ta,te,mr,gu,bn,pa,ur,es,fr,de,zh-CN,ja,ar',
+            includedLanguages: 'ar,en,hi,sa,ta,te,mr,gu,bn,pa,ur,es,fr,de,zh-CN,ja',
             layout: google.translate.TranslateElement.InlineLayout.SIMPLE
         }, 'google_translate_element'); 
     }
   </script>
   <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
+  <!-- STRICT REACT ROOT -->
   <div id="root"></div>
 
   <script type="text/babel">
@@ -72,7 +95,7 @@
                 <div className="min-h-screen flex items-center justify-center p-6 text-center">
                     <div className="bgcard2 p-6 rounded-3xl border border-red-500/30 max-w-sm">
                         <i className="ph ph-warning text-4xl text-amber-400 mb-4"></i>
-                        <h2 className="font-serif text-xl mb-2">Calculation Error</h2>
+                        <h2 className="font-serif text-xl mb-2">System Error</h2>
                         <p className="text-xs text-red-300 font-mono bg-black/40 p-3 rounded mb-4 overflow-auto max-h-32 text-left">{this.state.error?.toString()}</p>
                         <button onClick={() => window.location.reload()} className="w-full bg-amber-400 text-black py-2 rounded-full font-bold">Reload App</button>
                     </div>
@@ -93,7 +116,6 @@
       </svg>
     );
 
-    // Cryptographic Base64 & Hashing
     const CryptoUtils = {
         b64EncodeUnicode: (str) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m, p1) => String.fromCharCode('0x' + p1))),
         b64DecodeUnicode: (str) => decodeURIComponent(atob(str).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')),
@@ -122,6 +144,7 @@
     };
 
     const DB_FILE_NAME = 'graha_db_v1.19.json';
+    
     const AppDB = {
       config: null, useLocal: false,
       setConfig(owner, repo, token) { 
@@ -152,13 +175,13 @@
             catch(e) { return { sha: null, content: { users: {} } }; }
         }
         const data = await this.callApi('GET', DB_FILE_NAME);
-        if (!data) return { sha: null, content: { users: {} } }; // Auto-creates empty schema if 404
+        if (!data) return { sha: null, content: { users: {} } }; 
         return { sha: data.sha, content: JSON.parse(CryptoUtils.b64DecodeUnicode(data.content.replace(/\n/g, ''))) };
       },
       async saveDB(contentObj, sha) {
         if(this.useLocal) { try { localStorage.setItem('graha_local_db', JSON.stringify(contentObj)); } catch(e){} return; }
         await this.callApi('PUT', DB_FILE_NAME, { 
-            message: "Graha Ledger Sync v1.19", 
+            message: "Graha Ledger Sync", 
             content: CryptoUtils.b64EncodeUnicode(JSON.stringify(contentObj, null, 2)), 
             ...(sha ? { sha } : {}) 
         });
@@ -173,19 +196,9 @@
             profiles: CryptoUtils.encrypt(userData.profiles || []), settings: CryptoUtils.encrypt(userData.settings || {}), chatHistory: CryptoUtils.encrypt(userData.chatHistory || []) 
         };
         await this.saveDB(db.content, db.sha);
-      },
-      async getGlobalChatHistory() {
-        const db = await this.getDB(); if(!db.content.users) return [];
-        let globalHistory = [];
-        Object.values(db.content.users).forEach(u => {
-            const hist = CryptoUtils.decrypt(u.chatHistory) || [];
-            globalHistory = globalHistory.concat(hist);
-        });
-        return globalHistory;
       }
     };
 
-    // Constants & Astrological Math
     const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
     const NAKSHATRAS = ["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
     const LUNAR_MASAS = ["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashvin","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
@@ -288,19 +301,18 @@
         return { p: Math.sin(2*Math.PI*eD/23), e: Math.sin(2*Math.PI*eD/28), i: Math.sin(2*Math.PI*eD/33) };
     }
 
-    // --- MODALS ---
     function SetupModal({ onConfig }) {
         const [o, setO]=useState(""); const [r, setR]=useState("AstroGrah"); const [t, setT]=useState(""); const [err, setErr]=useState("");
         return (
-            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl mx-auto my-auto gl-fadein">
+            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl mx-auto my-auto gl-fadein border border-white/10">
                 <form onSubmit={async(e)=>{ e.preventDefault(); setErr(""); AppDB.setConfig(o,r,t); try{ await AppDB.callApi('GET',''); onConfig(); }catch(er){ setErr("Token Invalid or Repo Missing."); localStorage.removeItem('gh_db_config'); } }}>
                     <SageLogo/><h2 className="text-center font-serif text-xl mt-2 mb-4">Secure Cloud Setup</h2>
                     <p className="text-xs t60 text-center mb-4">Connect your GitHub Personal Access Token.</p>
                     {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-2 rounded">{err}</div>}
                     <div className="space-y-3">
-                        <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50"/></div>
-                        <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50"/></div>
-                        <div><label className="text-[10px] t40 uppercase font-mono">Access Token (PAT)</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50"/></div>
+                        <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                        <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                        <div><label className="text-[10px] t40 uppercase font-mono">Access Token (PAT)</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
                     </div>
                     <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-4 hover:bg-amber-300 transition">Connect Database</button>
                     <button type="button" onClick={()=>{ AppDB.enableLocal(); onConfig(); }} className="w-full text-xs t60 mt-3 hover:text-white transition">Skip Cloud - Use Local Storage</button>
@@ -314,7 +326,7 @@
         const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState("");
         
         if (mode === "forgot") return (
-            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 text-center gl-fadein mx-auto my-auto">
+            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 text-center gl-fadein mx-auto my-auto border border-white/10">
                 <Icon name="shield-warning" size={32} className="mx-auto text-amber-400 mb-3" />
                 <h2 className="font-serif text-xl t100 mb-2">Serverless Reset</h2>
                 <p className="text-sm t70 leading-relaxed mb-4">Because this app is decentralized, automatic email resets are not possible.</p>
@@ -334,7 +346,7 @@
         );
         
         return (
-            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 gl-fadein shadow-2xl mx-auto my-auto">
+            <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 gl-fadein shadow-2xl mx-auto my-auto border border-white/10">
                 <form onSubmit={async(ev)=>{
                     ev.preventDefault(); setErr("");
                     try {
@@ -358,8 +370,8 @@
                     <SageLogo/><h2 className="text-center font-serif text-2xl mt-2 mb-4">{mode==="signup"?"Sign Up":"Sign In"}</h2>
                     {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 mb-3 rounded">{err}</div>}
                     <div className="space-y-3">
-                        <div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50"/></div>
-                        {mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50"/></div>}
+                        <div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>
+                        {mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400/50 text-white"/></div>}
                     </div>
                     <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-amber-300 transition">{mode==="signup"?"Auto-Generate Account":"Sign In"}</button>
                     <div className="flex justify-between items-center mt-4">
@@ -387,7 +399,7 @@
                 }}>
                     <h2 className="font-serif text-xl t100 mb-2">Action Required</h2>
                     <p className="text-xs t60 mb-4 leading-relaxed">Please change your auto-generated password to a secure personal password.</p>
-                    <div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Custom Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400/50"/></div>
+                    <div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Custom Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400/50 text-white"/></div>
                     <button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-2.5 mt-5 hover:bg-emerald-400 transition">{loading ? "Saving Hash..." : "Save New Password"}</button>
                 </form>
             </div>
@@ -620,7 +632,7 @@
                     {l&&<div className="text-xs t50 italic p-3">Synthesizing Jyotish context...</div>}
                 </div>
                 <form onSubmit={ask} className="flex gap-2 p-2 bgfaint3 border border-white/10 rounded-2xl sticky bottom-4 shadow-2xl">
-                    <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about timing, career, doshas..." className="flex-1 bg-transparent text-sm focus:outline-none px-2"/>
+                    <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about timing, career, doshas..." className="flex-1 bg-transparent text-sm focus:outline-none px-2 text-white"/>
                     <button type="submit" disabled={l} className="px-5 py-2.5 bg-amber-400 text-black text-sm font-semibold rounded-xl disabled:opacity-50 hover:bg-amber-300 transition">Ask</button>
                 </form>
             </div>
@@ -630,7 +642,6 @@
     function AppContent() {
         const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
         const [dt, setDt]=useState(new Date()); const [ss, setSs]=useState(false); const [ed, setEd]=useState(null);
-        const [ex, setEx]=useState(false);
 
         useEffect(()=>{ if(AppDB.loadConfig()) setDbC(true); },[]);
 
@@ -685,7 +696,7 @@
                             <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/10 bgfaint2 p-1 font-mono text-xs shadow-inner">
                                 {[{id:"person",l:"Astrology"},{id:"panchang",l:"Panchang"},{id:"union",l:"Union"},{id:"ask",l:"Ask AI"}].map(t=><button key={t.id} onClick={()=>setTb(t.id)} className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2.5 transition ${tb===t.id?"bg-white/15 t100 shadow":"t50 hover:t100"}`}>{t.l}</button>)}
                             </div>
-                            {tb==="person" && <PersonTab pr={aP} ch={chs[aP?.id]} date={dt} setDate={setDt} ex={ex} setEx={setEx} settings={set}/>}
+                            {tb==="person" && <PersonTab pr={aP} ch={chs[aP?.id]} date={dt} setDate={setDt} settings={set}/>}
                             {tb==="panchang" && <PanchangTab d={dt} p={aP} utc={aP?.utcOffset||5.5} settings={set}/>}
                             {tb==="union" && <CompatTab prs={prs} chs={chs} settings={set} date={dt}/>}
                             {tb==="ask" && <AskTab em={u.e} set={set} pr={aP} ch={chs[aP?.id]}/>}
@@ -699,7 +710,7 @@
                                 <div>
                                     <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Update Password</label>
                                     <div className="flex gap-2">
-                                        <input id="new_pw_input" type="password" placeholder="Enter new password" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400/50"/>
+                                        <input id="new_pw_input" type="password" placeholder="Enter new password" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400/50 text-white"/>
                                         <button type="button" onClick={async () => {
                                             const v = document.getElementById('new_pw_input').value; if(!v || v.length < 6) return alert('Password too short.');
                                             const db = await AppDB.getDB(); db.content.users[u.e].password = await CryptoUtils.hashPassword(v); await AppDB.saveDB(db.content, db.sha);
@@ -707,10 +718,10 @@
                                         }} className="px-4 py-2 bg-amber-400 text-black font-semibold rounded-xl text-xs hover:bg-amber-300 transition">Save</button>
                                     </div>
                                 </div>
-                                <div><label className="text-[9px] font-mono uppercase t50 mb-1.5 block">AI Intelligence Engine</label><select value={set.aiModel} onChange={e=> { const ns={...set,aiModel:e.target.value}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none"><option value="offline">Offline Learning Engine</option><option value="gemini-1.5-flash">Gemini 1.5 Flash</option></select></div>
+                                <div><label className="text-[9px] font-mono uppercase t50 mb-1.5 block">AI Intelligence Engine</label><select value={set.aiModel} onChange={e=> { const ns={...set,aiModel:e.target.value}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"><option value="offline">Offline Learning Engine</option><option value="gemini-1.5-flash">Gemini 1.5 Flash</option></select></div>
                                 <div className="p-4 border border-emerald-500/20 bg-emerald-950/10 rounded-2xl space-y-3">
                                     <label className="text-[10px] text-emerald-400 font-mono uppercase flex items-center justify-between">Encrypted API Keys <a href="https://aistudio.google.com/app/apikey" target="_blank" className="hover:text-emerald-200" title="Get API Key"><Icon name="question"/></a></label>
-                                    <div><div className="text-[9px] t50 mb-1">Gemini Key</div><input type="password" value={set.apiKeys?.["gemini-1.5-flash"]||""} onChange={e=>{ const ns={...set,apiKeys:{...set.apiKeys,["gemini-1.5-flash"]:e.target.value}}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} placeholder="Paste token here..." className="w-full bg-black/50 border border-white/5 rounded-lg px-3 py-2 text-xs outline-none focus:border-emerald-500/50"/></div>
+                                    <div><div className="text-[9px] t50 mb-1">Gemini Key</div><input type="password" value={set.apiKeys?.["gemini-1.5-flash"]||""} onChange={e=>{ const ns={...set,apiKeys:{...set.apiKeys,["gemini-1.5-flash"]:e.target.value}}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} placeholder="Paste token here..." className="w-full bg-black/50 border border-white/5 rounded-lg px-3 py-2 text-xs outline-none focus:border-emerald-500/50 text-white"/></div>
                                 </div>
                             </div>
                         </div>
@@ -720,32 +731,32 @@
                         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={()=>setEd(null)}>
                             <form onClick={e=>e.stopPropagation()} onSubmit={hSave} className="w-full max-w-sm bgcard2 rounded-3xl border border-white/10 p-6 space-y-4 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl relative">
                                 <div className="flex justify-between border-b border-white/10 pb-3"><h3 className="font-serif text-lg t100">{ed.id?"Edit Profile":"New Profile"}</h3><button type="button" onClick={()=>setEd(null)} className="p-1 rounded-full hover:bg-white/10 transition"><Icon name="x"/></button></div>
-                                <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Full Name</label><input required name="nm" defaultValue={ed.name||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none"/></div>
+                                <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Full Name</label><input required name="nm" defaultValue={ed.name||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Date</label><input required type="date" name="dob" defaultValue={ed.dob||"2000-01-01"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none"/></div>
-                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Time</label><input required type="time" name="tm" defaultValue={ed.time||"12:00"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Date</label><input required type="date" name="dob" defaultValue={ed.dob||"2000-01-01"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Time</label><input required type="time" name="tm" defaultValue={ed.time||"12:00"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
                                 </div>
                                 <div>
                                     <label className="text-[9px] t50 uppercase font-mono mb-1 block">Quick Location Autofill</label>
                                     <select onChange={e=>{const p=CITY_PRESETS.find(c=>c.name===e.target.value); if(p){e.target.form.pl.value=p.name; e.target.form.lt.value=p.lat; e.target.form.ln.value=p.lon; e.target.form.ut.value=p.utc;}}} className="w-full bg-amber-400/10 border border-amber-400/30 text-amber-200 rounded-xl px-3 py-2.5 text-sm outline-none"><option value="">- Select City -</option>{CITY_PRESETS.map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select>
                                 </div>
-                                <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Place Name</label><input required name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none"/></div>
+                                <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Place Name</label><input required name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
                                 <div className="grid grid-cols-3 gap-2">
-                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Lat</label><input required type="number" step="any" name="lt" defaultValue={ed.lat||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm outline-none"/></div>
-                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Lon</label><input required type="number" step="any" name="ln" defaultValue={ed.lon||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm outline-none"/></div>
-                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">UTC</label><input required type="number" step="any" name="ut" defaultValue={ed.utcOffset||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm outline-none"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Lat</label><input required type="number" step="any" name="lt" defaultValue={ed.lat||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm outline-none text-white"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Lon</label><input required type="number" step="any" name="ln" defaultValue={ed.lon||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm outline-none text-white"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">UTC</label><input required type="number" step="any" name="ut" defaultValue={ed.utcOffset||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-sm outline-none text-white"/></div>
                                 </div>
                                 <div className="pt-3 border-t border-white/10">
                                     <div className="text-[10px] t40 uppercase font-mono mb-3 tracking-widest text-center">Spiritual Lineage</div>
                                     <div className="grid grid-cols-2 gap-3 mb-3">
-                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Gotra</label><input name="gt" defaultValue={ed.gotra||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none"/></div>
-                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Jaati / Varg</label><input name="jt" defaultValue={ed.jaati||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none"/></div>
+                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Gotra</label><input name="gt" defaultValue={ed.gotra||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
+                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Jaati / Varg</label><input name="jt" defaultValue={ed.jaati||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 mb-3">
-                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Kul Devta</label><input name="kd" defaultValue={ed.kulDevta||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none"/></div>
-                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Gram Devta</label><input name="gd" defaultValue={ed.gramDevta||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none"/></div>
+                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Kul Devta</label><input name="kd" defaultValue={ed.kulDevta||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
+                                        <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Gram Devta</label><input name="gd" defaultValue={ed.gramDevta||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
                                     </div>
-                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Sthan Devta</label><input name="sd" defaultValue={ed.sthanDevta||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Sthan Devta</label><input name="sd" defaultValue={ed.sthanDevta||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"/></div>
                                 </div>
                                 <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-4 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">Save Profile</button>
                             </form>
