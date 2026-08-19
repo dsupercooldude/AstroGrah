@@ -27,7 +27,15 @@
           "accent": "#D4A574"
         }
       ],
-      "chatHistory": [],
+      "chatHistory": [
+        {
+          "id": "1787173220605",
+          "q": "What is a good about today ?",
+          "a": "Error: Please add a valid API key for Gemini 1.5 Flash in Settings to use the online engine. Falling back to Offline Engine is recommended if you have no key.",
+          "via": "Gemini 1.5 Flash",
+          "timestamp": 1787173220605
+        }
+      ],
       "settings": {
         "aiModel": "gemini-1.5-flash",
         "monthSystem": "amanta"
