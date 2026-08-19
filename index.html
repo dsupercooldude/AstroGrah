@@ -6,7 +6,7 @@
   <title>Graha Ledger V2 | Jyotish Engine</title>
   
   <!-- Favicon -->
-  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Om_symbol.svg/512px-Om_symbol.svg.png" />
+  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Om_symbol.svg/512px-Om_symbol.svg.png" type="image/png" />
   
   <!-- Tailwind CSS & Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -31,7 +31,7 @@
         }, 'google_translate_element'); 
     }
   </script>
-  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
   <style>
     body { background: #14162B; margin: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; overflow-x: hidden; }
@@ -223,7 +223,7 @@
         { name: "Phalodi, India", lat: 27.13, lon: 72.36, utc: 5.5 }, { name: "Ujjain, India", lat: 23.17, lon: 75.78, utc: 5.5 }, 
         { name: "Varanasi, India", lat: 25.31, lon: 82.97, utc: 5.5 }, { name: "New Delhi, India", lat: 28.61, lon: 77.20, utc: 5.5 }, 
         { name: "Dubai, UAE", lat: 25.20, lon: 55.27, utc: 4 }, { name: "London, UK", lat: 51.50, lon: -0.12, utc: 0 }, 
-        { name: "New York, USA", lat: 40.71, lon: -74.00, utc: -5 } 
+        { name: "New York, USA", lat: 40.71, lon: -74.00, utc: -5 }, { name: "Lahore, PK", lat: 31.52, lon: 74.35, utc: 5 } 
     ];
     
     function norm360(x) { let v = x % 360; return v < 0 ? v + 360 : v; }
@@ -639,7 +639,7 @@
         const pK = WEEKDAY[d.getDay()]; const sDay = SANSKRIT_DAYS[pK];
         const fm = dt => dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
         
-        const sankalp = `Om Vishnu Vishnu Vishnu. Adya Brahmaniya dvitiya parardhe, Shvetavaraha kalpe, Jambu dvipe... ${p.gotra||'Kashyapa'} gotrotpannah, ${p.jaati||'Hindu'} vargah, ${p.name} aham, shruti smriti puranokta phala praptyartham, ayur arogya aishwarya abhivriddhyartham (for health, wealth & prosperity), Vikram Samvat ${pan.vikram}, ${pan.masa} mase, ${pan.paksha} pakshe, ${pan.tithi} tithau, ${sDay} vasaraye sankalpam karishye. Om Kuladevatayai (${p.kulDevta||'Devi'}) Namah, Om Gramadevatayai (${p.gramDevta||'Deva'}) Namah.`;
+        const sankalp = `Om Vishnu Vishnu Vishnu. Adya Brahmaniya dvitiya parardhe, Shvetavaraha kalpe, Jambu dvipe... ${p?.gotra||'Kashyapa'} gotrotpannah, ${p?.jaati||'Hindu'} vargah, ${p?.name||'User'} aham, shruti smriti puranokta phala praptyartham, ayur arogya aishwarya abhivriddhyartham (for health, wealth & prosperity), Vikram Samvat ${pan.vikram}, ${pan.masa} mase, ${pan.paksha} pakshe, ${pan.tithi} tithau, ${sDay} vasaraye sankalpam karishye. Om Kuladevatayai (${p?.kulDevta||'Devi'}) Namah, Om Gramadevatayai (${p?.gramDevta||'Deva'}) Namah.`;
         
         return (
             <div className="space-y-4 pb-10 gl-fadein mt-4">
@@ -782,13 +782,13 @@
             if(m.id==='offline'){ 
                 const globalHist = await AppDB.getGlobalChatHistory();
                 const pastMatches = globalHist.filter(x => x.q.toLowerCase().includes(q.toLowerCase().split(' ')[0]));
-                ans = `[Offline Learning Engine] Evaluated ${globalHist.length} encrypted global interactions. Based on ${pastMatches.length} similar historical context matrices, for ${pr.name} (${ch.moonSign} Moon, ${ch.lagna} Lagna): Transits indicate focus is required over expansion today. Action aligned with ${PLANET_INFO[WEEKDAY[new Date().getDay()]].name} yields the best results.`; 
+                ans = `[Offline Learning Engine] Evaluated ${globalHist.length} encrypted global interactions. Based on ${pastMatches.length} similar historical context matrices, for ${pr?.name||'User'} (${ch?.moonSign||'Aries'} Moon, ${ch?.d1?.lagna||'Aries'} Lagna): Transits indicate focus is required over expansion today. Action aligned with ${PLANET_INFO[WEEKDAY[new Date().getDay()]].name} yields the best results.`; 
             }
             else { 
                 if(!set.apiKeys?.[m.id]) ans=`Error: Missing ${m.name} API Key in Settings Vault. Please configure your key.`; 
                 else {
                     try {
-                        const payload = { contents: [{ parts: [{ text: `Act as a Jyotish astrologer for ${pr.name} (${ch.moonSign} Moon). Answer: ${q}` }] }] };
+                        const payload = { contents: [{ parts: [{ text: `Act as a Jyotish astrologer for ${pr?.name||'User'} (${ch?.moonSign||'Aries'} Moon). Answer: ${q}` }] }] };
                         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${set.apiKeys[m.id]}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                         const data = await res.json();
                         ans = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
@@ -838,7 +838,6 @@
         if(!dbC) return <SetupModal onConfig={()=>setDbC(true)}/>;
         if(!u) return <AuthModal onLogin={(e,d)=>setU({e,d})}/>;
         
-        // Critical block: Force password change on first login.
         if(u?.d?.requiresPasswordChange) {
             return <ForcePasswordChange email={u.e} onComplete={() => setU({...u, d: {...u.d, requiresPasswordChange: false}})} />
         }
@@ -879,12 +878,12 @@
                         <div className="flex items-center gap-2">
                             <div id="google_translate_element" className="hidden sm:block mt-1 mr-2"></div>
                             <button onClick={()=>setEd({})} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition"><Icon name="user-plus" size={18}/></button>
-                            <button onClick={()=>setSs(!ss)} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition"><Icon name="gear" size={18}/></button>
+                            <button onClick={()=>setSs(!ss)} className="p-2 rounded-full border border-white/10 bg-black/20 hover:bg-white/10 transition relative z-40"><Icon name="gear" size={18}/></button>
                         </div>
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-6">
+                <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-6 relative z-10">
                     {prs.length===0 ? (
                         <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10 bgfaint3 gl-fadein">
                             <h2 className="font-serif text-2xl mb-2 text-amber-300">Welcome to Graha Ledger</h2>
@@ -906,7 +905,7 @@
 
                     {ss && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={()=>setSs(false)}>
-                            <div onClick={e=>e.stopPropagation()} className="w-full max-w-sm p-6 rounded-3xl border border-white/10 bgcard2 space-y-5 max-h-[85vh] overflow-y-auto gl-fadein shadow-2xl custom-scrollbar">
+                            <div onClick={e=>e.stopPropagation()} className="w-full max-w-sm p-6 rounded-3xl border border-white/10 bgcard2 space-y-5 max-h-[85vh] overflow-y-auto gl-fadein shadow-2xl custom-scrollbar relative">
                                 <div className="flex justify-between items-center border-b border-white/10 pb-3">
                                     <h3 className="font-serif text-lg t100">Settings Vault</h3>
                                     <button onClick={()=>setSs(false)} className="p-1 rounded-full hover:bg-white/10 transition"><Icon name="x"/></button>
@@ -948,7 +947,7 @@
 
                     {ed && (
                         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={()=>setEd(null)}>
-                            <form onClick={e=>e.stopPropagation()} onSubmit={hSave} className="w-full max-w-sm bgcard2 rounded-3xl border border-white/10 p-6 space-y-4 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl custom-scrollbar">
+                            <form onClick={e=>e.stopPropagation()} onSubmit={hSave} className="w-full max-w-sm bgcard2 rounded-3xl border border-white/10 p-6 space-y-4 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl custom-scrollbar relative">
                                 <div className="flex justify-between border-b border-white/10 pb-3">
                                     <h3 className="font-serif text-lg t100">{ed.id?"Edit Natal Profile":"New Natal Profile"}</h3>
                                     <button type="button" onClick={()=>setEd(null)} className="p-1 rounded-full hover:bg-white/10 transition"><Icon name="x"/></button>
