@@ -9,7 +9,7 @@ window.AppDB = {
         const qs = m === 'GET' ? `?t=${Date.now()}` : ''; 
         const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${p}${qs}`;
         const headers = { 'Authorization': `token ${this.config.token}`, 'Accept': 'application/vnd.github.v3+json' };
-        if (body) headers['Content-Type'] = 'application/json';
+        if (b) headers['Content-Type'] = 'application/json';
         const res = await fetch(url, { method: m, headers, body: b ? JSON.stringify(b) : null });
         if (!res.ok) { if (res.status === 404 && m === 'GET') return null; throw new Error(res.status.toString()); }
         return await res.json();
