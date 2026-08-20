@@ -1,4 +1,5 @@
 // src/js/ai-rules.js
+
 window.executeMultiProviderAI = async (prompt, settings, systemInstruction = "") => {
   const providers = [
     {
@@ -73,12 +74,7 @@ window.generateDeepGochara = (ch, lagnaSign, date, pK, bScores) => {
     ? `Peaceful 4th house alignments foster emotional warmth, household tranquility, and family cohesion.`
     : (h7.includes("Mars") || h7.includes("Rahu") ? `Practice mindful patience during interpersonal dialogue to diffuse transient friction.` : `Grounded domestic environment. Ideal for smart home planning and family gatherings.`);
 
-  return {
-    health: { text: health, sc: hSc },
-    wealth: { text: wealth, sc: wSc },
-    career: { text: career, sc: cSc },
-    home: { text: home, sc: fSc }
-  };
+  return { health: { text: health, sc: hSc }, wealth: { text: wealth, sc: wSc }, career: { text: career, sc: cSc }, home: { text: home, sc: fSc } };
 };
 
 window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
@@ -86,14 +82,25 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
   const dateFormatted = targetDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
   const b = window.bio(profile?.dob, targetDate, profile?.utcOffset);
   const pK = window.WEEKDAY[targetDate.getDay()];
+  
+  // Real Ephemeris Data Extraction
   const lagna = kundli.d1.lagna;
   const moonSign = kundli.moonSign;
   const nak = kundli.nak;
+  const pada = kundli.pada;
+  const jupDeg = kundli.planetaryDegrees.Jupiter.toFixed(2);
+  const satDeg = kundli.planetaryDegrees.Saturn.toFixed(2);
+  const moonDeg = kundli.planetaryDegrees.Moon.toFixed(2);
 
+  // Deep Dasha Extraction
   const currentDecYear = targetDate.getFullYear() + (targetDate.getMonth() / 12) + (targetDate.getDate() / 365);
-  const activeMaha = kundli.dasha.find((d) => currentDecYear >= d.start && currentDecYear < d.end)?.lord || "Jupiter";
-  const antarList = window.getAntardashas(activeMaha, 2024, 2030);
-  const activeAntar = antarList.find((a) => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha;
+  const mahaObj = kundli.dasha.find((d) => currentDecYear >= d.start && currentDecYear < d.end);
+  const activeMaha = mahaObj ? mahaObj.lord : "Jupiter";
+  let activeAntar = activeMaha;
+  if(mahaObj) {
+      const antarList = window.getAntardashas(activeMaha, mahaObj.start, mahaObj.end);
+      activeAntar = antarList.find((a) => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha;
+  }
 
   let domain = "Holistic Jyotish & Gochara Synthesis";
   let analysis = "";
@@ -102,39 +109,37 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
 
   if (lQ.includes("target") || lQ.includes("commission") || lQ.includes("career") || lQ.includes("job") || lQ.includes("work") || lQ.includes("promotion")) {
     domain = "Career Milestones & Revenue Achievement";
-    analysis = `• Assessment for: ${profile?.name || "Native"} (Ascendant: ${lagna}, Moon: ${moonSign})\n`
-      + `• Active Vimshottari Cycle: ${activeMaha} Mahadasha / ${activeAntar} Antardasha.\n`
-      + `• Transit Synthesis: Jupiter currently transiting ${kundli.transits.Jupiter} casts benefic aspects on executive houses, while Saturn in ${kundli.transits.Saturn} demands systematic delivery. Your cognitive biorhythm is at ${(b.i * 100).toFixed(0)}%, indicating high strategic bandwidth for negotiations.`;
-    roadmap = `1. Target Alignment: Execute formal contract milestones during your ruling ${pK} Horas and Abhijit Muhurta.\n2. Negotiation Vector: Anchor multi-party deliverables with verifiable data. Your 10th/11th house lords support commission closure under steady diligence.`;
-    muhurtaRemedy = `Chant "${window.PLANET_INFO[activeMaha]?.beej}" and wear ${window.PLANET_INFO[activeMaha]?.gem} for sustained career momentum.`;
+    analysis = `• Real-Time Transit Data: Jupiter is transiting ${kundli.transits.Jupiter} at ${jupDeg}°, while Saturn sits in ${kundli.transits.Saturn} at ${satDeg}°.\n`
+      + `• Dasha Reality: Your active ${activeMaha} Mahadasha & ${activeAntar} Antardasha are heavily influencing your 10th/11th axis.\n`
+      + `• Mental Execution: Your calculated intellectual biorhythm is at ${(b.i * 100).toFixed(0)}%, indicating high bandwidth for complex negotiations.`;
+    roadmap = `1. Target Alignment: Execute formal contract milestones during your ruling ${pK} Horas.\n2. Negotiation Vector: Anchor multi-party deliverables with verifiable data to satisfy Saturn's demand for structure.`;
+    muhurtaRemedy = `Chant "${window.PLANET_INFO[activeMaha]?.beej}" and wear ${window.PLANET_INFO[activeMaha]?.gem} for sustained momentum.`;
   } else if (lQ.includes("marriage") || lQ.includes("wife") || lQ.includes("spouse") || lQ.includes("relationship") || lQ.includes("family") || lQ.includes("home")) {
-    domain = "Domestic Acceptance, Union & Relational Harmony";
-    analysis = `• Assessment for: ${profile?.name || "Native"}\n`
-      + `• Relational Axis: 7th House (Partnership) and 4th House (Sukha Bhava / Home Acceptance).\n`
-      + `• Planetary Aura: Venus transiting ${kundli.transits.Venus} brings relational ease. Moon in ${moonSign} (${nak} nakshatra) with emotional biorhythm at ${(b.e * 100).toFixed(0)}% indicates warm receptive instincts across the household.`;
-    roadmap = `1. Family Integration: Mutual understanding is heavily favored as benefic transits protect domestic discourse.\n2. Milestone Timing: Select Shukla Paksha lunar days for significant family ceremonies or residence milestones.`;
+    domain = "Domestic Acceptance & Relational Harmony";
+    analysis = `• Relational Axis Math: Your natal Moon sits at ${moonDeg}° in ${moonSign} (Nakshatra: ${nak}, Pada ${pada}).\n`
+      + `• Planetary Aura: Venus transiting ${kundli.transits.Venus} brings relational ease. Your emotional resonance vector is calculated at ${(b.e * 100).toFixed(0)}%, fostering highly receptive communication.`;
+    roadmap = `1. Family Integration: Mutual understanding is mathematically favored as benefic transits protect domestic discourse today.\n2. Milestone Timing: Select Shukla Paksha (waxing) lunar phases for significant household announcements.`;
     muhurtaRemedy = `Recite the Sri Suktam or "${window.PLANET_INFO.Venus.beej}" to invoke lasting household peace (Griha Shanti).`;
   } else if (lQ.includes("year") || lQ.includes("month") || lQ.includes("week") || lQ.includes("transit") || lQ.includes("future") || lQ.includes("prediction")) {
     domain = "Temporal Horizon & Gochara Matrix";
-    analysis = `• Forecast anchored to: ${dateFormatted}\n`
-      + `• Ascendant: ${lagna} | Janma Rashi: ${moonSign} (${nak} Pada ${kundli.pada})\n`
-      + `• Primary Dashas: ${activeMaha}-${activeAntar} active. Key planetary transits place Jupiter in ${kundli.transits.Jupiter}, Saturn in ${kundli.transits.Saturn}, Rahu in ${kundli.transits.Rahu}, and Ketu in ${kundli.transits.Ketu}.`;
-    roadmap = `1. Physical Rhythm: Vitality wave stands at ${(b.p * 100).toFixed(0)}%.\n2. Strategic Focus: Maintain consistent execution without over-leveraging during Rahu transit windows.`;
+    analysis = `• Ephemeris Target: ${dateFormatted}\n`
+      + `• Ascendant: ${lagna} | Janma Rashi: ${moonSign}\n`
+      + `• Current Rulers: ${activeMaha}-${activeAntar} timeframe active. Jupiter (${jupDeg}°) and Saturn (${satDeg}°) anchor your macro-trends.`;
+    roadmap = `1. Physical Rhythm: Vitality wave stands at ${(b.p * 100).toFixed(0)}%.\n2. Strategic Focus: Maintain consistent execution; avoid over-leveraging during Rahu/Ketu transit windows in ${kundli.transits.Rahu}.`;
     muhurtaRemedy = `Observe the prescribed day charity on ${pK} (${window.PLANET_INFO[pK]?.charity}).`;
   } else {
     domain = "Comprehensive Vedic Life Guidance";
-    analysis = `• Native: ${profile?.name || "Native"} | Anchored Target Date: ${dateFormatted}\n`
-      + `• Core Matrix: ${lagna} Lagna, Moon in ${moonSign} under the auspicious ${nak} constellation.\n`
-      + `• Current Cosmic Rulers: ${activeMaha} Mahadasha is guiding your overarching karmic trajectory, with day energy governed by ${pK} (${window.SANSKRIT_DAYS[pK]} Vara).`;
-    roadmap = `1. Align high-value decisions with favorable Choghadiya windows (Amrit, Shubh, Labh).\n2. Maintain balanced energy output tailored to your current biorhythm levels (P: ${(b.p * 100).toFixed(0)}%, E: ${(b.e * 100).toFixed(0)}%, I: ${(b.i * 100).toFixed(0)}%).`;
-    muhurtaRemedy = `Recite the Beej Mantra for ${pK}: "${window.PLANET_INFO[pK]?.beej}".`;
+    analysis = `• Native: ${profile?.name || "Native"} | Target Date: ${dateFormatted}\n`
+      + `• Core Matrix: ${lagna} Lagna, Moon at ${moonDeg}° in ${nak} (Pada ${pada}).\n`
+      + `• Active Dasha Timeline: You are currently operating under the ${activeMaha} Mahadasha and ${activeAntar} Antardasha.`;
+    roadmap = `1. Decisions: Align high-value tasks with favorable Choghadiya windows (Amrit, Shubh, Labh) visible in your Panchang tab.\n2. Energy: Maintain balanced output tailored to your biorhythms (P: ${(b.p * 100).toFixed(0)}%, E: ${(b.e * 100).toFixed(0)}%, I: ${(b.i * 100).toFixed(0)}%).`;
+    muhurtaRemedy = `Recite the Beej Mantra for the active Hora ruler (${pK}): "${window.PLANET_INFO[pK]?.beej}".`;
   }
 
   return `[Graha Ledger Vedic Expert Engine — Deterministic Mode]\n`
     + `═════════════════════════════════════════════════════\n`
-    + `📍 DOMAIN: ${domain}\n`
-    + `📅 ANCHORED TARGET DATE: ${dateFormatted}\n\n`
-    + `1. VEDIC ASTROLOGICAL SYNTHESIS:\n${analysis}\n\n`
+    + `📍 DOMAIN: ${domain}\n\n`
+    + `1. DATA-DRIVEN VEDIC SYNTHESIS:\n${analysis}\n\n`
     + `2. PRESCRIBED ACTION ROADMAP:\n${roadmap}\n\n`
     + `3. DIVINE REMEDY & MANTRAS:\n• ${muhurtaRemedy}\n`
     + `• Daily Action: ${window.PLANET_INFO[pK]?.action}`;
