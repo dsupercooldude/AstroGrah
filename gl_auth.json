@@ -2,7 +2,8 @@
   "users": {
     "d676921fb69ee271d52914daf3e497625cdb6e732e7af47b93faf3259bb4f244": {
       "p": "9442262cce3f04cab073fc66a13e12f4f03959429bbb81a7b7eda6ea8e872af4",
-      "req": false
+      "req": false,
+      "mfa": "ZHIBDHwEZQQCDAYKcXRqYhECcRZ9ZmB6HAkAEmN+ZHs="
     }
   }
 }
