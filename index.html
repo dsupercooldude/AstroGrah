@@ -32,6 +32,10 @@
     .gl-fadein { animation: fadein 0.25s ease-out; }
     @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* Fix detail marker styling for AI dropdowns */
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+
     .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget, #goog-gt-tt, .skiptranslate, #google_translate_element { display: none !important; opacity: 0 !important; pointer-events: none !important; height: 0 !important; }
     body { top: 0px !important; }
 
@@ -72,16 +76,34 @@
     const { useState, useEffect, useMemo, Component, Fragment } = React;
     const jsPDF = window.jspdf ? window.jspdf.jsPDF : null;
 
-    // ==========================================
-    // GLOBAL CONSTANTS (Fixed ReferenceError)
-    // ==========================================
     const CITY_PRESETS = [ 
         { name: "Dubai, UAE", lat: 25.20, lon: 55.27, utc: 4.0 }, { name: "Phalodi, India", lat: 27.13, lon: 72.36, utc: 5.5 }, 
         { name: "Mumbai, India", lat: 19.07, lon: 72.87, utc: 5.5 }, { name: "New Delhi, India", lat: 28.61, lon: 77.20, utc: 5.5 }, 
         { name: "Ujjain, India", lat: 23.17, lon: 75.78, utc: 5.5 }, { name: "London, UK", lat: 51.50, lon: -0.12, utc: 0.0 }, 
         { name: "New York, USA", lat: 40.71, lon: -74.00, utc: -5.0 }
     ];
+
+    const GOTRAS = ["Kashyapa", "Bharadwaj", "Vatsa", "Sandilya", "Gautama", "Gargya", "Vishwamitra", "Vasishtha", "Atri", "Agastya"];
+    const JAATIS = ["Brahmin", "Kshatriya", "Vaishya", "Shudra", "Kayastha", "Rajput", "Maratha", "Jat"];
+
     const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+    
+    // BASIC MODE PLAIN ENGLISH TRANSLATOR
+    const SIGN_TRAITS = {
+        "Aries": "bold, pioneering, and action-oriented",
+        "Taurus": "grounded, practical, and steadfast",
+        "Gemini": "communicative, intellectual, and highly adaptable",
+        "Cancer": "nurturing, deeply intuitive, and protective",
+        "Leo": "expressive, charismatic, and a natural leader",
+        "Virgo": "analytical, detail-oriented, and service-driven",
+        "Libra": "harmonious, diplomatic, and focused on balance",
+        "Scorpio": "intense, transformative, and highly perceptive",
+        "Sagittarius": "optimistic, philosophical, and freedom-loving",
+        "Capricorn": "disciplined, ambitious, and goal-oriented",
+        "Aquarius": "innovative, humanitarian, and fiercely independent",
+        "Pisces": "empathetic, spiritual, and deeply compassionate"
+    };
+
     const NAKSHATRAS = ["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
     const LUNAR_MASAS = ["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashvin","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
     const YOGAS = ["Vishkambha","Priti","Ayushman","Saubhagya","Shobhana","Atiganda","Sukarma","Dhriti","Shula","Ganda","Vriddhi","Dhruva","Vyaghata","Harshana","Vajra","Siddhi","Vyatipata","Variyana","Parigha","Shiva","Siddha","Sadhya","Shubha","Shukla","Brahma","Indra","Vaidhriti"];
@@ -326,32 +348,32 @@
     }
 
     function BiorhythmChart({ data, scores }) {
-        const w = 320, h = 100;
-        const pts = (key) => data.map((d, i) => `${(i/(data.length-1))*w},${50 - d[key]*40}`).join(" L ");
+        const w = 340, h = 100;
+        const pts = (key) => data.map(d => `${(d.idx/14)*w},${50 - d[key]*40}`).join(" L ");
         return (
-            <div className="w-full bgcard rounded-2xl border border-white/10 p-5 gl-fadein shadow-lg">
+            <div className="w-full bg-[#121426] rounded-2xl border border-white/10 p-5 gl-fadein shadow-lg">
                 <div className="flex justify-between items-center mb-6">
-                    <span className="font-mono text-[10px] t60 uppercase tracking-widest">15-Day Local Time Synchrony Wave</span>
+                    <span className="font-mono text-[10px] text-amber-200/70 uppercase tracking-widest">15-Day Local Time Synchrony Wave</span>
                     <div className="flex gap-3 font-mono text-[9px]">
-                        <span className="text-[#B23A48]">● Physical</span><span className="text-[#9FB8D9]">● Emotional</span><span className="text-[#D4A574]">● Intellectual</span>
+                        <span className="text-[#E84855]">● Physical</span><span className="text-[#6495ED]">● Emotional</span><span className="text-[#F9C22E]">● Intellectual</span>
                     </div>
                 </div>
-                <div className="w-full h-28 relative overflow-visible flex flex-col justify-end">
+                <div className="w-full h-32 relative overflow-visible flex flex-col justify-end">
                     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
-                        <line x1="0" y1="50" x2={w} y2="50" stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" />
-                        <line x1={w/2} y1="-10" x2={w/2} y2={h+10} stroke="rgba(212,165,116,0.3)" strokeDasharray="3 3" />
-                        <path d={`M ${pts('P')}`} fill="none" stroke="#B23A48" strokeWidth="2.5" className="drop-shadow" />
-                        <path d={`M ${pts('E')}`} fill="none" stroke="#9FB8D9" strokeWidth="2.5" className="drop-shadow" />
-                        <path d={`M ${pts('I')}`} fill="none" stroke="#D4A574" strokeWidth="2.5" className="drop-shadow" />
+                        <line x1="0" y1="50" x2={w} y2="50" stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" />
+                        <line x1={w/2} y1="-10" x2={w/2} y2={h+10} stroke="rgba(212,165,116,0.4)" strokeDasharray="3 3" />
+                        <path d={`M ${pts('P')}`} fill="none" stroke="#E84855" strokeWidth="2.5" className="drop-shadow-lg" />
+                        <path d={`M ${pts('E')}`} fill="none" stroke="#6495ED" strokeWidth="2.5" className="drop-shadow-lg" />
+                        <path d={`M ${pts('I')}`} fill="none" stroke="#F9C22E" strokeWidth="2.5" className="drop-shadow-lg" />
                     </svg>
                     <div className="flex justify-between w-full px-1 mt-4 font-mono text-[9px] t100 font-bold">
-                        <span>-7 Days</span><span className="text-amber-300 bg-black/80 px-3 py-1 rounded shadow-lg border border-white/10">Anchored Today</span><span>+7 Days</span>
+                        <span>-7 Days</span><span className="text-amber-300 bg-black/80 px-3 py-1 rounded shadow-lg border border-amber-400/20">Anchored Today</span><span>+7 Days</span>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
-                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-xs"><span className="text-[#B23A48] font-bold block mb-1">Physical ({scores.p}%)</span><span className="t85 leading-relaxed">{scores.p > 20 ? "Peak phase. High endurance and stamina for tasks." : (scores.p > -20 && scores.p <= 20 ? "Critical crossover day. High injury risk, rest." : "Recharge phase. Deep rest and recovery required.")}</span></div>
-                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-xs"><span className="text-[#9FB8D9] font-bold block mb-1">Emotional ({scores.e}%)</span><span className="t85 leading-relaxed">{scores.e > 20 ? "High resilience, empathy, and creative flow." : (scores.e > -20 && scores.e <= 20 ? "Crossover instability. Avoid arguments today." : "Emotional withdrawal phase. Practice solitude.")}</span></div>
-                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-xs"><span className="text-[#D4A574] font-bold block mb-1">Intellectual ({scores.i}%)</span><span className="t85 leading-relaxed">{scores.i > 20 ? "Peak cognitive processing and analytical focus." : (scores.i > -20 && scores.i <= 20 ? "Decision making compromised. Brain fog." : "Reflective period. Delay major contracts.")}</span></div>
+                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#E84855] font-bold block mb-1">Physical ({scores.p}%)</span><span className="t85 leading-relaxed">{scores.p > 20 ? "Peak phase. High endurance and stamina for physical tasks." : (scores.p > -20 && scores.p <= 20 ? "Critical crossover day. High injury risk, rest." : "Recharge phase. Deep rest and recovery required.")}</span></div>
+                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#6495ED] font-bold block mb-1">Emotional ({scores.e}%)</span><span className="t85 leading-relaxed">{scores.e > 20 ? "High resilience, empathy, and creative flow." : (scores.e > -20 && scores.e <= 20 ? "Crossover instability. Avoid arguments today." : "Emotional withdrawal phase. Practice solitude.")}</span></div>
+                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#F9C22E] font-bold block mb-1">Intellectual ({scores.i}%)</span><span className="t85 leading-relaxed">{scores.i > 20 ? "Peak cognitive processing and analytical focus." : (scores.i > -20 && scores.i <= 20 ? "Decision making compromised. Brain fog." : "Reflective period. Delay major contracts.")}</span></div>
                 </div>
             </div>
         );
@@ -361,13 +383,22 @@
         if (!ac) return null;
         
         if (!isExpert) {
+            let maxP = "Sun", maxScore = -1, minP = "Sun", minScore = 101;
+            Object.entries(ch.shadbala).forEach(([p, s]) => {
+                if(s > maxScore) { maxScore = s; maxP = p; }
+                if(s < minScore) { minScore = s; minP = p; }
+            });
+
             return (
                 <div className="p-5 bg-black/30 rounded-xl border border-white/5 text-[13px] t85 leading-relaxed shadow-inner">
-                    <span className="text-amber-300 font-bold block mb-2 text-base font-serif">Your Foundation Overview:</span>
-                    Your core outward personality and how others see you (Ascendant) is shaped by <strong>{ac.lagna}</strong>. 
-                    Your deep emotional reactions, intuition, and inner thoughts are driven by your Moon sign <strong>{ch.moonSign}</strong>, currently placed in the <strong>{ch.nak}</strong> constellation. 
+                    <span className="text-amber-300 font-bold block mb-3 text-base font-serif border-b border-white/10 pb-2">Your Foundation Overview:</span>
+                    Your core outward personality and how others see you (Ascendant) is shaped by <strong>{ac.lagna}</strong>, meaning your natural physical energy is generally <em>{SIGN_TRAITS[ac.lagna]||"unique"}</em>.<br/><br/>
+                    Your deep emotional reactions, intuition, and inner thoughts are driven by your Moon sign <strong>{ch.moonSign}</strong> (currently placed in the {ch.nak} constellation). This means your psychological instincts are fundamentally <em>{SIGN_TRAITS[ch.moonSign]||"unique"}</em>.
                     <br/><br/>
-                    In simple terms: <strong>{ac.lagna}</strong> defines your physical body and general life path, while your <strong>{ch.moonSign}</strong> dictates your daily feelings and psychological instincts. Switch to <strong>Expert Mode</strong> above to view precise geometric astrological charts and planetary transits.
+                    <span className="text-amber-200 font-bold block mt-3 mb-1 text-sm font-serif">Planetary Power Summary (Shadbala):</span>
+                    Your strongest guiding planet is <strong>{maxP} ({maxScore} pts)</strong>, which acts as your primary driving force and natural strength in life. 
+                    Conversely, your most sensitive planet is <strong>{minP} ({minScore} pts)</strong>, indicating an area where you might need to apply conscious effort, patience, and remedial actions.
+                    <br/><br/><span className="text-[10px] italic t50 mt-2 block">Switch to <strong>Expert Mode</strong> above to view precise geometric astrological charts and planetary transits.</span>
                 </div>
             );
         }
@@ -522,9 +553,9 @@
                         <SageLogo size={44}/><h2 className="text-center font-serif text-xl mt-2 mb-4 text-amber-200">Connect Cloud Vault</h2>
                         {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}
                         <div className="space-y-3">
-                            <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
-                            <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
-                            <div><label className="text-[10px] t40 uppercase font-mono">Personal Access Token</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter')e.target.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter')e.target.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
+                            <div><label className="text-[10px] t40 uppercase font-mono">Personal Access Token</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter')e.target.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
                         </div>
                         <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-5 hover:bg-amber-300 transition">Authorize & Sync</button>
                         <button type="button" onClick={()=>{ AppDB.enableLocal(); onConfig(); }} className="w-full text-xs t60 mt-3 hover:text-white transition">Skip Cloud - Use Offline Local Storage</button>
@@ -538,11 +569,11 @@
         const [mode, setMode] = useState("login"); const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState("");
         const [mfaPin, setMfaPin] = useState("");
         
-        const proceedToVault = async (normE, emailHash, reqChange) => {
+        const proceedToVault = async (normE, emailHash, reqChange, isMfaEnabled) => {
             const vaultFile = await AppDB.getFile(`gl_vault_${emailHash}.json`);
             const prof = typeof vaultFile.content.profiles === 'string' ? CryptoUtils.decrypt(vaultFile.content.profiles) : (vaultFile.content.profiles || []);
             const sett = typeof vaultFile.content.settings === 'string' ? CryptoUtils.decrypt(vaultFile.content.settings) : (vaultFile.content.settings || {});
-            onLogin({ email: normE, emailHash, profiles: prof, settings: sett, requiresPasswordChange: reqChange });
+            onLogin({ email: normE, emailHash, profiles: prof, settings: sett, requiresPasswordChange: reqChange, mfaEnabled: isMfaEnabled });
         };
 
         const handleSubmit = async (ev) => { 
@@ -565,7 +596,7 @@
                     const hashedInput = await CryptoUtils.hashPassword(p); 
                     if(u.p !== p && u.p !== hashedInput) throw new Error("Invalid password."); 
                     if (u.mfa) { setMode("mfa"); return; }
-                    await proceedToVault(normE, emailHash, u.req); 
+                    await proceedToVault(normE, emailHash, u.req, !!u.mfa); 
                 }
             } catch(error) { setErr(error.message); }
         };
@@ -580,7 +611,7 @@
                 if (!window.OTPAuth) throw new Error("Authenticator library missing.");
                 const totp = new window.OTPAuth.TOTP({ secret: secret });
                 if (totp.validate({ token: mfaPin, window: 1 }) === null) throw new Error("Invalid 2FA PIN.");
-                await proceedToVault(normE, emailHash, u.req);
+                await proceedToVault(normE, emailHash, u.req, true);
             } catch(err) { setErr(err.message); }
         };
 
@@ -605,8 +636,8 @@
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-4 gl-fadein">
                 <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10 relative">
-                    <button onClick={onReset} className="absolute top-4 right-4 text-[10px] font-mono text-red-400 border border-red-400/30 px-2 py-1 rounded hover:bg-red-400/20">Reset DB</button>
-                    <form onSubmit={handleSubmit}><SageLogo size={44}/><h2 className="text-center font-serif text-2xl mt-1 mb-4 text-amber-200">{mode==="signup"?"Create Account":"Sign In"}</h2>{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<div className="space-y-3"><div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>{mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>}</div><button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-5 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">{mode==="signup"?"Generate Credentials":"Enter Vault"}</button><div className="flex justify-between items-center mt-4"><button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white">{mode==="login"?"New User? Quick Sign Up":"Existing User? Sign In"}</button></div></form>
+                    <button onClick={onReset} className="absolute top-4 right-4 text-[10px] font-mono text-red-400 border border-red-400/30 px-2 py-1 rounded hover:bg-red-400/20 transition">Disconnect Vault DB</button>
+                    <form onSubmit={handleSubmit}><SageLogo size={44}/><h2 className="text-center font-serif text-2xl mt-1 mb-4 text-amber-200">{mode==="signup"?"Create Account":"Sign In"}</h2>{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<div className="space-y-3"><div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} onKeyDown={(e)=>{if(e.key==='Enter')e.target.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>{mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} onKeyDown={(e)=>{if(e.key==='Enter')e.target.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>}</div><button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-5 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">{mode==="signup"?"Generate Credentials":"Enter Vault"}</button><div className="flex justify-between items-center mt-4"><button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white">{mode==="login"?"New User? Quick Sign Up":"Existing User? Sign In"}</button></div></form>
                 </div>
             </div>
         );
@@ -614,12 +645,11 @@
 
     function ForcePasswordChange({ email, emailHash, onComplete }) {
         const [p, setP] = useState(""); const [loading, setLoading] = useState(false);
-        return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/40 shadow-2xl"><form onSubmit={async (e) => { e.preventDefault(); if(p.length < 6) return alert('Password too short.'); setLoading(true); try { let authFile = await AppDB.getFile('gl_auth.json'); authFile.content.users[emailHash].p = await CryptoUtils.hashPassword(p); authFile.content.users[emailHash].req = false; await AppDB.saveFile('gl_auth.json', authFile.content, authFile.sha); onComplete(); } catch (err) { alert(err.message); setLoading(false); } }}><h2 className="font-serif text-xl t100 mb-2 text-emerald-300">Set Custom Password</h2><div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Private Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-emerald-500/50"/></div><button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 mt-5 hover:bg-emerald-400 transition">{loading ? "Encrypting..." : "Confirm & Launch"}</button></form></div></div> )
+        return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/40 shadow-2xl"><form onSubmit={async (e) => { e.preventDefault(); if(p.length < 6) return alert('Password too short.'); setLoading(true); try { let authFile = await AppDB.getFile('gl_auth.json'); authFile.content.users[emailHash].p = await CryptoUtils.hashPassword(p); authFile.content.users[emailHash].req = false; await AppDB.saveFile('gl_auth.json', authFile.content, authFile.sha); onComplete(); } catch (err) { alert(err.message); setLoading(false); } }}><h2 className="font-serif text-xl t100 mb-2 text-emerald-300">Set Custom Password</h2><div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Private Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} onKeyDown={(e)=>{if(e.key==='Enter')e.target.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-emerald-500/50"/></div><button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 mt-5 hover:bg-emerald-400 transition">{loading ? "Encrypting..." : "Confirm & Launch"}</button></form></div></div> )
     }
 
     function PersonTab({ pr, ch, date, setDate, settings, onEditProfile }) {
-        const [div, setDiv]=useState(1); 
-        const [chartStyle, setChartStyle]=useState(settings.kundaliStyle||"north");
+        const [div, setDiv]=useState(1); const [chartStyle, setChartStyle]=useState(settings.kundaliStyle||"north");
         const [expert, setExpert] = useState(false);
         const [expandedDasha, setExpandedDasha] = useState(null);
         const [expandedAntar, setExpandedAntar] = useState(null);
@@ -629,14 +659,15 @@
         const ac = div===1?ch.d1:(div===7?ch.d7:(div===9?ch.d9:(div===10?ch.d10:ch.d60))); 
         const pK = WEEKDAY[date.getDay()]; const pI = PLANET_INFO[pK];
         
-        const bs = []; 
-        for(let i=-7;i<=7;i++){ 
-            const d=new Date(date.getTime()); d.setDate(d.getDate()+i); 
-            const b=bio(pr.dob, d, pr.utcOffset); 
-            bs.push({ label: i===0?"Today":`${d.getMonth()+1}/${d.getDate()}`, P: +b.p.toFixed(2), E: +b.e.toFixed(2), I: +b.i.toFixed(2), S: +b.s.toFixed(2) }); 
+        // High-resolution rendering for perfectly smooth Biorhythm paths (60 points)
+        const bsGraph = [];
+        for(let i=-7; i<=7; i+=0.25) {
+            const d = new Date(date.getTime() + i*24*60*60*1000);
+            const b = bio(pr.dob, d, pr.utcOffset);
+            bsGraph.push({ idx: i + 7, P: b.p, E: b.e, I: b.i });
         }
-        const bT = bs[7];
-        const scores = { p: Math.floor(bT.P*100), e: Math.floor(bT.E*100), i: Math.floor(bT.I*100) };
+        const bT = bio(pr.dob, date, pr.utcOffset);
+        const scores = { p: Math.floor(bT.p*100), e: Math.floor(bT.e*100), i: Math.floor(bT.i*100) };
 
         const gochara = generateDeepGochara(ch, ch.d1.lagna, date, pK, scores);
 
@@ -786,9 +817,7 @@
                     </div>
                 </div>
 
-                <BiorhythmChart data={bs} scores={scores} />
-
-                <div className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/10 via-transparent to-transparent p-5 space-y-3 mt-4">
+                <div className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/10 via-transparent to-transparent p-5 space-y-3">
                     <div className="flex justify-between items-center"><h3 className="font-serif text-base text-amber-300 flex items-center gap-2"><Icon name="sparkle"/> Prescriptions for {pK}</h3><span className="text-[10px] font-mono t50 uppercase">{pI.symbol} Active Hora</span></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div className="p-3.5 bg-black/30 rounded-2xl border border-white/5 sm:col-span-2"><span className="font-mono text-[9px] text-amber-400 block uppercase mb-1">Presiding Deity & Mantras</span><div className="t100 font-bold mb-1">Adhidevata: {pI.adhidevata}</div><div className="t90 tracking-wide font-medium italic">" {pI.beej} "</div><div className="t60 mt-1">Recite {pI.mantras.join(", ")}</div></div>
@@ -796,6 +825,8 @@
                         <div className="p-3.5 bg-black/30 rounded-2xl border border-white/5"><span className="font-mono text-[9px] text-amber-400 block uppercase mb-1">Charity (Dana)</span><span className="t85 leading-relaxed block">{pI.charity}</span></div>
                     </div>
                 </div>
+
+                <BiorhythmChart data={bsGraph} scores={scores} />
             </div>
         );
     }
@@ -902,49 +933,57 @@
             let ans = ""; 
             let usedProvider = set.aiModel || "offline";
             
-            const b = bio(pr?.dob, new Date(), pr?.utcOffset); 
-            const pK = WEEKDAY[new Date().getDay()]; 
-            const pan = panchang(new Date(), set.monthSystem, pr?.utcOffset||5.5);
-            
-            let globalContext = "";
-            try { const gDB = await AppDB.getGlobalAI(); if(gDB.history.length>0) { const last = CryptoUtils.decrypt(gDB.history[gDB.history.length-1]); globalContext = `[Global Trend: Previous user asked "${last.q}"]`; } } catch(err){}
-
-            const systemContext = `You are the Graha Ledger Jyotish Sage. Provide Vedic astrology guidance for ${pr?.name||'Native'} (Asc: ${ch?.d1?.lagna||'Aries'}, Moon: ${ch?.moonSign||'Aries'}). Transits: 2026 calculations applied. Today: ${pK} Hora, ${pan.tithi} Tithi. Biorhythms: Emotional ${(b.e*100).toFixed(0)}%. ${globalContext}.`;
-
-            if (set.aiModel !== 'offline') {
-                const apiRes = await executeMultiProviderAI(q, set, systemContext);
-                if (apiRes && apiRes.text) { ans = apiRes.text; usedProvider = apiRes.provider; }
-            }
-
-            if (!ans) {
-                usedProvider = "offline";
-                const lowerQ = q.toLowerCase();
-                let contextResponse = "";
+            try {
+                const b = bio(pr?.dob, new Date(), pr?.utcOffset); 
+                const pK = WEEKDAY[new Date().getDay()]; 
+                const pan = panchang(new Date(), set.monthSystem, pr?.utcOffset||5.5);
                 
-                if (lowerQ.includes('target') || lowerQ.includes('commission') || lowerQ.includes('year') || lowerQ.includes('goal')) {
-                    contextResponse = `Regarding your yearly targets and commissions: Jupiter's macro-transit provides significant structural support this year. With your Intellectual cycle currently at ${(b.i*100).toFixed(0)}%, strategic planning and disciplined execution will help you exceed these targets. Maintain focus and avoid speculative risks.`;
-                } else if (lowerQ.includes('week') || lowerQ.includes('7 day')) {
-                    contextResponse = `Over the next 7 days, planetary movements suggest steady progression. With ${pK} ruling today's starting energy, discipline is key. Your biorhythms show Intellectual clarity at ${(b.i*100).toFixed(0)}%, making this an excellent week for structured planning and logic.`;
-                } else if (lowerQ.includes('month') || lowerQ.includes('30 day')) {
-                    contextResponse = `Looking at the month ahead, transit alignments highlight long-term execution over immediate action. Ensure you balance your physical energy (currently ${(b.p*100).toFixed(0)}%) with adequate rest periods.`;
-                } else if (lowerQ.includes('career') || lowerQ.includes('job') || lowerQ.includes('work')) {
-                    contextResponse = `Focusing on your career: The 10th house transits indicate a need for backend strategy right now. Avoid direct confrontations with management. Utilize your ${(b.e*100).toFixed(0)}% emotional resonance to navigate office politics gracefully.`;
-                } else {
-                    contextResponse = `For today's alignment: Transit alignments suggest focus and discipline. Your biorhythm dictates ${b.i > 0 ? 'clarity for execution' : 'restraint'}. Use ${PLANET_INFO[pK]?.gem} and chant "${PLANET_INFO[pK]?.beej.split('(')[0]}" to balance this energy.`;
+                let globalContext = "";
+                try { const gDB = await AppDB.getGlobalAI(); if(gDB.history.length>0) { const last = CryptoUtils.decrypt(gDB.history[gDB.history.length-1]); globalContext = `[Global Trend: Previous user asked "${last.q}"]`; } } catch(err){}
+
+                const systemContext = `You are the Graha Ledger Jyotish Sage. Provide Vedic astrology guidance for ${pr?.name||'Native'} (Asc: ${ch?.d1?.lagna||'Aries'}, Moon: ${ch?.moonSign||'Aries'}). Transits: 2026 calculations applied. Today: ${pK} Hora, ${pan.tithi} Tithi. Biorhythms: Emotional ${(b.e*100).toFixed(0)}%. ${globalContext}. If query is general, provide a 7-day outlook.`;
+
+                if (set.aiModel !== 'offline') {
+                    const apiRes = await executeMultiProviderAI(q, set, systemContext);
+                    if (apiRes && apiRes.text) { ans = apiRes.text; usedProvider = apiRes.provider; }
                 }
 
-                ans = `[Global Offline Dynamic Engine]\n\nAnalysis for ${pr?.name||'Native'}:\n• Lagna: ${ch?.d1?.lagna||'Aries'} | Moon: ${ch?.moonSign||'Aries'}\n• 2026 Hora: ${pK} (${PLANET_INFO[pK]?.action})\n• Resonance: Emotional ${(b.e*100).toFixed(0)}%\n\nRegarding "${q}":\n${contextResponse}`;
-            }
+                if (!ans) {
+                    usedProvider = "offline";
+                    const lowerQ = q.toLowerCase();
+                    let contextResponse = "";
+                    
+                    if (lowerQ.includes('target') || lowerQ.includes('commission') || lowerQ.includes('year') || lowerQ.includes('goal')) {
+                        contextResponse = `Regarding your yearly targets and commissions: Jupiter's macro-transit provides significant structural support this year. With your Intellectual cycle currently at ${(b.i*100).toFixed(0)}%, strategic planning and disciplined execution will help you exceed these targets. Maintain focus and avoid speculative risks.`;
+                    } else if (lowerQ.includes('week') || lowerQ.includes('7 day')) {
+                        contextResponse = `Over the next 7 days, planetary movements suggest steady progression. With ${pK} ruling today's starting energy, discipline is key. Your biorhythms show Intellectual clarity at ${(b.i*100).toFixed(0)}%, making this an excellent week for structured planning and logic.`;
+                    } else if (lowerQ.includes('month') || lowerQ.includes('30 day')) {
+                        contextResponse = `Looking at the month ahead, transit alignments highlight long-term execution over immediate action. Ensure you balance your physical energy (currently ${(b.p*100).toFixed(0)}%) with adequate rest periods.`;
+                    } else if (lowerQ.includes('career') || lowerQ.includes('job') || lowerQ.includes('work')) {
+                        contextResponse = `Focusing on your career: The 10th house transits indicate a need for backend strategy right now. Avoid direct confrontations with management. Utilize your ${(b.e*100).toFixed(0)}% emotional resonance to navigate office politics gracefully.`;
+                    } else {
+                        contextResponse = `For today's alignment: Transit alignments suggest focus and discipline. Your biorhythm dictates ${b.i > 0 ? 'clarity for execution' : 'restraint'}. Use ${PLANET_INFO[pK]?.gem} and chant "${PLANET_INFO[pK]?.beej.split('(')[0]}" to balance this energy.`;
+                    }
 
-            const newQA = { id: Date.now(), q, a: ans, v: usedProvider };
-            const nx = [...h, newQA]; setH(nx); setQ(""); setL(false);
-            
-            try {
-                const chatsFile = await AppDB.getFile(`gl_chats_${emHash}.json`);
-                chatsFile.content.h = CryptoUtils.encrypt(nx);
-                await AppDB.saveFile(`gl_chats_${emHash}.json`, chatsFile.content, chatsFile.sha);
-                await AppDB.appendGlobalAI(newQA); 
-            } catch(er){}
+                    ans = `[Global Offline Dynamic Engine]\n\nAnalysis for ${pr?.name||'Native'}:\n• Lagna: ${ch?.d1?.lagna||'Aries'} | Moon: ${ch?.moonSign||'Aries'}\n• 2026 Hora: ${pK} (${PLANET_INFO[pK]?.action})\n• Resonance: Emotional ${(b.e*100).toFixed(0)}%\n\nRegarding "${q}":\n${contextResponse}`;
+                }
+
+                const newQA = { id: Date.now(), q, a: ans, v: usedProvider };
+                const nx = [...h, newQA]; setH(nx); setQ(""); 
+                
+                try {
+                    const chatsFile = await AppDB.getFile(`gl_chats_${emHash}.json`);
+                    chatsFile.content.h = CryptoUtils.encrypt(nx);
+                    await AppDB.saveFile(`gl_chats_${emHash}.json`, chatsFile.content, chatsFile.sha);
+                    await AppDB.appendGlobalAI(newQA); 
+                } catch(er){}
+            } catch (err) {
+                ans = `System Error: ${err.message}. Please check your API keys or connection.`;
+                setH([...h, { id: Date.now(), q, a: ans, v: 'error' }]);
+                setQ("");
+            } finally {
+                setL(false);
+            }
         }
 
         return (
@@ -958,12 +997,23 @@
                 </div>
 
                 <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
-                    {h.map(x=>( <div key={x.id} className="space-y-1.5"><div className="flex gap-2"><span className="text-amber-400 font-bold text-sm">Q:</span><span className="text-xs t90 font-medium">{x.q}</span></div><div className="p-4 bgcard rounded-2xl border border-white/5 text-xs t85 leading-relaxed whitespace-pre-wrap">{x.a}<div className="text-[8px] t40 font-mono mt-3 uppercase border-t border-white/5 pt-2">Via {x.v}</div></div></div> ))}
+                    {h.map(x=>( 
+                        <details key={x.id} className="p-4 bgcard rounded-2xl border border-white/5 text-xs t85 leading-relaxed whitespace-pre-wrap group" open={x.id === h[h.length-1].id}>
+                            <summary className="font-bold text-amber-400 cursor-pointer flex justify-between items-start outline-none">
+                                <span className="pr-4">Q: {x.q}</span>
+                                <Icon name="caret-down" className="group-open:rotate-180 transition-transform mt-0.5" />
+                            </summary>
+                            <div className="mt-3 pt-3 border-t border-white/10 text-white/90">
+                                {x.a}
+                                <div className="text-[8px] t40 font-mono mt-3 uppercase">Via {x.v}</div>
+                            </div>
+                        </details>
+                    ))}
                     {l && <div className="text-xs t50 italic p-3">Synthesizing global transits & history...</div>}
                 </div>
                 <form onSubmit={ask} className="flex gap-2 p-2 bgcard2 border border-white/10 rounded-2xl shadow-2xl">
                     <button type="button" onClick={startListening} className={`px-3 py-2 rounded-xl transition ${isMic ? 'bg-red-500 text-white animate-pulse' : 'bg-black/30 text-amber-300 hover:bg-white/10'}`}><Icon name="microphone" size={20}/></button>
-                    <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about 2026 transits, career..." className="flex-1 bg-transparent text-xs focus:outline-none px-2 text-white"/>
+                    <input value={q} onChange={e=>setQ(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault(); ask(e);}}} placeholder="Ask about 2026 transits, career..." className="flex-1 bg-transparent text-xs focus:outline-none px-2 text-white"/>
                     <button type="submit" disabled={l} className="px-5 py-2.5 bg-amber-400 text-black text-xs font-semibold rounded-xl disabled:opacity-50 hover:bg-amber-300">Ask</button>
                 </form>
             </div>
@@ -978,7 +1028,6 @@
 
         useEffect(()=>{ if(AppDB.loadConfig()) setDbC(true); },[]);
         
-        // Correct Logout vs Reset behavior
         const logoutUser = () => { setU(null); };
         const resetDbConfig = () => { AppDB.clearConfig(); setDbC(false); setU(null); };
 
@@ -1020,10 +1069,15 @@
         }
 
         const enableMFA = () => {
+            if (!window.OTPAuth) return alert("Authenticator validation engine offline.");
             const secret = new window.OTPAuth.Secret({ size: 20 }).base32;
             const totp = new window.OTPAuth.TOTP({ issuer: "Graha Ledger", label: u.email, algorithm: "SHA1", digits: 6, period: 30, secret: secret });
             const uri = totp.toString();
-            setMfaSetup({ secret, qr: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`, pin: '' });
+            if (window.QRCode) {
+                window.QRCode.toDataURL(uri, (err, url) => { setMfaSetup({ secret, qr: url, pin: '' }); });
+            } else {
+                setMfaSetup({ secret, qr: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`, pin: '' });
+            }
         }
 
         const verifyAndSaveMfa = async () => {
@@ -1033,7 +1087,9 @@
             const authDB = await AppDB.getFile('gl_auth.json');
             authDB.content.users[u.emailHash].mfa = CryptoUtils.encrypt(mfaSetup.secret);
             await AppDB.saveFile('gl_auth.json', authDB.content, authDB.sha);
-            alert("MFA Enabled Successfully! Your vault is now locked."); setMfaSetup(null);
+            alert("MFA Enabled Successfully! Your vault is now locked."); 
+            setU({...u, mfaEnabled: true});
+            setMfaSetup(null);
         }
 
         const fetchCityCoordinates = async () => {
@@ -1045,9 +1101,14 @@
                 const data = await res.json();
                 if(data && data.length > 0) {
                     const lon = parseFloat(data[0].lon);
-                    document.querySelector('input[name="lt"]').value = parseFloat(data[0].lat).toFixed(4);
+                    const lat = parseFloat(data[0].lat);
+                    document.querySelector('input[name="lt"]').value = lat.toFixed(4);
                     document.querySelector('input[name="ln"]').value = lon.toFixed(4);
-                    document.querySelector('input[name="ut"]').value = (Math.round((lon / 15) * 2) / 2).toFixed(1);
+                    
+                    let calcUtc = (Math.round((lon / 15) * 2) / 2).toFixed(1);
+                    if (lon > 68 && lon < 90 && lat > 8 && lat < 37) calcUtc = "5.5";
+                    document.querySelector('input[name="ut"]').value = calcUtc;
+                    
                     document.querySelector('input[name="pl"]').value = data[0].display_name.split(",")[0];
                 } else { alert("City not found. Try a broader search."); }
             } catch(e) { alert("Search failed."); }
@@ -1056,6 +1117,9 @@
 
         return (
             <div className="min-h-screen w-full font-sans pb-10 relative">
+                <datalist id="gotras">{GOTRAS.map(g=><option key={g} value={g} />)}</datalist>
+                <datalist id="jaatis">{JAATIS.map(j=><option key={j} value={j} />)}</datalist>
+
                 <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
                     <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-36">
                         <div className="flex items-center gap-3"><SageLogo size={32}/><div><h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.6</h1><div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.email}</div></div></div>
@@ -1088,8 +1152,13 @@
                                 
                                 <div>
                                     <label className="text-[9px] font-mono uppercase text-emerald-400 mb-1.5 block">2FA Authenticator Setup</label>
-                                    {!mfaSetup && <button type="button" onClick={enableMFA} className="w-full py-2 bg-emerald-500/20 text-emerald-300 font-semibold rounded-xl text-xs hover:bg-emerald-500/30 transition border border-emerald-500/30">Enable 2FA Authenticator App</button>}
-                                    {mfaSetup && (
+                                    {u.mfaEnabled ? (
+                                        <div className="w-full py-2.5 bg-emerald-500/10 text-emerald-300 font-semibold rounded-xl text-xs border border-emerald-500/30 text-center flex items-center justify-center gap-2">
+                                            <Icon name="check-circle" size={16}/> 2FA is currently Active on your Vault
+                                        </div>
+                                    ) : !mfaSetup ? (
+                                        <button type="button" onClick={enableMFA} className="w-full py-2 bg-emerald-500/20 text-emerald-300 font-semibold rounded-xl text-xs hover:bg-emerald-500/30 transition border border-emerald-500/30">Enable 2FA Authenticator App</button>
+                                    ) : (
                                         <div className="bg-black/40 p-3 rounded-xl border border-emerald-500/30 text-center">
                                             <img src={mfaSetup.qr} alt="QR Code" className="w-32 h-32 mx-auto rounded-lg mb-2 shadow-lg bg-white p-1"/>
                                             <div className="text-[9px] font-mono t85 mb-3 select-all">Secret: {mfaSetup.secret}</div>
@@ -1127,7 +1196,7 @@
                             <form onClick={e=>e.stopPropagation()} onSubmit={hSave} className="w-full max-w-md bgcard2 rounded-3xl border border-white/10 p-6 space-y-3.5 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl relative">
                                 <div className="flex justify-between items-center border-b border-white/10 pb-3">
                                     <h3 className="font-serif text-lg text-white">{ed.id?"Modify Profile Details":"Create Natal Profile"}</h3>
-                                    {ed.id && <button type="button" onClick={()=>deleteProfile(ed.id)} className="text-[10px] text-red-400 font-mono border border-red-400/30 px-2 py-1 rounded">Delete</button>}
+                                    {ed.id && <button type="button" onClick={()=>deleteProfile(ed.id)} className="text-[10px] text-red-400 font-mono border border-red-400/30 px-2 py-1 rounded hover:bg-red-400/20">Delete</button>}
                                 </div>
                                 <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Full Name</label><input required name="nm" defaultValue={ed.name||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
                                 <div className="grid grid-cols-2 gap-2">
@@ -1138,7 +1207,7 @@
                                 <div className="pt-2 border-t border-white/10">
                                     <label className="text-[9px] t50 uppercase font-mono mb-1 flex justify-between items-center">
                                         <span>GPS Auto-Locate</span>
-                                        <button type="button" onClick={()=>{ if(navigator.geolocation) { navigator.geolocation.getCurrentPosition(async pos => { document.querySelector('input[name="lt"]').value = pos.coords.latitude.toFixed(4); document.querySelector('input[name="ln"]').value = pos.coords.longitude.toFixed(4); document.querySelector('input[name="ut"]').value = (Math.round((pos.coords.longitude / 15) * 2) / 2).toFixed(1); try { const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`); const d = await r.json(); document.querySelector('input[name="pl"]').value = d.address.city || d.address.town || d.address.village || 'Auto GPS Location'; } catch(e){ document.querySelector('input[name="pl"]').value = 'GPS Coord'; } }); } else alert('Geolocation not supported'); }} className="text-amber-300 hover:text-amber-200">Use GPS <Icon name="crosshair"/></button>
+                                        <button type="button" onClick={()=>{ if(navigator.geolocation) { navigator.geolocation.getCurrentPosition(async pos => { document.querySelector('input[name="lt"]').value = pos.coords.latitude.toFixed(4); document.querySelector('input[name="ln"]').value = pos.coords.longitude.toFixed(4); let calcUtc = (Math.round((pos.coords.longitude / 15) * 2) / 2).toFixed(1); if (pos.coords.longitude > 68 && pos.coords.longitude < 90 && pos.coords.latitude > 8 && pos.coords.latitude < 37) calcUtc = "5.5"; document.querySelector('input[name="ut"]').value = calcUtc; try { const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`); const d = await r.json(); document.querySelector('input[name="pl"]').value = d.address.city || d.address.town || d.address.village || 'Auto GPS Location'; } catch(e){ document.querySelector('input[name="pl"]').value = 'GPS Coord'; } }); } else alert('Geolocation not supported'); }} className="text-amber-300 hover:text-amber-200 border border-amber-300/30 px-2 py-1 rounded">Use GPS <Icon name="crosshair"/></button>
                                     </label>
                                 </div>
 
@@ -1161,8 +1230,8 @@
                                 <div className="pt-2 border-t border-white/10">
                                     <div className="text-[10px] text-amber-400 uppercase font-mono mb-2 tracking-widest text-center">Spiritual Lineage (Optional)</div>
                                     <div className="grid grid-cols-2 gap-2 mb-2">
-                                        <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Gotra</label><input name="gt" defaultValue={ed.gotra||""} placeholder="e.g. Kashyapa" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
-                                        <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Jaati / Varg</label><input name="jt" defaultValue={ed.jaati||""} placeholder="e.g. Brahmin" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                        <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Gotra</label><input list="gotras" name="gt" defaultValue={ed.gotra||""} placeholder="e.g. Kashyapa" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                        <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Jaati / Varg</label><input list="jaatis" name="jt" defaultValue={ed.jaati||""} placeholder="e.g. Brahmin" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2 mb-2">
                                         <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Kul Devta</label><input name="kd" defaultValue={ed.kulDevta||""} placeholder="e.g. Chamunda" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
