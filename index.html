@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Graha Ledger V2</title>
+  <title>Graha Ledger V2.1</title>
   
   <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzE0MTYyQiIgc3Ryb2tlPSIjRDRBNTc0IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzZXJpZiIgZm9udC1zaXplPSI0NSIgZmlsbD0iI0Q0QTU3NCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4KWQPC90ZXh0Pjwvc3ZnPg==" type="image/svg+xml" />
   
@@ -13,7 +13,6 @@
   <!-- CORE DEPENDENCIES -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -81,10 +80,7 @@
     <option value="ja">Japanese</option>
   </select>
 
-  <!-- STRICT REACT ROOT -->
   <div id="root"></div>
-
-  <!-- HIDDEN GOOGLE ENGINE -->
   <div id="google_translate_element"></div>
 
   <script type="text/javascript">
@@ -110,19 +106,12 @@
 
   <!-- REACT APPLICATION LOGIC -->
   <script type="text/babel">
-    // Hide Bootloader immediately when script starts executing
     document.getElementById('bootloader').style.display = 'none';
 
-    // SAFE DESTRUCTURING (Prevents fatal crashes if CDNs fail to load)
     const React = window.React || {};
     const { useState, useEffect, useMemo, Component, Fragment } = React;
-    
-    const Recharts = window.Recharts || {};
-    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } = Recharts;
-    
     const jsPDF = window.jspdf ? window.jspdf.jsPDF : null;
 
-    // 1. FATAL ERROR BOUNDARY
     class ErrorBoundary extends Component {
         constructor(props) { super(props); this.state = { hasError: false, error: null }; }
         static getDerivedStateFromError(error) { return { hasError: true, error }; }
@@ -152,14 +141,10 @@
       </svg>
     );
 
-    // 2. SECURE CRYPTO (Unicode Safe)
+    // SECURE CRYPTO
     const CryptoUtils = {
-        b64EncodeUnicode: (str) => {
-            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) { return String.fromCharCode('0x' + p1); }));
-        },
-        b64DecodeUnicode: (str) => {
-            return decodeURIComponent(atob(str).split('').map(function(c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join(''));
-        },
+        b64EncodeUnicode: (str) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1))),
+        b64DecodeUnicode: (str) => decodeURIComponent(atob(str).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')),
         encrypt: (data) => {
             if (!data) return data;
             const str = typeof data === 'object' ? JSON.stringify(data) : String(data);
@@ -175,22 +160,16 @@
             } catch(e) { return b64; }
         },
         hashPassword: async (str) => {
-             const fallbackHash = (s) => {
-                let h = 0;
-                for(let i = 0; i < s.length; i++) { h = Math.imul(31, h) + s.charCodeAt(i) | 0; }
-                return "hash_" + Math.abs(h).toString(16);
-             }
+             const fallbackHash = (s) => { let h = 0; for(let i = 0; i < s.length; i++) { h = Math.imul(31, h) + s.charCodeAt(i) | 0; } return "hash_" + Math.abs(h).toString(16); }
             try {
                 if (!window.crypto || !window.crypto.subtle) return fallbackHash(str);
                 const buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
                 return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-            } catch (err) {
-                return fallbackHash(str);
-            }
+            } catch (err) { return fallbackHash(str); }
         }
     };
 
-    // 3. DATABASE ADAPTER
+    // DATABASE ADAPTER
     const DB_FILE_NAME = 'graha_db_v1.20.json';
     
     const AppDB = {
@@ -215,18 +194,15 @@
       enableLocal() { this.useLocal = true; try { localStorage.setItem('gh_use_local', 'true'); } catch(e){} },
       async callApi(method, path, body = null) {
         if (!this.config) throw new Error("GitHub DB not configured.");
-        
-        // Fix: Ensure PUT requests do NOT contain query strings which cause GitHub 422 Errors
         const qs = method === 'GET' ? `?t=${Date.now()}` : '';
         const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${path}${qs}`;
-        
         const headers = { 'Authorization': `token ${this.config.token}`, 'Accept': 'application/vnd.github.v3+json' };
         if (body) headers['Content-Type'] = 'application/json';
         const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
         
         if (!res.ok) {
             if (res.status === 404 && method === 'GET') return null; 
-            throw new Error(res.status.toString()); // Passing straight Status Code
+            throw new Error(res.status.toString());
         }
         return await res.json();
       },
@@ -248,13 +224,9 @@
                 ...(sha ? { sha } : {}) 
             });
         } catch (err) {
-            // FIX: Gracefully recover from Github API 409 Conflict (stale sha) or 422 Unprocessable Entity (missing sha on existing file)
             if ((err.message === "409" || err.message === "422") && retryCount < 2) {
                 const latestData = await this.callApi('GET', DB_FILE_NAME);
-                if (latestData && latestData.sha) {
-                    await this.saveDB(contentObj, latestData.sha, retryCount + 1);
-                    return;
-                }
+                if (latestData && latestData.sha) { await this.saveDB(contentObj, latestData.sha, retryCount + 1); return; }
             }
             throw new Error(`Database Sync Failed: ${err.message}`);
         }
@@ -264,28 +236,18 @@
           const db = await this.getDB(); 
           if(!db.content.users || !db.content.users[normE]) return null;
           const user = db.content.users[normE];
-          return { 
-              ...user, 
-              profiles: CryptoUtils.decrypt(user.profiles) || [], 
-              settings: CryptoUtils.decrypt(user.settings) || {}, 
-              chatHistory: CryptoUtils.decrypt(user.chatHistory) || [] 
-          };
+          return { ...user, profiles: CryptoUtils.decrypt(user.profiles) || [], settings: CryptoUtils.decrypt(user.settings) || {}, chatHistory: CryptoUtils.decrypt(user.chatHistory) || [] };
       },
       async syncUserData(email, userData) {
         const normE = email.trim().toLowerCase();
         const db = await this.getDB(); 
         if(!db.content.users) db.content.users = {};
-        db.content.users[normE] = { 
-            ...db.content.users[normE], 
-            profiles: CryptoUtils.encrypt(userData.profiles || []), 
-            settings: CryptoUtils.encrypt(userData.settings || {}), 
-            chatHistory: CryptoUtils.encrypt(userData.chatHistory || []) 
-        };
+        db.content.users[normE] = { ...db.content.users[normE], profiles: CryptoUtils.encrypt(userData.profiles || []), settings: CryptoUtils.encrypt(userData.settings || {}), chatHistory: CryptoUtils.encrypt(userData.chatHistory || []) };
         await this.saveDB(db.content, db.sha);
       }
     };
 
-    // 4. ASTROLOGY MATH ENGINE
+    // ASTROLOGY MATH ENGINE
     const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
     const NAKSHATRAS = ["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
     const LUNAR_MASAS = ["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashvin","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
@@ -388,7 +350,90 @@
         return { p: Math.sin(2*Math.PI*eD/23), e: Math.sin(2*Math.PI*eD/28), i: Math.sin(2*Math.PI*eD/33) };
     }
 
-    // 5. ISOLATED AUTH COMPONENTS
+    // NATIVE UI COMPONENTS
+    function BiorhythmChart({ data }) {
+        const w = 300, h = 100;
+        const pts = (key) => data.map((d, i) => `${(i/(data.length-1))*w},${50 - d[key]*45}`).join(" L ");
+        return (
+            <div className="w-full h-32 relative overflow-hidden flex flex-col justify-end">
+                <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full overflow-visible p-2">
+                    <line x1="0" y1="50" x2={w} y2="50" stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" />
+                    <line x1={w/2} y1="0" x2={w/2} y2={h} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 4" />
+                    <path d={`M ${pts('P')}`} fill="none" stroke="#B23A48" strokeWidth="2.5" className="drop-shadow" />
+                    <path d={`M ${pts('E')}`} fill="none" stroke="#9FB8D9" strokeWidth="2.5" className="drop-shadow" />
+                    <path d={`M ${pts('I')}`} fill="none" stroke="#D4A574" strokeWidth="2.5" className="drop-shadow" />
+                </svg>
+                <div className="flex justify-between w-full px-2 mt-2 font-mono text-[8px] t50">
+                    <span>-7D</span><span className="text-amber-300 font-bold">Today</span><span>+7D</span>
+                </div>
+            </div>
+        );
+    }
+
+    function KundaliChart({ ac, ch, style="north" }) {
+        if (!ac) return null;
+        
+        if (style === "south") {
+            return (
+                <div className="grid grid-cols-4 gap-1 aspect-square w-full max-w-[320px] mx-auto rounded-xl border border-white/10 bg-black/40 p-1.5 shadow-inner mb-4">
+                    {[ { s: "Pisces", r: 0, c: 0 }, { s: "Aries", r: 0, c: 1 }, { s: "Taurus", r: 0, c: 2 }, { s: "Gemini", r: 0, c: 3 }, { s: "Cancer", r: 1, c: 3 }, { s: "Leo", r: 2, c: 3 }, { s: "Virgo", r: 3, c: 3 }, { s: "Libra", r: 3, c: 2 }, { s: "Scorpio", r: 3, c: 1 }, { s: "Sagittarius", r: 3, c: 0 }, { s: "Capricorn", r: 2, c: 0 }, { s: "Aquarius", r: 1, c: 0 } ].map((bx) => {
+                        const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; 
+                        const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); 
+                        const isL = ac.lagna===bx.s;
+                        const trs = ch.transits && Object.entries(ch.transits).filter(([,sn])=>sn===bx.s).map(([p])=>p);
+                        return (
+                            <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1.5 rounded-lg border text-[9px] relative overflow-hidden transition-all ${isL?'border-amber-400/50 bg-amber-400/10':'border-white/10 bg-white/5'}`}>
+                                <div className="flex justify-between font-mono font-medium t50 mb-0.5"><span>{bx.s.slice(0,3)}</span><span className={isL?'text-amber-300':''}>{isL?'Lg':`H${hNum}`}</span></div>
+                                <div className="flex flex-col gap-0.5 z-10">{pIn.map(p=><span key={p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="font-semibold drop-shadow">{p.slice(0,3)}</span>)}</div>
+                                {trs && trs.length > 0 && <div className="mt-auto pt-1 border-t border-white/10 text-[8px] flex flex-wrap gap-0.5 z-10">{trs.map(p=><span key={'tr'+p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="italic opacity-80">+{p.slice(0,2)}</span>)}</div>}
+                            </div>
+                        )
+                    })}
+                    <div style={{gridRow:"2/4", gridColumn:"2/4"}} className="flex flex-col items-center justify-center p-2 text-center bg-black/20 rounded-xl border border-white/5 m-1">
+                        <span className="font-mono text-[9px] t50 mt-1 uppercase tracking-widest">South Indian</span>
+                    </div>
+                </div>
+            );
+        }
+
+        // Native SVG North Indian Diamond Chart
+        const hPos = {
+            1: {x:50, y:25}, 2: {x:25, y:12.5}, 3: {x:12.5, y:25}, 4: {x:25, y:50},
+            5: {x:12.5, y:75}, 6: {x:25, y:87.5}, 7: {x:50, y:75}, 8: {x:75, y:87.5},
+            9: {x:87.5, y:75}, 10: {x:75, y:50}, 11: {x:87.5, y:25}, 12: {x:75, y:12.5}
+        };
+
+        const renderHouse = (hNum) => {
+            const sn = ac.houses[hNum];
+            const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p);
+            const trs = ch.transits && Object.entries(ch.transits).filter(([,snT])=>snT===sn).map(([p])=>p);
+            const {x, y} = hPos[hNum];
+            return (
+                <g key={`h${hNum}`}>
+                    <text x={x} y={y-5} fill="rgba(255,255,255,0.2)" fontSize="6" textAnchor="middle" fontFamily="monospace">{sn.slice(0,3)}</text>
+                    <text x={x} y={y+2} fill="#D4A574" fontSize="5" textAnchor="middle" fontWeight="bold">{hNum}</text>
+                    {pIn.map((p, i) => <text key={p} x={x} y={y+8+(i*5)} fill={PLANET_INFO[p]?.color} fontSize="5" textAnchor="middle" fontWeight="bold">{p.slice(0,2)}</text>)}
+                    {trs && trs.length > 0 && <text x={x} y={y+10+(pIn.length*5)} fill="rgba(255,255,255,0.6)" fontSize="4" textAnchor="middle" fontStyle="italic">+{trs.map(p=>p.slice(0,2)).join(',')}</text>}
+                </g>
+            );
+        }
+
+        return (
+            <div className="w-full max-w-[320px] mx-auto rounded-xl bg-black/40 p-2 shadow-inner mb-4 relative aspect-square">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                    {/* Background Rect & Borders */}
+                    <rect x="0" y="0" width="100" height="100" fill="transparent" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5"/>
+                    <line x1="0" y1="0" x2="100" y2="100" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5"/>
+                    <line x1="100" y1="0" x2="0" y2="100" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5"/>
+                    <polygon points="50,0 100,50 50,100 0,50" fill="transparent" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5"/>
+                    {Object.keys(hPos).map(hNum => renderHouse(Number(hNum)))}
+                </svg>
+                <div className="absolute top-1 left-2 font-mono text-[8px] t40 uppercase">North Indian</div>
+            </div>
+        )
+    }
+
+    // AUTH COMPONENTS
     function SetupModal({ onConfig }) {
         const [o, setO]=useState(""); const [r, setR]=useState("AstroGrah"); const [t, setT]=useState(""); const [err, setErr]=useState("");
         return (
@@ -425,7 +470,7 @@
         
         const handleSubmit = async (ev) => {
             ev.preventDefault(); setErr("");
-            const normE = e.trim().toLowerCase(); // Protect against case-mismatches
+            const normE = e.trim().toLowerCase(); 
             try {
                 const db = await AppDB.getDB(); if(!db.content.users) db.content.users = {};
                 if(mode === "signup") { 
@@ -435,7 +480,11 @@
                     db.content.users[normE] = { password: hashedPw, requiresPasswordChange: true }; 
                     await AppDB.saveDB(db.content, db.sha); setGp(gen); setMode("generated");
                 } else if(mode === "login") { 
-                    const u = db.content.users[normE]; if(!u) throw new Error("Account not found.");
+                    const u = db.content.users[normE]; 
+                    if(!u) {
+                        if (Object.keys(db.content.users).length === 0) throw new Error("Empty Database! Please switch to Quick Sign Up to initialize.");
+                        throw new Error("Account not found.");
+                    }
                     const hashedInput = await CryptoUtils.hashPassword(p);
                     if(u.password !== p && u.password !== hashedInput) throw new Error("Invalid password."); 
                     const parsedData = await AppDB.getUserData(normE);
@@ -467,7 +516,6 @@
                     <div className="flex gap-2 items-center justify-center mb-2">
                         <div className="flex-1 p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/20 tracking-wider text-lg">{gp}</div>
                         <button onClick={() => {
-                            // Robust Copy Fallback
                             const el = document.createElement('textarea');
                             el.value = gp; el.style.position = 'fixed'; el.style.opacity = '0';
                             document.body.appendChild(el); el.select();
@@ -534,7 +582,7 @@
         )
     }
 
-    // 6. TABS
+    // TABS
     function PersonTab({ pr, ch, date, setDate, settings }) {
         const [div, setDiv]=useState(1); const [expert, setExpert]=useState(false);
         if(!ch) return <div className="p-4 border border-white/10 rounded-xl text-center text-sm t60 bgfaint3 mt-4">Compute Error. Please check birth details.</div>;
@@ -559,11 +607,6 @@
                             <div className="text-[11px] font-mono t60 mt-1">{pr.dob} · {pr.time} · {pr.place}</div>
                         </div>
                         <button onClick={exPDF} className="p-2 border border-white/10 rounded-full bg-black/20 hover:bg-white/10 transition"><Icon name="download-simple"/></button>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-2 text-[10px] font-mono">
-                        <div><span className="t40 block">Gotra / Jaati</span><span className="t100 text-[11px]">{pr.gotra||"N/A"} · {pr.jaati||"N/A"}</span></div>
-                        <div><span className="t40 block">Kul / Gram Devta</span><span className="t100 text-[11px]">{pr.kulDevta||"N/A"} · {pr.gramDevta||"N/A"}</span></div>
-                        <div className="col-span-2"><span className="t40 block">Sthan Devta</span><span className="t100 text-[11px]">{pr.sthanDevta||"N/A"}</span></div>
                     </div>
                 </div>
 
@@ -591,28 +634,10 @@
                     {!expert ? (
                         <div className="text-sm t85 leading-relaxed p-4 bg-black/20 rounded-xl border border-white/5 mb-4">
                             <span className="text-amber-300 font-bold block mb-1">Your Core Foundation:</span>
-                            With a {ch.d1.lagna} ascendant, your life path is driven by its ruling planet. Your emotional core is grounded in {ch.moonSign} (Nakshatra: {ch.nak}), which means you process the world through this lens. Today's active planet is {pK}, so focus on {pI.action.toLowerCase()}
+                            With a {ch.d1.lagna} ascendant, your life path is driven by its ruling planet. Your emotional core is grounded in {ch.moonSign} (Nakshatra: {ch.nak}, Pada: {ch.pada}), processing the world through this specific lens. Today's active hora/planet is {pK}, meaning energy naturally flows towards {pI.action.toLowerCase()}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-4 gap-1 aspect-square max-w-[320px] mx-auto rounded-xl border border-white/10 bg-black/40 p-1.5 shadow-inner mb-4">
-                            {[ { s: "Pisces", r: 0, c: 0 }, { s: "Aries", r: 0, c: 1 }, { s: "Taurus", r: 0, c: 2 }, { s: "Gemini", r: 0, c: 3 }, { s: "Cancer", r: 1, c: 3 }, { s: "Leo", r: 2, c: 3 }, { s: "Virgo", r: 3, c: 3 }, { s: "Libra", r: 3, c: 2 }, { s: "Scorpio", r: 3, c: 1 }, { s: "Sagittarius", r: 3, c: 0 }, { s: "Capricorn", r: 2, c: 0 }, { s: "Aquarius", r: 1, c: 0 } ].map((bx) => {
-                                const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; 
-                                const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); 
-                                const isL = ac.lagna===bx.s;
-                                const trs = ch.transits && Object.entries(ch.transits).filter(([,sn])=>sn===bx.s).map(([p])=>p);
-                                return (
-                                    <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1.5 rounded-lg border text-[9px] relative overflow-hidden transition-all ${isL?'border-amber-400/50 bg-amber-400/10':'border-white/10 bg-white/5'}`}>
-                                        <div className="flex justify-between font-mono font-medium t50 mb-0.5"><span>{bx.s.slice(0,3)}</span><span className={isL?'text-amber-300':''}>{isL?'Lg':`H${hNum}`}</span></div>
-                                        <div className="flex flex-col gap-0.5 z-10">{pIn.map(p=><span key={p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="font-semibold drop-shadow">{p.slice(0,3)}</span>)}</div>
-                                        {trs && trs.length > 0 && <div className="mt-auto pt-1 border-t border-white/10 text-[8px] flex flex-wrap gap-0.5 z-10">{trs.map(p=><span key={'tr'+p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="italic opacity-80">+{p.slice(0,2)}</span>)}</div>}
-                                    </div>
-                                )
-                            })}
-                            <div style={{gridRow:"2/4", gridColumn:"2/4"}} className="flex flex-col items-center justify-center p-2 text-center bg-black/20 rounded-xl border border-white/5 m-1">
-                                <span className="font-serif text-sm t100">{div===1?'D-1 Rashi':div===9?'D-9 Navamsha':'D-10 Dashamsha'}</span>
-                                <span className="font-mono text-[9px] t50 mt-1 uppercase">South Indian Style</span>
-                            </div>
-                        </div>
+                        <KundaliChart ac={ac} ch={ch} style={settings.kundaliStyle} />
                     )}
                 </div>
 
@@ -629,22 +654,9 @@
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bgfaint3 p-4">
-                    <div className="flex justify-between items-center mb-1"><span className="font-serif text-[15px] block">Biorhythm Synchrony</span><span className="font-mono text-[9px] t40 bg-white/5 px-2 py-1 rounded">UTC{pr.utcOffset} Synced</span></div>
+                    <div className="flex justify-between items-center mb-4"><span className="font-serif text-[15px] block">Biorhythm Synchrony</span><span className="font-mono text-[9px] t40 bg-white/5 px-2 py-1 rounded">UTC{pr.utcOffset} Synced</span></div>
                     
-                    {LineChart ? (
-                        <ResponsiveContainer width="100%" height={160}>
-                            <LineChart data={bs} margin={{top:5, right:5, left:-20, bottom:0}}>
-                                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false}/>
-                                <XAxis dataKey="label" tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}} interval={2}/>
-                                <YAxis domain={[-1,1]} tick={{fill:"rgba(255,255,255,0.4)", fontSize:9}}/>
-                                <Tooltip contentStyle={{background:"#1A1C36", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, fontSize:10}}/>
-                                <ReferenceLine x="Today" stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3"/>
-                                <Line type="monotone" dataKey="P" stroke="#B23A48" dot={false} strokeWidth={2}/>
-                                <Line type="monotone" dataKey="E" stroke="#9FB8D9" dot={false} strokeWidth={2}/>
-                                <Line type="monotone" dataKey="I" stroke="#D4A574" dot={false} strokeWidth={2}/>
-                            </LineChart>
-                        </ResponsiveContainer>
-                    ) : <div className="p-4 text-xs t50 text-center">Chart library failed to load from CDN.</div>}
+                    <BiorhythmChart data={bs} />
 
                     <div className="mt-4 p-3 bg-black/20 rounded-xl border border-white/5 text-[11px] leading-relaxed t85">
                         <strong className="text-white block mb-1">Today's Real-Time Status:</strong> 
@@ -661,7 +673,22 @@
         const pan = panchang(d, settings.monthSystem, utc); 
         const pK = WEEKDAY[d.getDay()]; const sDay = SANSKRIT_DAYS[pK];
         const fm = dt => dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
-        const sankalp = `Om Vishnu Vishnu Vishnu. Adya Brahmaniya dvitiya parardhe, Shvetavaraha kalpe, Jambu dvipe... ${p?.gotra||'Kashyapa'} gotrotpannah, ${p?.jaati||'Hindu'} vargah, ${p?.name||'User'} aham, shruti smriti puranokta phala praptyartham, ayur arogya aishwarya abhivriddhyartham, manashanti praptyartham (for health, wealth, prosperity, and mental peace), Vikram Samvat ${pan.vikram}, ${pan.masa} mase, ${pan.paksha} pakshe, ${pan.tithi} tithau, ${sDay} vasaraye sankalpam karishye. Om Kuladevatayai (${p?.kulDevta||'Devi'}) Namah, Om Gramadevatayai (${p?.gramDevta||'Deva'}) Namah, Om Sthandevatayai (${p?.sthanDevta||'Deva'}) Namah.`;
+        
+        // DYNAMIC SANKALP COMPILER
+        const getSankalp = () => {
+            const parts = [];
+            if(p?.gotra) parts.push(`${p.gotra} gotrotpannah`);
+            if(p?.jaati) parts.push(`${p.jaati} vargah`);
+            parts.push(`${p?.name||'User'} aham`);
+            
+            let devtas = [];
+            if(p?.kulDevta) devtas.push(`Om Kuladevatayai (${p.kulDevta}) Namah`);
+            if(p?.gramDevta) devtas.push(`Om Gramadevatayai (${p.gramDevta}) Namah`);
+            if(p?.sthanDevta) devtas.push(`Om Sthandevatayai (${p.sthanDevta}) Namah`);
+            const devtaString = devtas.length > 0 ? " " + devtas.join(", ") + "." : "";
+            
+            return `Om Vishnu Vishnu Vishnu. Adya Brahmaniya dvitiya parardhe, Shvetavaraha kalpe, Jambu dvipe... ${parts.join(', ')}, shruti smriti puranokta phala praptyartham, ayur arogya aishwarya abhivriddhyartham, manashanti praptyartham, Vikram Samvat ${pan.vikram}, ${pan.masa} mase, ${pan.paksha} pakshe, ${pan.tithi} tithau, ${sDay} vasaraye sankalpam karishye.${devtaString}`;
+        }
         
         return (
             <div className="space-y-4 pb-10 gl-fadein mt-4">
@@ -671,7 +698,7 @@
                 </div>
                 <div className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-5 text-xs">
                     <h3 className="font-serif text-[15px] text-amber-300 mb-2">Personalized Sankalp Mantra</h3>
-                    <p className="t85 italic leading-relaxed font-medium bg-black/20 p-3 rounded-xl border border-amber-400/10">"{sankalp}"</p>
+                    <p className="t85 italic leading-relaxed font-medium bg-black/20 p-3 rounded-xl border border-amber-400/10">"{getSankalp()}"</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center text-xs font-mono">
                     <div className="p-3 border border-white/10 rounded-xl bg-gradient-to-b from-amber-900/20 to-black/20">
@@ -755,9 +782,15 @@
         async function ask(e){
             e.preventDefault(); if(!q.trim()||l) return; setL(true); 
             let ans = "";
+            
             if(set.aiModel==='offline'){ 
-                const context = h.slice(-3).map(x=>x.q).join(" ");
-                ans = `[Offline Engine] Synthesizing context: "${context}". Based on ${pr?.name||'User'}'s ${ch?.moonSign||'Aries'} Moon: Focus is required over expansion today. Trust intuition over logic.`; 
+                // Enhanced Dynamic Offline Engine
+                const b = bio(pr?.dob, new Date(), pr?.utcOffset);
+                const pK = WEEKDAY[new Date().getDay()];
+                const pan = panchang(new Date(), set.monthSystem, pr?.utcOffset||5.5);
+                const isHighE = b.E > 0;
+                
+                ans = `[Offline Learning Engine] Synthesizing core context...\n\nData Assessment for ${pr?.name||'User'} (Asc: ${ch?.d1?.lagna||'Unknown'}, Moon: ${ch?.moonSign||'Unknown'}):\nCurrently, your internal biorhythm marks your Emotional resonance at ${(b.E*100).toFixed(0)}%. As today is ruled by ${pK} and falls under the ${pan.tithi} Tithi, your chart aligns best with ${PLANET_INFO[pK]?.action.toLowerCase()} ${isHighE ? 'while leveraging your high communicative stability' : 'but requires patience to balance sensitivity'}.\n\n(Note: Connect your Gemini API Key in the Settings Vault to unlock generative, conversational Jyotish readings).`; 
             } else { 
                 if(!set.apiKeys || !set.apiKeys[set.aiModel]) ans=`Error: Missing API Key in Settings Vault.`; 
                 else {
@@ -794,25 +827,35 @@
         );
     }
 
-    // 7. MAIN RENDERER
+    // MAIN RENDERER
     function AppContent() {
-        const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
-        const [dt, setDt]=useState(new Date()); const [ss, setSs]=useState(false); const [ed, setEd]=useState(null);
+        const [dbC, setDbC]=useState(false); 
+        const [u, setU]=useState(null); 
+        const [tb, setTb]=useState("person");
+        const [dt, setDt]=useState(new Date()); 
+        const [ss, setSs]=useState(false); 
+        const [ed, setEd]=useState(null);
 
         useEffect(()=>{ 
             if(AppDB.loadConfig()) setDbC(true); 
         },[]);
-
+        
         const resetConfig = () => { AppDB.clearConfig(); setDbC(false); setU(null); };
+
+        const prs = u?.d?.profiles || []; 
+        const set = u?.d?.settings || {aiModel:"offline", monthSystem:"amanta", kundaliStyle:"north", apiKeys:{}};
+        
+        const chs = useMemo(()=>{ 
+            const o={}; 
+            if(prs) { prs.forEach(p=>o[p.id]=computeKundli(p, dt)); }
+            return o; 
+        }, [prs, dt]);
+        
+        const aP = prs.length > 0 ? prs[0] : null;
 
         if(!dbC) return <SetupModal onConfig={()=>setDbC(true)}/>;
         if(!u) return <AuthModal onLogin={(e,d)=>setU({e: e.trim().toLowerCase(), d})} onReset={resetConfig}/>;
         if(u?.d?.requiresPasswordChange) return <ForcePasswordChange email={u.e} onComplete={() => setU({...u, d: {...u.d, requiresPasswordChange: false}})} />;
-
-        const prs = u?.d?.profiles||[]; 
-        const set = u?.d?.settings||{aiModel:"offline", monthSystem:"amanta", kundaliStyle:"north", apiKeys:{}};
-        const chs = useMemo(()=>{ const o={}; prs.forEach(p=>o[p.id]=computeKundli(p, dt)); return o; },[prs,dt]);
-        const aP = prs.length > 0 ? prs[0] : null;
 
         const hSave = async(e) => {
             e.preventDefault(); const f=e.target;
@@ -884,6 +927,16 @@
                                         }} className="px-4 py-2 bg-amber-400 text-black font-semibold rounded-xl text-xs hover:bg-amber-300 transition">Save</button>
                                     </div>
                                 </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Kundali Style</label>
+                                        <select value={set.kundaliStyle} onChange={e=> { const ns={...set,kundaliStyle:e.target.value}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"><option value="north">North Indian</option><option value="south">South Indian</option></select>
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Month System</label>
+                                        <select value={set.monthSystem} onChange={e=> { const ns={...set,monthSystem:e.target.value}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"><option value="amanta">Amanta</option><option value="purnimanta">Purnimanta</option></select>
+                                    </div>
+                                </div>
                                 <div><label className="text-[9px] font-mono uppercase t50 mb-1.5 block">AI Intelligence Engine</label><select value={set.aiModel} onChange={e=> { const ns={...set,aiModel:e.target.value}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"><option value="offline">Offline Learning Engine</option><option value="gemini-1.5-flash">Gemini 1.5 Flash</option></select></div>
                                 <div className="p-4 border border-emerald-500/20 bg-emerald-950/10 rounded-2xl space-y-3">
                                     <label className="text-[10px] text-emerald-400 font-mono uppercase flex items-center justify-between">Encrypted API Keys <a href="https://aistudio.google.com/app/apikey" target="_blank" className="hover:text-emerald-200" title="Get API Key"><Icon name="question"/></a></label>
@@ -903,8 +956,8 @@
                                     <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Time</label><input required type="time" name="tm" defaultValue={ed.time||"12:00"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
                                 </div>
                                 <div>
-                                    <label className="text-[9px] t50 uppercase font-mono mb-1 block">Quick Location Autofill</label>
-                                    <select onChange={e=>{const p=CITY_PRESETS.find(c=>c.name===e.target.value); if(p){e.target.form.pl.value=p.name; e.target.form.lt.value=p.lat; e.target.form.ln.value=p.lon; e.target.form.ut.value=p.utc;}}} className="w-full bg-amber-400/10 border border-amber-400/30 text-amber-200 rounded-xl px-3 py-2.5 text-sm outline-none"><option value="">- Select City -</option>{CITY_PRESETS.map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select>
+                                    <label className="text-[9px] t50 uppercase font-mono mb-1 block">Quick Location Autofill (Optional)</label>
+                                    <select onChange={e=>{const p=CITY_PRESETS.find(c=>c.name===e.target.value); if(p){e.target.form.pl.value=p.name; e.target.form.lt.value=p.lat; e.target.form.ln.value=p.lon; e.target.form.ut.value=p.utc;}}} className="w-full bg-amber-400/10 border border-amber-400/30 text-amber-200 rounded-xl px-3 py-2.5 text-sm outline-none"><option value="">- Select City or Type Manually Below -</option>{CITY_PRESETS.map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select>
                                 </div>
                                 <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Place Name</label><input required name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white"/></div>
                                 <div className="grid grid-cols-3 gap-2">
