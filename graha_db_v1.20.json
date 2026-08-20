@@ -2,7 +2,10 @@
   "users": {
     "dsupercooldude@gmail.com": {
       "password": "9442262cce3f04cab073fc66a13e12f4f03959429bbb81a7b7eda6ea8e872af4",
-      "requiresPasswordChange": false
+      "requiresPasswordChange": false,
+      "profiles": "CDplK1NdVxRpYwAsQFlBXnMXPiRBEh4UNy4lZwgSAw9reWp1BR0CBHFtZTFbXVcUaWN3cQgCChR/YzcpU1NXFGljFy1TXF1SOm1nDFxUW1dxbWUpU0QQDGF2aXQBHBBaPC9lfwUCHAVlbWUwRlN9UDUyIjEQCgcYZm1lIl1EQFdxe2UHWlFAVzc2Ji8SEh4UOSAmMVsSCBQdIDUkRVFGFgU4JjYSckBXOywuKxAcEF0mLQMgRERTFGljCiRFUVZfKiBlaRBXQFc+BSIzRlEQDHFja2dBRFpXPQUiM0ZREAxxY2tnW1QQDHFwcH0FAgIEZ3l1dAUAEBpxICQmV15GFGljZAEGcQcBZ2M6GA==",
+      "settings": "KDw=",
+      "chatHistory": "CBw="
     }
   }
 }
