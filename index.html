@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Graha Ledger V2.8 Enterprise</title>
   
-  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzE0MTYyQiIgc3Ryb2tlPSIjRDRBNTc0IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzZXJpZiIgZm9udC1zaXplPSI0NSIgZmlsbD0iI0Q0QTU3NCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4KWQPC90ZXh0Pjwvc3ZnPg==" type="image/svg+xml" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   
-  <!-- EXTERNAL DEPENDENCIES -->
+  <!-- CORE DEPENDENCIES -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -19,12 +18,15 @@
 
   <style>
     body { background: #121426; margin: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; overflow-x: hidden; }
-    ::-webkit-scrollbar { width: 4px; height: 4px; } ::-webkit-scrollbar-thumb { background: rgba(212,165,116,0.25); border-radius: 4px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; } 
+    ::-webkit-scrollbar-thumb { background: rgba(212,165,116,0.25); border-radius: 4px; }
     .font-serif { font-family: 'Fraunces', serif; } .font-mono { font-family: 'IBM Plex Mono', monospace; }
     .t100 { color: #F2EFE6; } .t85 { color: rgba(242,239,230,0.85); } .t60 { color: rgba(242,239,230,0.60); }
-    .bgcard { background: #181A33; border: 1px solid rgba(255,255,255,0.08); } .bgcard2 { background: #1C1F3D; border: 1px solid rgba(212,165,116,0.15); }
+    .bgcard { background: #181A33; border: 1px solid rgba(255,255,255,0.08); } 
+    .bgcard2 { background: #1C1F3D; border: 1px solid rgba(212,165,116,0.15); }
     .bgfaint { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
-    .gl-fadein { animation: fadein 0.25s ease-out; } @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .gl-fadein { animation: fadein 0.25s ease-out; } 
+    @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     details > summary { list-style: none; outline: none; } details > summary::-webkit-details-marker { display: none; }
     .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget, #goog-gt-tt, .skiptranslate, #google_translate_element { display: none !important; opacity: 0 !important; pointer-events: none !important; height: 0 !important; }
     body { top: 0px !important; }
@@ -33,9 +35,22 @@
   </style>
 </head>
 <body>
-  <div id="bootloader" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center;"><div style="background: #1C1F3D; border: 1px solid rgba(212,165,116,0.3); padding: 30px; border-radius: 24px; max-width: 400px;"><h2 style="font-family: serif; color: #D4A574; font-size: 24px; margin-bottom: 10px;">Graha Ledger Loading...</h2><p style="color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 20px;">Fetching modular fabric components...</p><button onclick="localStorage.clear(); window.location.reload();" style="background: #D4A574; color: #121426; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">Hard Reset Cache</button></div></div>
-  <div class="custom-lang-wrapper"><select class="custom-lang-selector notranslate" onchange="triggerGoogleTranslate(this.value)"><option value="en">English (Default)</option><option value="hi">हिन्दी (Hindi)</option><option value="sa">संस्कृतम् (Sanskrit)</option><option value="ar">العربية (Arabic)</option><option value="ta">தமிழ் (Tamil)</option><option value="te">తెలుగు (Telugu)</option><option value="mr">मराठी (Marathi)</option><option value="gu">ગુજરાતી (Gujarati)</option><option value="bn">বাংলা (Bengali)</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="ru">Русский (Russian)</option><option value="ja">日本語 (Japanese)</option><option value="zh-CN">中文 (Chinese)</option></select></div>
-  
+
+  <!-- BOOTLOADER -->
+  <div id="bootloader" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center;">
+      <div style="background: #1C1F3D; border: 1px solid rgba(212,165,116,0.3); padding: 30px; border-radius: 24px; max-width: 400px;">
+          <h2 style="font-family: serif; color: #D4A574; font-size: 24px; margin-bottom: 10px;">Graha Ledger Loading...</h2>
+          <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 20px;">Fetching modular fabric components...</p>
+          <button onclick="localStorage.clear(); window.location.reload();" style="background: #D4A574; color: #121426; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">Hard Reset Cache</button>
+      </div>
+  </div>
+
+  <div class="custom-lang-wrapper">
+    <select class="custom-lang-selector notranslate" onchange="triggerGoogleTranslate(this.value)">
+        <option value="en">English (Default)</option><option value="hi">हिन्दी (Hindi)</option><option value="sa">संस्कृतम् (Sanskrit)</option><option value="ar">العربية (Arabic)</option><option value="ta">தமிழ் (Tamil)</option><option value="te">తెలుగు (Telugu)</option><option value="mr">मराठी (Marathi)</option><option value="gu">ગુજરાતી (Gujarati)</option><option value="bn">বাংলা (Bengali)</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="ru">Русский (Russian)</option><option value="ja">日本語 (Japanese)</option><option value="zh-CN">中文 (Chinese)</option>
+    </select>
+  </div>
+
   <div id="root"></div>
   <div id="google_translate_element"></div>
 
