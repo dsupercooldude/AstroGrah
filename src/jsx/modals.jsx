@@ -1,0 +1,120 @@
+const { useState } = window.React;
+const { Icon, SageLogo, AppDB, CryptoUtils } = window;
+
+window.SetupModal = ({ onConfig }) => {
+    const [o, setO]=useState(""); const [r, setR]=useState("AstroGrah"); const [t, setT]=useState(""); const [err, setErr]=useState("");
+    return (
+        <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10">
+            <form onSubmit={async(e)=>{ e.preventDefault(); setErr(""); AppDB.setConfig(o,r,t); try{ await AppDB.callApi('GET',''); onConfig(); }catch(er){ if(er.message==="404") { onConfig(); } else { setErr("Token Invalid or Repo Missing."); AppDB.clearConfig(); } } }}>
+                <SageLogo size={44}/><h2 className="text-center font-serif text-xl mt-2 mb-4 text-amber-200">Connect Cloud Vault</h2>
+                {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}
+                <div className="space-y-3">
+                    <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault(); e.target.form.requestSubmit();}}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
+                    <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault(); e.target.form.requestSubmit();}}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
+                    <div><label className="text-[10px] t40 uppercase font-mono">Personal Access Token</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault(); e.target.form.requestSubmit();}}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
+                </div>
+                <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-5 hover:bg-amber-300 transition">Authorize & Sync</button>
+                <button type="button" onClick={()=>{ AppDB.enableLocal(); onConfig(); }} className="w-full text-xs t60 mt-3 hover:text-white transition">Skip Cloud - Use Offline Local Storage</button>
+            </form></div></div>
+    );
+};
+
+window.AuthModal = ({ onLogin }) => {
+    const [mode, setMode] = useState("login"); const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState(""); const [mfaPin, setMfaPin] = useState("");
+    const proceedToVault = async (normE, emailHash, reqChange, isMfaEnabled) => {
+        const vaultFile = await AppDB.getFile(`gl_vault_${emailHash}.json`);
+        const prof = typeof vaultFile.content.profiles === 'string' ? CryptoUtils.decrypt(vaultFile.content.profiles) : (vaultFile.content.profiles || []);
+        const sett = typeof vaultFile.content.settings === 'string' ? CryptoUtils.decrypt(vaultFile.content.settings) : (vaultFile.content.settings || {});
+        try { localStorage.setItem('gl_active_user', JSON.stringify({ email: normE, emailHash, mfaEnabled: isMfaEnabled })); } catch(ex){}
+        onLogin({ email: normE, emailHash, profiles: prof, settings: sett, requiresPasswordChange: reqChange, mfaEnabled: isMfaEnabled });
+    };
+    const handleSubmit = async (ev) => { 
+        ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase(); 
+        try { 
+            const emailHash = await AppDB.hashKey(normE); let authFile = await AppDB.getFile('gl_auth.json'); if(!authFile.content.users) authFile.content.users = {};
+            if(mode === "signup") { 
+                if(authFile.content.users[emailHash]) throw new Error("Email already registered."); 
+                const gen="Om-"+Math.random().toString(36).slice(-6)+"!"; const hashedPw = await CryptoUtils.hashPassword(gen); 
+                authFile.content.users[emailHash] = { p: hashedPw, req: true }; await AppDB.saveFile('gl_auth.json', authFile.content, authFile.sha); 
+                setGp(gen); setMode("generated");
+            } else if(mode === "login") { 
+                const u = authFile.content.users[emailHash]; 
+                if(!u) { if (Object.keys(authFile.content.users).length === 0) throw new Error("Empty Vault! Please Sign Up."); throw new Error("Account not found."); } 
+                const hashedInput = await CryptoUtils.hashPassword(p); if(u.p !== p && u.p !== hashedInput) throw new Error("Invalid password."); 
+                if (u.mfa) { setMode("mfa"); return; } await proceedToVault(normE, emailHash, u.req, !!u.mfa); 
+            }
+        } catch(error) { setErr(error.message); }
+    };
+    const handleMfaSubmit = async (ev) => {
+        ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase();
+        try {
+            const emailHash = await AppDB.hashKey(normE); let authFile = await AppDB.getFile('gl_auth.json'); const u = authFile.content.users[emailHash];
+            const secret = CryptoUtils.decrypt(u.mfa); if (!window.OTPAuth) throw new Error("Authenticator library missing.");
+            const totp = new window.OTPAuth.TOTP({ secret: secret }); if (totp.validate({ token: mfaPin, window: 1 }) === null) throw new Error("Invalid 2FA PIN.");
+            await proceedToVault(normE, emailHash, u.req, true);
+        } catch(err) { setErr(err.message); }
+    };
+
+    if (mode === "mfa") return (
+        <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10 text-center"><Icon name="shield-check" size={48} className="mx-auto text-emerald-400 mb-3" /><h2 className="font-serif text-2xl mt-1 mb-2 text-emerald-200">2FA Protected</h2><p className="text-xs t60 mb-5">Enter your 6-digit Authenticator app PIN.</p>
+            <form onSubmit={handleMfaSubmit}>{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<input required type="text" maxLength="6" value={mfaPin} onChange={ev=>setMfaPin(ev.target.value)} onKeyDown={(ev)=>{if(ev.key==='Enter'){ev.preventDefault(); ev.target.form.requestSubmit();}}} placeholder="000000" className="w-full text-center tracking-[0.5em] font-mono font-bold bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-lg outline-none text-emerald-300 focus:border-emerald-400/50 mb-4"/><button type="submit" className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 hover:bg-emerald-400 transition">Unlock Vault</button><button type="button" onClick={()=>setMode("login")} className="mt-4 text-[10px] t50 hover:text-white">Cancel</button></form></div></div>
+    );
+    if (mode === "generated") return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl border border-emerald-500/40 bgcard2 p-6 text-center shadow-2xl"><h2 className="font-serif text-xl t100 mb-1 text-emerald-300">Account Created</h2><p className="text-xs t75 mb-4">Auto-generated secure password:</p><div className="flex gap-2 items-center justify-center mb-3"><div className="flex-1 p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/30 text-base select-all">{gp}</div></div><p className="text-[10px] t50">Save this temporary password.</p><button onClick={()=>setMode("login")} className="w-full rounded-full py-3 text-sm font-semibold bg-emerald-500 text-black mt-5">Proceed to Sign In</button></div></div> );
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10 relative">
+            <form onSubmit={handleSubmit}><SageLogo size={44}/><h2 className="text-center font-serif text-2xl mt-1 mb-4 text-amber-200">{mode==="signup"?"Create Account":"Sign In"}</h2>{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<div className="space-y-3"><div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} onKeyDown={(ev)=>{if(ev.key==='Enter'){ev.preventDefault(); ev.target.form.requestSubmit();}}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>{mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} onKeyDown={(ev)=>{if(ev.key==='Enter'){ev.preventDefault(); ev.target.form.requestSubmit();}}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>}</div><button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-5 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">{mode==="signup"?"Generate Credentials":"Enter Vault"}</button><div className="flex justify-between items-center mt-4"><button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white">{mode==="login"?"New User? Quick Sign Up":"Existing User? Sign In"}</button></div></form></div></div>
+    );
+};
+
+window.ForcePasswordChange = ({ email, emailHash, onComplete }) => {
+    const [p, setP] = useState(""); const [loading, setLoading] = useState(false);
+    return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/40 shadow-2xl"><form onSubmit={async (e) => { e.preventDefault(); if(p.length < 6) return alert('Password too short.'); setLoading(true); try { let authFile = await AppDB.getFile('gl_auth.json'); authFile.content.users[emailHash].p = await CryptoUtils.hashPassword(p); authFile.content.users[emailHash].req = false; await AppDB.saveFile('gl_auth.json', authFile.content, authFile.sha); onComplete(); } catch (err) { alert(err.message); setLoading(false); } }}><h2 className="font-serif text-xl t100 mb-2 text-emerald-300">Set Custom Password</h2><div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Private Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} onKeyDown={(ev)=>{if(ev.key==='Enter'){ev.preventDefault(); ev.target.form.requestSubmit();}}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-emerald-500/50"/></div><button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 mt-5 hover:bg-emerald-400 transition">{loading ? "Encrypting..." : "Confirm & Launch"}</button></form></div></div> )
+};
+
+window.AdminAuthModal = ({ u, onClose, onAuthenticated }) => {
+    const [adminUser, setAdminUser] = useState(""); const [pwd, setPw] = useState(""); const [mfa, setMfa] = useState(""); const [err, setErr] = useState("");
+    const handleAuth = async (e) => {
+        e.preventDefault(); setErr("");
+        try { 
+            let adminFile = await AppDB.getFile('gl_admin.json');
+            if (!adminFile.content.adminUser) { const hashedDefault = await CryptoUtils.hashPassword(pwd); adminFile.content = { adminUser: adminUser.trim().toLowerCase(), p: hashedDefault, mfa: null }; await AppDB.saveFile('gl_admin.json', adminFile.content, adminFile.sha); alert("Admin Vault initialized with these credentials."); onAuthenticated(); return; }
+            const normAdmin = adminUser.trim().toLowerCase(); if (adminFile.content.adminUser !== normAdmin) throw new Error("Invalid Admin Username.");
+            const hashedInput = await CryptoUtils.hashPassword(pwd); if (adminFile.content.p !== pwd && adminFile.content.p !== hashedInput) throw new Error("Invalid Master Admin Password.");
+            if (adminFile.content.mfa) { const secret = CryptoUtils.decrypt(adminFile.content.mfa); const totp = new window.OTPAuth.TOTP({ secret }); if (totp.validate({ token: mfa, window: 1 }) === null) throw new Error("Invalid Admin 2FA PIN."); }
+            onAuthenticated();
+        } catch (error) { setErr(error.message); }
+    };
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4" onClick={onClose}><div onClick={e=>e.stopPropagation()} className="w-full max-w-sm bgcard2 p-6 rounded-3xl border border-amber-500/30 shadow-2xl gl-fadein text-center"><Icon name="shield-warning" size={40} className="text-amber-400 mx-auto mb-3"/><h3 className="font-serif text-lg text-white mb-1">Admin Authentication</h3><p className="text-[10px] t60 mb-4">Dedicated Admin credentials required to access DB architecture.</p>
+            <form onSubmit={handleAuth} className="space-y-3">{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 rounded">{err}</div>}
+                <input required type="text" placeholder="Admin Username" value={adminUser} onChange={e=>setAdminUser(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-amber-400/50"/>
+                <input required type="password" placeholder="Master Admin Password" value={pwd} onChange={e=>setPw(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-amber-400/50"/>
+                <input type="text" maxLength="6" placeholder="Admin 2FA PIN (if configured)" value={mfa} onChange={e=>setMfa(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-amber-400/50 tracking-widest text-center font-mono"/>
+                <button type="submit" className="w-full bg-amber-500 text-black font-bold rounded-full py-2.5 hover:bg-amber-400 transition mt-2">Unlock Admin Console</button><button type="button" onClick={onClose} className="text-[10px] t50 hover:text-white mt-3 w-full">Cancel</button>
+            </form></div></div>
+    );
+};
+
+window.AdminConsoleModal = ({ onClose, onResetDb }) => {
+    const [o, setO] = useState(AppDB.config?.owner || ""); const [r, setR] = useState(AppDB.config?.repo || ""); const [t, setT] = useState(AppDB.config?.token || ""); const [adminMfaSetup, setAdminMfaSetup] = useState(null);
+    const handleSaveDb = (e) => { e.preventDefault(); if(!confirm("Update Database Configuration?")) return; AppDB.setConfig(o, r, t); alert("Database configuration updated successfully."); onClose(); };
+    const enableAdmin2FA = () => { const secret = new window.OTPAuth.Secret({ size: 20 }).base32; const totp = new window.OTPAuth.TOTP({ issuer: "Graha Ledger Admin", label: "MasterAdmin", algorithm: "SHA1", digits: 6, period: 30, secret: secret }); const uri = totp.toString(); setAdminMfaSetup({ secret, qr: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`, pin: '' }); };
+    const verifyAdmin2FA = async () => { const totp = new window.OTPAuth.TOTP({ secret: adminMfaSetup.secret }); if (totp.validate({ token: adminMfaSetup.pin, window: 1 }) === null) return alert("Invalid PIN."); let adminFile = await AppDB.getFile('gl_admin.json'); adminFile.content.mfa = CryptoUtils.encrypt(adminMfaSetup.secret); await AppDB.saveFile('gl_admin.json', adminFile.content, adminFile.sha); alert("Admin 2FA Activated Successfully."); setAdminMfaSetup(null); };
+
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4" onClick={onClose}><div onClick={e=>e.stopPropagation()} className="w-full max-w-md bgcard2 p-6 rounded-3xl border border-white/10 shadow-2xl gl-fadein max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-3"><h3 className="font-serif text-lg text-amber-300 flex items-center gap-2"><Icon name="database"/> Dedicated Admin Console</h3><button onClick={onClose} className="hover:text-white t60"><Icon name="x"/></button></div>
+            <form onSubmit={handleSaveDb} className="space-y-3">
+                <div><label className="text-[9px] t50 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"/></div>
+                <div><label className="text-[9px] t50 uppercase font-mono">Repository Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"/></div>
+                <div><label className="text-[9px] t50 uppercase font-mono">Personal Access Token</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"/></div>
+                <button type="submit" className="w-full bg-amber-400 text-black font-bold rounded-full py-2.5 mt-2 hover:bg-amber-300 transition">Update Repo Connection</button>
+            </form>
+            <div className="mt-5 pt-4 border-t border-white/10 space-y-3"><span className="font-mono text-[9px] uppercase t50 block">Admin Security & 2FA</span>
+                {!adminMfaSetup ? ( <button type="button" onClick={enableAdmin2FA} className="w-full py-2 bg-emerald-500/20 text-emerald-300 font-semibold rounded-xl text-xs hover:bg-emerald-500/30 border border-emerald-500/30">Set Dedicated Admin 2FA</button> ) : (
+                    <div className="bg-black/40 p-3 rounded-xl border border-emerald-500/30 text-center"><img src={adminMfaSetup.qr} alt="Admin QR" className="w-28 h-28 mx-auto rounded-lg mb-2 bg-white p-1"/><input value={adminMfaSetup.pin} onChange={e=>setAdminMfaSetup({...adminMfaSetup, pin: e.target.value})} maxLength="6" placeholder="Enter PIN" className="w-full text-center tracking-widest font-mono bg-black/50 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-emerald-300 mb-2"/><button type="button" onClick={verifyAdmin2FA} className="w-full py-1.5 bg-emerald-500 text-black font-bold rounded-lg text-xs">Verify & Activate</button></div>
+                )}
+                <button onClick={()=>{ if(confirm("Disconnect and clear database settings? You will be logged out.")) { onResetDb(); } }} className="w-full bg-red-500/20 border border-red-500/30 text-red-300 font-bold rounded-full py-2.5 hover:bg-red-500/40 transition">Disconnect Database</button>
+            </div></div></div>
+    );
+};
