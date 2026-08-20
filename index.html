@@ -6,9 +6,12 @@
   <title>Graha Ledger V2.8 Enterprise</title>
   
   <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzE0MTYyQiIgc3Ryb2tlPSIjRDRBNTc0IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzZXJpZiIgZm9udC1zaXplPSI0NSIgZmlsbD0iI0Q0QTU3NCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4KWQPC90ZXh0Pjwvc3ZnPg==" type="image/svg+xml" />
+  
+  <!-- CSS & Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   
+  <!-- Core Dependencies -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -18,13 +21,15 @@
 
   <style>
     body { background: #121426; margin: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; overflow-x: hidden; }
-    ::-webkit-scrollbar { width: 4px; height: 4px; } ::-webkit-scrollbar-thumb { background: rgba(212,165,116,0.25); border-radius: 4px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; } 
+    ::-webkit-scrollbar-thumb { background: rgba(212,165,116,0.25); border-radius: 4px; }
     .font-serif { font-family: 'Fraunces', serif; } .font-mono { font-family: 'IBM Plex Mono', monospace; }
     .t100 { color: #F2EFE6; } .t85 { color: rgba(242,239,230,0.85); } .t60 { color: rgba(242,239,230,0.60); }
     .bgcard { background: #181A33; border: 1px solid rgba(255,255,255,0.08); } 
     .bgcard2 { background: #1C1F3D; border: 1px solid rgba(212,165,116,0.15); }
     .bgfaint { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
-    .gl-fadein { animation: fadein 0.25s ease-out; } @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .gl-fadein { animation: fadein 0.25s ease-out; } 
+    @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     details > summary { list-style: none; outline: none; } details > summary::-webkit-details-marker { display: none; }
     .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget, #goog-gt-tt, .skiptranslate, #google_translate_element { display: none !important; opacity: 0 !important; pointer-events: none !important; height: 0 !important; }
     body { top: 0px !important; }
@@ -57,11 +62,22 @@
   </script>
   <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-  <!-- MODULAR FABRIC INJECTIONS -->
-  <script src="src/core.js"></script>
-  <script type="text/babel" src="src/ui.jsx"></script>
-  <script type="text/babel" src="src/tabs.jsx"></script>
-  <script type="text/babel" src="src/app.jsx"></script>
+  <!-- 1. PURE LOGIC MODULES (Loaded First) -->
+  <script src="src/js/cryptography.js"></script>
+  <script src="src/js/database.js"></script>
+  <script src="src/js/formulas.js"></script>
+  <script src="src/js/ai-rules.js"></script>
+
+  <!-- 2. UI COMPONENTS (Loaded Second) -->
+  <script type="text/babel" src="src/jsx/components.jsx"></script>
+  <script type="text/babel" src="src/jsx/charts.jsx"></script>
+  <script type="text/babel" src="src/jsx/modals.jsx"></script>
+  
+  <!-- 3. VIEWS & DASHBOARDS (Loaded Third) -->
+  <script type="text/babel" src="src/jsx/tabs.jsx"></script>
+
+  <!-- 4. MASTER ORCHESTRATOR (Loaded Last) -->
+  <script type="text/babel" src="src/jsx/app.jsx"></script>
 
 </body>
 </html>
