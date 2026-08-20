@@ -1,316 +1,344 @@
-// src/jsx/modals.jsx
-const { useState } = window.React;
+// src/jsx/app.jsx
+const bootInterval = setInterval(() => {
+  if (window.ErrorBoundary && window.PersonTab && window.AuthModal && window.SetupModal && window.SettingsModal && window.KundaliRenderer && window.React) {
+    clearInterval(bootInterval);
+    document.getElementById("bootloader").style.display = "none";
 
-window.SetupModal = ({ onConfig }) => {
-  const { SageLogo, AppDB } = window;
-  const [o, setO] = useState(""); const [r, setR] = useState("AstroGrah"); const [t, setT] = useState(""); const [err, setErr] = useState("");
-  
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10">
-      <form onSubmit={async(e)=>{ e.preventDefault(); setErr(""); AppDB.setConfig(o,r,t); try{ await AppDB.callApi('GET',''); onConfig(); }catch(er){ if(er.message==="404") { onConfig(); } else { setErr("Token Invalid or Repo Missing."); AppDB.clearConfig(); } } }}>
-        <SageLogo size={44}/><h2 className="text-center font-serif text-xl mt-2 mb-4 text-amber-200">Connect Cloud Vault</h2>
-        {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}
-        <div className="space-y-3">
-          <div><label className="text-[10px] t40 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
-          <div><label className="text-[10px] t40 uppercase font-mono">Repo Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
-          <div><label className="text-[10px] t40 uppercase font-mono">Personal Access Token</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>
-        </div>
-        <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-5 hover:bg-amber-300 transition">Authorize & Sync</button>
-        <button type="button" onClick={()=>{ AppDB.enableLocal(); onConfig(); }} className="w-full text-xs t60 mt-3 hover:text-white transition">Skip Cloud - Use Offline Local Storage</button>
-      </form></div></div>
-  );
-};
+    const { ErrorBoundary, SetupModal, AuthModal, ForcePasswordChange, AdminAuthModal, AdminConsoleModal, SettingsModal, PersonTab, PanchangTab, CompatTab, AskTab, SageLogo, Icon, AppDB, CryptoUtils } = window;
+    const { useState, useEffect, useMemo, Fragment } = window.React;
 
-window.AuthModal = ({ onLogin }) => {
-  const { SageLogo, Icon, AppDB, CryptoUtils } = window;
-  const [mode, setMode] = useState("login"); const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState(""); const [mfaPin, setMfaPin] = useState("");
-  
-  const proceedToVault = async (normE, emailHash, reqChange, isMfaEnabled) => {
-    const vaultFile = await AppDB.getFile(`gl_vault_${emailHash}.json`);
-    const prof = typeof vaultFile.content.profiles === 'string' ? CryptoUtils.decrypt(vaultFile.content.profiles) : (vaultFile.content.profiles || []);
-    const sett = typeof vaultFile.content.settings === 'string' ? CryptoUtils.decrypt(vaultFile.content.settings) : (vaultFile.content.settings || {});
-    try { localStorage.setItem('gl_active_user', JSON.stringify({ email: normE, emailHash, mfaEnabled: isMfaEnabled })); } catch(ex){}
-    onLogin({ email: normE, emailHash, profiles: prof, settings: sett, requiresPasswordChange: reqChange, mfaEnabled: isMfaEnabled });
-  };
-  
-  const handleSubmit = async (ev) => { 
-    ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase(); 
-    try { 
-      const emailHash = await AppDB.hashKey(normE); let authFile = await AppDB.getFile('gl_auth.json'); if(!authFile.content.users) authFile.content.users = {};
-      if(mode === "signup") { 
-        if(authFile.content.users[emailHash]) throw new Error("Email already registered."); 
-        const gen="Om-"+Math.random().toString(36).slice(-6)+"!"; const hashedPw = await CryptoUtils.hashPassword(gen); 
-        authFile.content.users[emailHash] = { p: hashedPw, req: true }; await AppDB.saveFile('gl_auth.json', authFile.content, authFile.sha); 
-        setGp(gen); setMode("generated");
-      } else if(mode === "login") { 
-        const u = authFile.content.users[emailHash]; 
-        if(!u) { if (Object.keys(authFile.content.users).length === 0) throw new Error("Empty Vault! Please Sign Up."); throw new Error("Account not found."); } 
-        const hashedInput = await CryptoUtils.hashPassword(p); if(u.p !== p && u.p !== hashedInput) throw new Error("Invalid password."); 
-        if (u.mfa) { setMode("mfa"); return; } await proceedToVault(normE, emailHash, u.req, !!u.mfa); 
-      }
-    } catch(error) { setErr(error.message); }
-  };
-  
-  const handleMfaSubmit = async (ev) => {
-    ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase();
-    try {
-      const emailHash = await AppDB.hashKey(normE); let authFile = await AppDB.getFile('gl_auth.json'); const u = authFile.content.users[emailHash];
-      const secret = CryptoUtils.decrypt(u.mfa); if (!window.OTPAuth) throw new Error("Authenticator library missing.");
-      const totp = new window.OTPAuth.TOTP({ secret: secret }); if (totp.validate({ token: mfaPin, window: 1 }) === null) throw new Error("Invalid 2FA PIN.");
-      await proceedToVault(normE, emailHash, u.req, true);
-    } catch(err) { setErr(err.message); }
-  };
+    function AppContent() {
+      // SYNCHRONOUS BOOT: Prevents setup modal from incorrectly popping up on new tabs
+      const [dbC, setDbC] = useState(() => AppDB.loadConfig());
+      
+      const [u, setU] = useState(null);
+      const [tb, setTb] = useState("person");
+      const [dt, setDt] = useState(new Date());
+      const [ss, setSs] = useState(false);
+      const [ed, setEd] = useState(null);
+      const [activeProfileId, setActiveProfileId] = useState(null);
+      const [adminAuthOpen, setAdminAuthOpen] = useState(false);
+      const [adminConsoleOpen, setAdminConsoleOpen] = useState(false);
 
-  if (mode === "mfa") return (
-    <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10 text-center"><Icon name="shield-check" size={48} className="mx-auto text-emerald-400 mb-3" /><h2 className="font-serif text-2xl mt-1 mb-2 text-emerald-200">2FA Protected</h2><p className="text-xs t60 mb-5">Enter your 6-digit Authenticator app PIN.</p>
-      <form onSubmit={handleMfaSubmit}>{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<input required type="text" maxLength="6" value={mfaPin} onChange={ev=>setMfaPin(ev.target.value)} placeholder="000000" className="w-full text-center tracking-[0.5em] font-mono font-bold bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-lg outline-none text-emerald-300 focus:border-emerald-400/50 mb-4"/><button type="submit" className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 hover:bg-emerald-400 transition">Unlock Vault</button><button type="button" onClick={()=>setMode("login")} className="mt-4 text-[10px] t50 hover:text-white">Cancel</button></form></div></div>
-  );
-  if (mode === "generated") return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl border border-emerald-500/40 bgcard2 p-6 text-center shadow-2xl"><h2 className="font-serif text-xl t100 mb-1 text-emerald-300">Account Created</h2><p className="text-xs t75 mb-4">Auto-generated secure password:</p><div className="flex gap-2 items-center justify-center mb-3"><div className="flex-1 p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/30 text-base select-all">{gp}</div></div><p className="text-[10px] t50">Save this temporary password.</p><button onClick={()=>setMode("login")} className="w-full rounded-full py-3 text-sm font-semibold bg-emerald-500 text-black mt-5">Proceed to Sign In</button></div></div> );
-  
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10 relative">
-      <form onSubmit={handleSubmit}><SageLogo size={44}/><h2 className="text-center font-serif text-2xl mt-1 mb-4 text-amber-200">{mode==="signup"?"Create Account":"Sign In"}</h2>{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<div className="space-y-3"><div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>{mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>}</div><button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-5 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">{mode==="signup"?"Generate Credentials":"Enter Vault"}</button><div className="flex justify-between items-center mt-4"><button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white">{mode==="login"?"New User? Quick Sign Up":"Existing User? Sign In"}</button></div></form></div></div>
-  );
-};
+      const [formData, setFormData] = useState({ name: "", dob: "2000-01-01", time: "12:00", place: "", lat: "", lon: "", utcOffset: "5.5", gotra: "", jaati: "", kulDevta: "", gramDevta: "", sthanDevta: "" });
 
-window.ForcePasswordChange = ({ email, emailHash, onComplete }) => {
-  const { AppDB, CryptoUtils } = window;
-  const [p, setP] = useState(""); const [loading, setLoading] = useState(false);
-  return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/40 shadow-2xl"><form onSubmit={async (e) => { e.preventDefault(); if(p.length < 6) return alert('Password too short.'); setLoading(true); try { let authFile = await AppDB.getFile('gl_auth.json'); authFile.content.users[emailHash].p = await CryptoUtils.hashPassword(p); authFile.content.users[emailHash].req = false; await AppDB.saveFile('gl_auth.json', authFile.content, authFile.sha); onComplete(); } catch (err) { alert(err.message); setLoading(false); } }}><h2 className="font-serif text-xl t100 mb-2 text-emerald-300">Set Custom Password</h2><div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Private Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-emerald-500/50"/></div><button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 mt-5 hover:bg-emerald-400 transition">{loading ? "Encrypting..." : "Confirm & Launch"}</button></form></div></div> );
-};
+      window.useIdleTimeout(() => {
+        if (u) {
+          try { localStorage.removeItem("gl_active_user"); } catch (e) {}
+          setU(null);
+          alert("Session timed out after 5 minutes of inactivity.");
+        }
+      }, 300000);
 
-window.AdminAuthModal = ({ u, onClose, onAuthenticated }) => {
-  const { Icon, AppDB, CryptoUtils } = window;
-  const [adminUser, setAdminUser] = useState(""); const [pwd, setPw] = useState(""); const [mfa, setMfa] = useState(""); const [err, setErr] = useState("");
-  
-  const handleAuth = async (e) => {
-    e.preventDefault(); setErr("");
-    try { 
-      let adminFile = await AppDB.getFile('gl_admin.json');
-      if (!adminFile.content.adminUser) { const hashedDefault = await CryptoUtils.hashPassword(pwd); adminFile.content = { adminUser: adminUser.trim().toLowerCase(), p: hashedDefault, mfa: null }; await AppDB.saveFile('gl_admin.json', adminFile.content, adminFile.sha); alert("Admin Vault initialized with these credentials."); onAuthenticated(); return; }
-      const normAdmin = adminUser.trim().toLowerCase(); if (adminFile.content.adminUser !== normAdmin) throw new Error("Invalid Admin Username.");
-      const hashedInput = await CryptoUtils.hashPassword(pwd); if (adminFile.content.p !== pwd && adminFile.content.p !== hashedInput) throw new Error("Invalid Master Admin Password.");
-      if (adminFile.content.mfa) { const secret = CryptoUtils.decrypt(adminFile.content.mfa); const totp = new window.OTPAuth.TOTP({ secret }); if (totp.validate({ token: mfa, window: 1 }) === null) throw new Error("Invalid Admin 2FA PIN."); }
-      onAuthenticated();
-    } catch (error) { setErr(error.message); }
-  };
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4" onClick={onClose}><div onClick={e=>e.stopPropagation()} className="w-full max-w-sm bgcard2 p-6 rounded-3xl border border-amber-500/30 shadow-2xl gl-fadein text-center"><Icon name="shield-warning" size={40} className="text-amber-400 mx-auto mb-3"/><h3 className="font-serif text-lg text-white mb-1">Admin Authentication</h3><p className="text-[10px] t60 mb-4">Dedicated Admin credentials required to access DB architecture.</p>
-      <form onSubmit={handleAuth} className="space-y-3">{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2 rounded">{err}</div>}
-        <input required type="text" placeholder="Admin Username" value={adminUser} onChange={e=>setAdminUser(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-amber-400/50"/>
-        <input required type="password" placeholder="Master Admin Password" value={pwd} onChange={e=>setPw(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-amber-400/50"/>
-        <input type="text" maxLength="6" placeholder="Admin 2FA PIN (if configured)" value={mfa} onChange={e=>setMfa(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-amber-400/50 tracking-widest text-center font-mono"/>
-        <button type="submit" className="w-full bg-amber-500 text-black font-bold rounded-full py-2.5 hover:bg-amber-400 transition mt-2">Unlock Admin Console</button><button type="button" onClick={onClose} className="text-[10px] t50 hover:text-white mt-3 w-full">Cancel</button>
-      </form></div></div>
-  );
-};
+      useEffect(() => {
+        const fetchVaultIfConfigured = async () => {
+          if (dbC) {
+            try {
+              const sess = localStorage.getItem("gl_active_user");
+              if (sess) {
+                const parsedSess = JSON.parse(sess);
+                const vaultFile = await AppDB.getFile(`gl_vault_${parsedSess.emailHash}.json`);
+                const prof = typeof vaultFile.content.profiles === "string" ? CryptoUtils.decrypt(vaultFile.content.profiles) : vaultFile.content.profiles || [];
+                const sett = typeof vaultFile.content.settings === "string" ? CryptoUtils.decrypt(vaultFile.content.settings) : vaultFile.content.settings || {};
+                setU({ email: parsedSess.email, emailHash: parsedSess.emailHash, profiles: prof, settings: sett, mfaEnabled: parsedSess.mfaEnabled });
+                if (prof.length) setActiveProfileId(prof[0].id);
+              }
+            } catch (e) {}
+          }
+        };
+        fetchVaultIfConfigured();
+      }, [dbC]);
 
-window.AdminConsoleModal = ({ onClose, onResetDb }) => {
-  const { Icon, AppDB, CryptoUtils } = window;
-  const [o, setO] = useState(AppDB.config?.owner || ""); const [r, setR] = useState(AppDB.config?.repo || ""); const [t, setT] = useState(AppDB.config?.token || ""); const [adminMfaSetup, setAdminMfaSetup] = useState(null);
-  const handleSaveDb = (e) => { e.preventDefault(); if(!confirm("Update Database Configuration?")) return; AppDB.setConfig(o, r, t); alert("Database configuration updated successfully."); onClose(); };
-  const enableAdmin2FA = () => { const secret = new window.OTPAuth.Secret({ size: 20 }).base32; const totp = new window.OTPAuth.TOTP({ issuer: "Graha Ledger Admin", label: "MasterAdmin", algorithm: "SHA1", digits: 6, period: 30, secret: secret }); const uri = totp.toString(); setAdminMfaSetup({ secret, qr: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`, pin: '' }); };
-  const verifyAdmin2FA = async () => { const totp = new window.OTPAuth.TOTP({ secret: adminMfaSetup.secret }); if (totp.validate({ token: adminMfaSetup.pin, window: 1 }) === null) return alert("Invalid PIN."); let adminFile = await AppDB.getFile('gl_admin.json'); adminFile.content.mfa = CryptoUtils.encrypt(adminMfaSetup.secret); await AppDB.saveFile('gl_admin.json', adminFile.content, adminFile.sha); alert("Admin 2FA Activated Successfully."); setAdminMfaSetup(null); };
+      const logoutUser = () => { try { localStorage.removeItem("gl_active_user"); } catch (e) {} setU(null); };
+      const resetDbConfig = () => { try { localStorage.removeItem("gl_active_user"); } catch (e) {} AppDB.clearConfig(); setDbC(false); setU(null); setAdminConsoleOpen(false); };
 
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4" onClick={onClose}><div onClick={e=>e.stopPropagation()} className="w-full max-w-md bgcard2 p-6 rounded-3xl border border-white/10 shadow-2xl gl-fadein max-h-[85vh] overflow-y-auto">
-      <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-3"><h3 className="font-serif text-lg text-amber-300 flex items-center gap-2"><Icon name="database"/> Dedicated Admin Console</h3><button onClick={onClose} className="hover:text-white t60"><Icon name="x"/></button></div>
-      <form onSubmit={handleSaveDb} className="space-y-3">
-        <div><label className="text-[9px] t50 uppercase font-mono">GitHub Username</label><input required value={o} onChange={e=>setO(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"/></div>
-        <div><label className="text-[9px] t50 uppercase font-mono">Repository Name</label><input required value={r} onChange={e=>setR(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"/></div>
-        <div><label className="text-[9px] t50 uppercase font-mono">Personal Access Token</label><input required type="password" value={t} onChange={e=>setT(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"/></div>
-        <button type="submit" className="w-full bg-amber-400 text-black font-bold rounded-full py-2.5 mt-2 hover:bg-amber-300 transition">Update Repo Connection</button>
-      </form>
-      <div className="mt-5 pt-4 border-t border-white/10 space-y-3"><span className="font-mono text-[9px] uppercase t50 block">Admin Security & 2FA</span>
-        {!adminMfaSetup ? ( <button type="button" onClick={enableAdmin2FA} className="w-full py-2 bg-emerald-500/20 text-emerald-300 font-semibold rounded-xl text-xs hover:bg-emerald-500/30 border border-emerald-500/30">Set Dedicated Admin 2FA</button> ) : (
-          <div className="bg-black/40 p-3 rounded-xl border border-emerald-500/30 text-center"><img src={adminMfaSetup.qr} alt="Admin QR" className="w-28 h-28 mx-auto rounded-lg mb-2 bg-white p-1"/><input value={adminMfaSetup.pin} onChange={e=>setAdminMfaSetup({...adminMfaSetup, pin: e.target.value})} maxLength="6" placeholder="Enter PIN" className="w-full text-center tracking-widest font-mono bg-black/50 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-emerald-300 mb-2"/><button type="button" onClick={verifyAdmin2FA} className="w-full py-1.5 bg-emerald-500 text-black font-bold rounded-lg text-xs">Verify & Activate</button></div>
-        )}
-        <button onClick={()=>{ if(confirm("Disconnect and clear database settings? You will be logged out.")) { onResetDb(); } }} className="w-full bg-red-500/20 border border-red-500/30 text-red-300 font-bold rounded-full py-2.5 hover:bg-red-500/40 transition">Disconnect Database</button>
-      </div></div></div>
-  );
-};
+      const prs = u?.profiles || [];
+      const set = u?.settings || { aiModel: "offline", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {} };
+      const chs = useMemo(() => {
+        const o = {};
+        if (prs) { prs.forEach((p) => (o[p.id] = window.computeKundli(p, dt))); }
+        return o;
+      }, [prs, dt]);
+      const aP = prs.find((p) => p.id === activeProfileId) || (prs.length > 0 ? prs[0] : null);
 
-// --- DEDICATED SETTINGS & MULTI-AI / 2FA MODAL ---
-window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }) => {
-  const { Icon, AppDB, CryptoUtils } = window;
-  const [mfaSetup, setMfaSetup] = useState(null);
-  const [localSet, setLocalSet] = useState(settings || { aiModel: "offline", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {} });
+      if (!dbC) return <SetupModal onConfig={() => setDbC(true)} />;
+      if (!u) return <AuthModal onLogin={(d) => { setU(d); if (d?.profiles?.length) setActiveProfileId(d.profiles[0].id); }} />;
+      if (u?.requiresPasswordChange) return <ForcePasswordChange email={u.email} emailHash={u.emailHash} onComplete={() => setU({ ...u, requiresPasswordChange: false })} />;
 
-  const enableMFA = () => {
-    if (!window.OTPAuth) return alert("Authenticator library failed to load.");
-    const secret = new window.OTPAuth.Secret({ size: 20 }).base32;
-    const totp = new window.OTPAuth.TOTP({ issuer: "Graha Ledger", label: u.email, algorithm: "SHA1", digits: 6, period: 30, secret: secret });
-    const uri = totp.toString();
-    setMfaSetup({ secret, qr: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`, pin: "" });
-  };
+      const calculateTimezone = (lat, lon) => {
+        if (lat >= 22.5 && lat <= 26.5 && lon >= 51.0 && lon <= 56.5) return "4.0"; // UAE
+        if (lat >= 6.0 && lat <= 37.5 && lon >= 68.0 && lon <= 97.5) return "5.5";  // India
+        if (lat >= 49.5 && lat <= 61.0 && lon >= -8.0 && lon <= 2.0) return "0.0";  // UK
+        return (Math.round((lon / 15) * 2) / 2).toFixed(1);
+      };
 
-  const verifyAndSaveMfa = async (e) => {
-    e.preventDefault();
-    if (!window.OTPAuth) return alert("Authenticator library missing.");
-    const totp = new window.OTPAuth.TOTP({ secret: mfaSetup.secret });
-    if (totp.validate({ token: mfaSetup.pin, window: 1 }) === null) return alert("Invalid PIN. Please check your Authenticator app and try again.");
-    const authDB = await AppDB.getFile("gl_auth.json");
-    authDB.content.users[u.emailHash].mfa = CryptoUtils.encrypt(mfaSetup.secret);
-    await AppDB.saveFile("gl_auth.json", authDB.content, authDB.sha);
-    alert("2FA Enabled Successfully! Your vault is securely locked.");
-    onMfaSuccess();
-    setMfaSetup(null);
-  };
+      const handleOpenEdit = (profileObj = {}) => {
+        setFormData({
+          id: profileObj.id || null,
+          name: profileObj.name || "",
+          dob: profileObj.dob || "2000-01-01",
+          time: profileObj.time || "12:00",
+          place: profileObj.place || "",
+          lat: profileObj.lat !== undefined ? profileObj.lat : "",
+          lon: profileObj.lon !== undefined ? profileObj.lon : "",
+          utcOffset: profileObj.utcOffset !== undefined ? profileObj.utcOffset : "5.5",
+          gotra: profileObj.gotra || "",
+          jaati: profileObj.jaati || "",
+          kulDevta: profileObj.kulDevta || "",
+          gramDevta: profileObj.gramDevta || "",
+          sthanDevta: profileObj.sthanDevta || ""
+        });
+        setEd(profileObj);
+      };
 
-  const handleKeyChange = (provider, value) => {
-    const updated = { ...localSet, apiKeys: { ...(localSet.apiKeys || {}), [provider]: value } };
-    setLocalSet(updated);
-    onUpdateSettings(updated);
-  };
+      const fetchCityCoordinates = async () => {
+        const query = formData.place;
+        if (!query) return alert("Please type a city name first.");
+        const preset = window.CITY_PRESETS.find((c) => c.name.toLowerCase().includes(query.toLowerCase()));
+        if (preset) {
+          setFormData((prev) => ({ ...prev, place: preset.name, lat: preset.lat.toString(), lon: preset.lon.toString(), utcOffset: preset.utc.toString() }));
+          return;
+        }
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+            const tz = calculateTimezone(lat, lon);
+            setFormData((prev) => ({ ...prev, place: data[0].display_name.split(",")[0], lat: lat.toFixed(4), lon: lon.toFixed(4), utcOffset: tz }));
+          } else {
+            alert("City coordinates not found. Enter latitude and longitude manually.");
+          }
+        } catch (e) {
+          alert("Network search failed. Enter coordinates manually.");
+        }
+      };
 
-  const handleSelectChange = (key, value) => {
-    const updated = { ...localSet, [key]: value };
-    setLocalSet(updated);
-    onUpdateSettings(updated);
-  };
+      const handleGPS = () => {
+        if (!navigator.geolocation) return alert("Geolocation not supported on this browser.");
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            const tz = calculateTimezone(lat, lon);
+            let placeName = "GPS Location";
+            try {
+              const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+              const d = await r.json();
+              placeName = d.address?.city || d.address?.town || d.address?.county || "Current Location";
+            } catch (e) {}
+            setFormData((prev) => ({ ...prev, place: placeName, lat: lat.toFixed(4), lon: lon.toFixed(4), utcOffset: tz }));
+          },
+          () => alert("GPS access denied.")
+        );
+      };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg p-6 rounded-3xl border border-white/10 bgcard2 space-y-5 max-h-[88vh] overflow-y-auto gl-fadein shadow-2xl relative">
-        <div className="flex justify-between items-center border-b border-white/10 pb-3">
-          <h3 className="font-serif text-lg text-white flex items-center gap-2"><Icon name="gear" /> Security & App Settings</h3>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition text-white/60 hover:text-white"><Icon name="x" size={18} /></button>
-        </div>
+      const hSave = async (e) => {
+        e.preventDefault();
+        const pD = {
+          ...formData,
+          lat: parseFloat(formData.lat) || 0,
+          lon: parseFloat(formData.lon) || 0,
+          utcOffset: parseFloat(formData.utcOffset) || 5.5,
+          id: formData.id || Date.now().toString()
+        };
+        const nP = formData.id ? prs.map((p) => (p.id === pD.id ? pD : p)) : [...prs, pD];
+        const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`);
+        vaultFile.content.profiles = CryptoUtils.encrypt(nP);
+        vaultFile.content.settings = vaultFile.content.settings || CryptoUtils.encrypt(set);
+        await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha);
+        setU({ ...u, profiles: nP });
+        setActiveProfileId(pD.id);
+        setEd(null);
+      };
 
-        {/* 1. 2FA / MFA Authenticator Section */}
-        <div>
-          <label className="text-[10px] font-mono uppercase text-emerald-400 mb-1.5 block font-bold">Two-Factor Authentication (2FA)</label>
-          {u.mfaEnabled ? (
-            <div className="w-full py-2.5 bg-emerald-500/10 text-emerald-300 font-semibold rounded-xl text-xs border border-emerald-500/30 text-center flex items-center justify-center gap-2">
-              <Icon name="shield-check" size={18} /> 2FA is Active on your Vault
-            </div>
-          ) : !mfaSetup ? (
-            <button type="button" onClick={enableMFA} className="w-full py-2.5 bg-emerald-500/20 text-emerald-300 font-semibold rounded-xl text-xs hover:bg-emerald-500/30 transition border border-emerald-500/30 flex items-center justify-center gap-2">
-              <Icon name="qr-code" size={18} /> Setup 2FA with Authenticator App (Google / Microsoft / Authy)
-            </button>
-          ) : (
-            <div className="bg-black/50 p-4 rounded-2xl border border-emerald-500/30 text-center space-y-3">
-              <span className="text-xs text-emerald-200 block font-serif">Scan QR in Authenticator App:</span>
-              <img src={mfaSetup.qr} alt="2FA QR" className="w-36 h-36 mx-auto rounded-xl shadow-lg bg-white p-2" />
-              <div className="text-[10px] font-mono t70 select-all bg-black/60 p-2 rounded-lg border border-white/10">Secret: {mfaSetup.secret}</div>
-              <form onSubmit={verifyAndSaveMfa} className="space-y-2">
-                <input required value={mfaSetup.pin} onChange={(e) => setMfaSetup({ ...mfaSetup, pin: e.target.value })} maxLength="6" placeholder="Enter 6-digit PIN" className="w-full text-center tracking-[0.5em] font-mono font-bold bg-black/60 border border-emerald-500/40 rounded-xl px-3 py-2.5 text-base outline-none text-emerald-300" />
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setMfaSetup(null)} className="flex-1 py-2 bg-white/10 text-white text-xs rounded-xl hover:bg-white/20">Cancel</button>
-                  <button type="submit" className="flex-1 py-2 bg-emerald-500 text-black font-bold text-xs rounded-xl hover:bg-emerald-400">Verify & Activate</button>
+      const deleteProfile = async (id) => {
+        if (!confirm("Are you sure you want to delete this profile?")) return;
+        const nP = prs.filter((p) => p.id !== id);
+        const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`);
+        vaultFile.content.profiles = CryptoUtils.encrypt(nP);
+        await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha);
+        setU({ ...u, profiles: nP });
+        if (nP.length > 0) setActiveProfileId(nP[0].id);
+        setEd(null);
+      };
+
+      const updateSettings = async (ns) => {
+        const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`);
+        vaultFile.content.settings = CryptoUtils.encrypt(ns);
+        vaultFile.content.profiles = vaultFile.content.profiles || CryptoUtils.encrypt(prs);
+        await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha);
+        setU({ ...u, settings: ns });
+      };
+
+      return (
+        <div className="min-h-screen w-full font-sans pb-10 relative">
+          <datalist id="gotras">{window.GOTRAS.map((g) => (<option key={g} value={g} />))}</datalist>
+          <datalist id="jaatis">{window.JAATIS.map((j) => (<option key={j} value={j} />))}</datalist>
+
+          {/* Modals & Dialogs */}
+          {adminAuthOpen && <AdminAuthModal u={u} onClose={() => setAdminAuthOpen(false)} onAuthenticated={() => { setAdminAuthOpen(false); setAdminConsoleOpen(true); }} />}
+          {adminConsoleOpen && <AdminConsoleModal onClose={() => setAdminConsoleOpen(false)} onResetDb={resetDbConfig} />}
+          {ss && <SettingsModal u={u} settings={set} onClose={() => setSs(false)} onUpdateSettings={updateSettings} onMfaSuccess={() => setU({ ...u, mfaEnabled: true })} />}
+
+          {/* Header Bar */}
+          <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
+            <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-36">
+              <div className="flex items-center gap-3">
+                <SageLogo size={32} />
+                <div>
+                  <h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.8</h1>
+                  <div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.email}</div>
                 </div>
-              </form>
-            </div>
-          )}
-        </div>
-
-        {/* 2. Astrological Preferences */}
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Default Kundali Style</label>
-            <select value={localSet.kundaliStyle} onChange={(e) => handleSelectChange("kundaliStyle", e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white">
-              <option value="north">North Indian</option><option value="south">South Indian</option><option value="east">East Indian</option><option value="kp">KP System</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Month System</label>
-            <select value={localSet.monthSystem} onChange={(e) => handleSelectChange("monthSystem", e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white">
-              <option value="amanta">Amanta (New Moon / Amavasya)</option><option value="purnimanta">Purnimanta (Full Moon / Purnima)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* 3. Primary AI Model */}
-        <div>
-          <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Primary AI Engine</label>
-          <select value={localSet.aiModel} onChange={(e) => handleSelectChange("aiModel", e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs outline-none text-white font-medium">
-            <option value="offline">Offline Vedic Rule Engine (100% Local / Zero API Required)</option>
-            <option value="gemini">Google Gemini 1.5 Flash (Fastest)</option>
-            <option value="openai">OpenAI GPT-4o Mini</option>
-            <option value="groq">Groq (Ultra-Fast Llama 3.1)</option>
-            <option value="deepseek">DeepSeek V3</option>
-            <option value="kimi">Moonshot / Kimi</option>
-            <option value="openrouter">OpenRouter Gateway</option>
-            <option value="huggingface">Hugging Face (Mistral 7B)</option>
-          </select>
-        </div>
-
-        {/* 4. Multi-LLM API Integration Matrix with Direct Links */}
-        <div className="p-4 border border-amber-500/30 bg-amber-950/15 rounded-2xl space-y-3">
-          <div className="flex justify-between items-center">
-            <label className="text-[10px] text-amber-300 font-mono uppercase font-bold tracking-wider">Multi-Provider AI Fallback Matrix</label>
-            <span className="text-[9px] text-amber-200/60 font-mono">Auto-Cascading</span>
-          </div>
-          <p className="text-[10px] t60 leading-relaxed">
-            If your selected provider hits token limits or rate limits (429), the engine automatically cascades through your other configured API keys before falling back to Offline.
-          </p>
-
-          <div className="space-y-2.5 pt-1">
-            {/* Google Gemini */}
-            <div>
-              <div className="flex justify-between text-[9px] t60 mb-0.5 font-mono">
-                <span className="text-white font-semibold">Google Gemini API Key</span>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-amber-300 hover:underline flex items-center gap-1">Get Gemini Key <Icon name="arrow-square-out" size={12} /></a>
               </div>
-              <input type="password" value={localSet.apiKeys?.gemini || ""} onChange={(e) => handleKeyChange("gemini", e.target.value)} placeholder="AIzaSy..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
-            </div>
-
-            {/* OpenAI */}
-            <div>
-              <div className="flex justify-between text-[9px] t60 mb-0.5 font-mono">
-                <span className="text-white font-semibold">OpenAI API Key</span>
-                <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="text-amber-300 hover:underline flex items-center gap-1">Get OpenAI Key <Icon name="arrow-square-out" size={12} /></a>
+              <div className="flex items-center gap-2">
+                {prs.length > 1 && (
+                  <select value={aP?.id || ""} onChange={(e) => setActiveProfileId(e.target.value)} className="bg-black/40 border border-white/10 rounded-xl px-2 py-1.5 font-serif text-xs text-amber-200 outline-none max-w-[80px] sm:max-w-[120px] truncate">
+                    {prs.map((p) => (<option key={p.id} value={p.id}>{p.name.split(" ")[0]}</option>))}
+                  </select>
+                )}
+                <button onClick={() => handleOpenEdit({})} title="Add Profile" className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-amber-300">
+                  <Icon name="user-plus" size={17} />
+                </button>
+                <button onClick={() => setSs(true)} title="Settings" className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-amber-300">
+                  <Icon name="gear" size={17} />
+                </button>
+                <button onClick={() => setAdminAuthOpen(true)} title="Admin DB Console" className="p-2 rounded-full border border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/20 transition text-amber-300">
+                  <Icon name="database" size={17} />
+                </button>
+                <button onClick={logoutUser} title="Logout" className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-red-400">
+                  <Icon name="sign-out" size={17} />
+                </button>
               </div>
-              <input type="password" value={localSet.apiKeys?.openai || ""} onChange={(e) => handleKeyChange("openai", e.target.value)} placeholder="sk-proj-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
-            </div>
-
-            {/* Groq */}
-            <div>
-              <div className="flex justify-between text-[9px] t60 mb-0.5 font-mono">
-                <span className="text-white font-semibold">Groq API Key (Ultra Fast)</span>
-                <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-amber-300 hover:underline flex items-center gap-1">Get Groq Key <Icon name="arrow-square-out" size={12} /></a>
-              </div>
-              <input type="password" value={localSet.apiKeys?.groq || ""} onChange={(e) => handleKeyChange("groq", e.target.value)} placeholder="gsk_..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
-            </div>
-
-            {/* DeepSeek */}
-            <div>
-              <div className="flex justify-between text-[9px] t60 mb-0.5 font-mono">
-                <span className="text-white font-semibold">DeepSeek API Key</span>
-                <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noreferrer" className="text-amber-300 hover:underline flex items-center gap-1">Get DeepSeek Key <Icon name="arrow-square-out" size={12} /></a>
-              </div>
-              <input type="password" value={localSet.apiKeys?.deepseek || ""} onChange={(e) => handleKeyChange("deepseek", e.target.value)} placeholder="sk-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
-            </div>
-
-            {/* Moonshot / Kimi */}
-            <div>
-              <div className="flex justify-between text-[9px] t60 mb-0.5 font-mono">
-                <span className="text-white font-semibold">Moonshot / Kimi API Key</span>
-                <a href="https://platform.moonshot.cn/console/api-keys" target="_blank" rel="noreferrer" className="text-amber-300 hover:underline flex items-center gap-1">Get Kimi Key <Icon name="arrow-square-out" size={12} /></a>
-              </div>
-              <input type="password" value={localSet.apiKeys?.kimi || ""} onChange={(e) => handleKeyChange("kimi", e.target.value)} placeholder="sk-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
-            </div>
-
-            {/* OpenRouter */}
-            <div>
-              <div className="flex justify-between text-[9px] t60 mb-0.5 font-mono">
-                <span className="text-white font-semibold">OpenRouter Gateway Key</span>
-                <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-amber-300 hover:underline flex items-center gap-1">Get OpenRouter Key <Icon name="arrow-square-out" size={12} /></a>
-              </div>
-              <input type="password" value={localSet.apiKeys?.openrouter || ""} onChange={(e) => handleKeyChange("openrouter", e.target.value)} placeholder="sk-or-v1-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
-            </div>
-
-            {/* Hugging Face */}
-            <div>
-              <div className="flex justify-between text-[9px] t60 mb-0.5 font-mono">
-                <span className="text-white font-semibold">Hugging Face User Access Token</span>
-                <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noreferrer" className="text-amber-300 hover:underline flex items-center gap-1">Get HuggingFace Token <Icon name="arrow-square-out" size={12} /></a>
-              </div>
-              <input type="password" value={localSet.apiKeys?.huggingface || ""} onChange={(e) => handleKeyChange("huggingface", e.target.value)} placeholder="hf_..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
             </div>
           </div>
+
+          {/* Main Body */}
+          <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-6 relative z-10">
+            {prs.length === 0 ? (
+              <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10 bgfaint gl-fadein">
+                <h2 className="font-serif text-2xl mb-2 text-amber-300">Welcome to Graha Ledger</h2>
+                <button onClick={() => handleOpenEdit({})} className="px-8 py-3 rounded-full bg-amber-400 text-black text-sm font-semibold hover:bg-amber-300 mt-4">Create Natal Profile</button>
+              </div>
+            ) : (
+              <Fragment>
+                <div className="flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bgcard p-1 font-mono text-[11px] shadow-inner mb-2">
+                  {[
+                    { id: "person", l: "Astrology & Dasha" },
+                    { id: "panchang", l: "Panchang & Muhurta" },
+                    { id: "union", l: "Union Milan" },
+                    { id: "ask", l: "Vedic AI Sage" }
+                  ].map((t) => (
+                    <button key={t.id} onClick={() => setTb(t.id)} className={`flex-1 whitespace-nowrap rounded-xl px-3 py-2.5 transition ${tb === t.id ? "bg-amber-400/20 text-amber-300 font-bold shadow" : "t50 hover:t100"}`}>
+                      {t.l}
+                    </button>
+                  ))}
+                </div>
+                {tb === "person" && <PersonTab pr={aP} ch={chs[aP?.id]} date={dt} setDate={setDt} settings={set} onEditProfile={handleOpenEdit} />}
+                {tb === "panchang" && <PanchangTab d={dt} setDate={setDt} p={aP} utc={aP?.utcOffset || 5.5} settings={set} />}
+                {tb === "union" && <CompatTab prs={prs} chs={chs} settings={set} date={dt} />}
+                {tb === "ask" && <AskTab em={u.email} emHash={u.emailHash} set={set} pr={aP} ch={chs[aP?.id]} date={dt} />}
+              </Fragment>
+            )}
+
+            {/* Profile Form Modal */}
+            {ed && (
+              <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={() => setEd(null)}>
+                <form onClick={(e) => e.stopPropagation()} onSubmit={hSave} className="w-full max-w-md bgcard2 rounded-3xl border border-white/10 p-6 space-y-3.5 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl relative">
+                  <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                    <h3 className="font-serif text-lg text-white">{formData.id ? "Modify Profile" : "Create Natal Profile"}</h3>
+                    {formData.id && (
+                      <button type="button" onClick={() => deleteProfile(formData.id)} className="text-[10px] text-red-400 font-mono border border-red-400/30 px-2 py-1 rounded hover:bg-red-400/20">Delete</button>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-[9px] t50 uppercase font-mono mb-1 block">Full Name</label>
+                    <input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] t50 uppercase font-mono mb-1 block">Date of Birth</label>
+                      <input required type="date" value={formData.dob} onChange={(e) => setFormData({ ...formData, dob: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] t50 uppercase font-mono mb-1 block">Time (24h)</label>
+                      <input required type="time" value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] t50 uppercase font-mono mb-1 flex justify-between items-center">
+                      <span>Birth Place Name</span>
+                      <button type="button" onClick={handleGPS} className="text-amber-300 hover:text-amber-200 border border-amber-300/30 px-2 py-0.5 rounded text-[10px]">Use GPS <Icon name="crosshair" /></button>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        required
+                        value={formData.place}
+                        onChange={(e) => setFormData({ ...formData, place: e.target.value })}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); fetchCityCoordinates(); } }}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"
+                        placeholder="Type city (e.g. Dubai, Mumbai)..."
+                      />
+                      <button type="button" onClick={fetchCityCoordinates} className="px-3 py-2 bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-xl text-xs hover:bg-amber-400/30 transition">Auto-Fetch</button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[9px] t50 uppercase font-mono mb-1 block">Latitude</label>
+                      <input required type="number" step="any" value={formData.lat} onChange={(e) => setFormData({ ...formData, lat: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-xs outline-none text-white" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] t50 uppercase font-mono mb-1 block">Longitude</label>
+                      <input required type="number" step="any" value={formData.lon} onChange={(e) => setFormData({ ...formData, lon: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-xs outline-none text-white" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-amber-300 uppercase font-mono mb-1 block font-bold">UTC Offset</label>
+                      <input required type="number" step="any" value={formData.utcOffset} onChange={(e) => setFormData({ ...formData, utcOffset: e.target.value })} className="w-full bg-black/40 border border-amber-400/40 rounded-xl px-2 py-2 text-xs outline-none text-amber-300 font-bold" />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10">
+                    <div className="text-[10px] text-amber-400 uppercase font-mono mb-2 tracking-widest text-center">Spiritual Lineage (Optional)</div>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div>
+                        <label className="text-[8px] t50 uppercase font-mono mb-1 block">Gotra</label>
+                        <input list="gotras" value={formData.gotra} onChange={(e) => setFormData({ ...formData, gotra: e.target.value })} placeholder="e.g. Kashyapa" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white" />
+                      </div>
+                      <div>
+                        <label className="text-[8px] t50 uppercase font-mono mb-1 block">Jaati / Varg</label>
+                        <input list="jaatis" value={formData.jaati} onChange={(e) => setFormData({ ...formData, jaati: e.target.value })} placeholder="e.g. Brahmin" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div>
+                        <label className="text-[8px] t50 uppercase font-mono mb-1 block">Kul Devta</label>
+                        <input value={formData.kulDevta} onChange={(e) => setFormData({ ...formData, kulDevta: e.target.value })} placeholder="e.g. Chamunda" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white" />
+                      </div>
+                      <div>
+                        <label className="text-[8px] t50 uppercase font-mono mb-1 block">Gram Devta</label>
+                        <input value={formData.gramDevta} onChange={(e) => setFormData({ ...formData, gramDevta: e.target.value })} placeholder="e.g. Bhairava" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[8px] t50 uppercase font-mono mb-1 block">Sthan Devta</label>
+                      <input value={formData.sthanDevta} onChange={(e) => setFormData({ ...formData, sthanDevta: e.target.value })} placeholder="e.g. Hanumanji" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white" />
+                    </div>
+                  </div>
+                  <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-2 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">Save Encrypted Vault Profile</button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
-  );
-};
+      );
+    }
+
+    const root = window.React.StrictMode ? window.ReactDOM.createRoot(document.getElementById("root")) : null;
+    if (root) {
+      root.render(<ErrorBoundary><AppContent /></ErrorBoundary>);
+    }
+  }
+}, 50);
