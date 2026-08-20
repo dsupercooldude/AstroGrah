@@ -1,16 +1,37 @@
-// src/core.js (Global Math, DB, & AI Engine)
+// src/core.js
 window.CITY_PRESETS=[{name:"Dubai, UAE",lat:25.20,lon:55.27,utc:4.0},{name:"Phalodi, India",lat:27.13,lon:72.36,utc:5.5},{name:"Mumbai, India",lat:19.07,lon:72.87,utc:5.5},{name:"New Delhi, India",lat:28.61,lon:77.20,utc:5.5},{name:"Ujjain, India",lat:23.17,lon:75.78,utc:5.5},{name:"London, UK",lat:51.50,lon:-0.12,utc:0.0},{name:"New York, USA",lat:40.71,lon:-74.00,utc:-5.0}];
-window.GOTRAS=["Kashyapa","Bharadwaj","Vatsa","Sandilya","Gautama","Gargya","Vishwamitra","Vasishtha","Atri","Agastya"]; window.JAATIS=["Brahmin","Kshatriya","Vaishya","Shudra","Kayastha","Rajput","Maratha","Jat"];
+window.GOTRAS=["Kashyapa","Bharadwaj","Vatsa","Sandilya","Gautama","Gargya","Vishwamitra","Vasishtha","Atri","Agastya"]; 
+window.JAATIS=["Brahmin","Kshatriya","Vaishya","Shudra","Kayastha","Rajput","Maratha","Jat"];
 window.SIGNS=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 window.SIGN_TRAITS={"Aries":"bold, pioneering, high-energy","Taurus":"grounded, determined, value-focused","Gemini":"intellectual, versatile, adaptable","Cancer":"nurturing, deeply intuitive, protective","Leo":"charismatic, authoritative, creative","Virgo":"analytical, precision-driven, methodical","Libra":"diplomatic, aesthetic, balanced","Scorpio":"transformative, perceptive, strategic","Sagittarius":"philosophical, expansive, visionary","Capricorn":"ambitious, structured, disciplined","Aquarius":"innovative, unconventional, humanitarian","Pisces":"intuitive, empathetic, contemplative"};
 window.NAKSHATRAS=["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
 window.LUNAR_MASAS=["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashvin","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
 window.YOGAS=["Vishkambha","Priti","Ayushman","Saubhagya","Shobhana","Atiganda","Sukarma","Dhriti","Shula","Ganda","Vriddhi","Dhruva","Vyaghata","Harshana","Vajra","Siddhi","Vyatipata","Variyana","Parigha","Shiva","Siddha","Sadhya","Shubha","Shukla","Brahma","Indra","Vaidhriti"];
-window.KARANAS=["Bava","Balava","Kaulava","Taitila","Gara","Vanija","Vishti (Bhadra)"]; window.WEEKDAY=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"]; window.SANSKRIT_DAYS={Sun:"Ravi",Moon:"Soma",Mars:"Mangala",Mercury:"Budha",Jupiter:"Brihaspati",Venus:"Shukra",Saturn:"Shani"};
-window.PLANET_LORDS=["Ketu","Venus","Sun","Moon","Mars","Rahu","Jupiter","Saturn","Mercury"]; window.VIMSHOTTARI_YEARS={Ketu:7,Venus:20,Sun:6,Moon:10,Mars:7,Rahu:18,Jupiter:16,Saturn:19,Mercury:17};
-window.PLANET_INFO={Sun:{symbol:"☉",color:"#E8A33D",adhidevata:"Lord Rama",gem:"Ruby",beej:"Om Hraam Hreem Hroum Sah Suryaya Namah",mantras:["Aditya Hrudaya Stotram"],charity:"Donate wheat/copper on Sunday.",action:"Offer Arghya facing east at dawn."},Moon:{symbol:"☽",color:"#9FB8D9",adhidevata:"Goddess Gauri",gem:"Pearl",beej:"Om Shraam Shreem Shroum Sah Chandraya Namah",mantras:["Chandra Kavacham"],charity:"Donate white rice/milk on Monday.",action:"Practice moonlit meditation."},Mars:{symbol:"♂",color:"#B23A48",adhidevata:"Lord Hanuman",gem:"Red Coral",beej:"Om Kraam Kreem Kroum Sah Bhaumaya Namah",mantras:["Hanuman Chalisa"],charity:"Donate red lentils on Tuesday.",action:"Physical discipline."},Mercury:{symbol:"☿",color:"#7C9473",adhidevata:"Lord Vishnu",gem:"Emerald",beej:"Om Braam Breem Broum Sah Budhaya Namah",mantras:["Vishnu Sahasranama"],charity:"Feed green spinach to cows on Wednesday.",action:"Refine business communication."},Jupiter:{symbol:"♃",color:"#D4A574",adhidevata:"Lord Dakshinamurthy",gem:"Yellow Sapphire",beej:"Om Graam Greem Groum Sah Gurave Namah",mantras:["Guru Stotram"],charity:"Donate yellow turmeric on Thursday.",action:"Seek guidance from mentors."},Venus:{symbol:"♀",color:"#C98CA7",adhidevata:"Goddess Lakshmi",gem:"Diamond",beej:"Om Draam Dreem Droum Sah Shukraya Namah",mantras:["Sri Suktam"],charity:"Donate white silk/ghee on Friday.",action:"Cultivate aesthetic harmony."},Saturn:{symbol:"♄",color:"#8288A0",adhidevata:"Lord Shani",gem:"Blue Sapphire",beej:"Om Praam Preem Proum Sah Shanaye Namah",mantras:["Shani Chalisa"],charity:"Donate black sesame/mustard oil on Saturday.",action:"Light a mustard-oil lamp at dusk."},Rahu:{symbol:"☊",color:"#A872B2",adhidevata:"Goddess Durga",gem:"Hessonite",beej:"Om Bhraam Bhreem Bhroum Sah Rahave Namah",mantras:["Durga Saptashati"],charity:"Feed stray animals.",action:"Avoid impulsive speculation."},Ketu:{symbol:"☋",color:"#72AAB2",adhidevata:"Lord Ganesha",gem:"Cat's Eye",beej:"Om Sraam Sreem Sroum Sah Ketave Namah",mantras:["Ganesha Atharvashirsha"],charity:"Donate multi-colored items.",action:"Observe silent contemplation."}};
+window.KARANAS=["Bava","Balava","Kaulava","Taitila","Gara","Vanija","Vishti (Bhadra)"]; 
+window.WEEKDAY=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"]; 
+window.SANSKRIT_DAYS={Sun:"Ravi",Moon:"Soma",Mars:"Mangala",Mercury:"Budha",Jupiter:"Brihaspati",Venus:"Shukra",Saturn:"Shani"};
+window.PLANET_LORDS=["Ketu","Venus","Sun","Moon","Mars","Rahu","Jupiter","Saturn","Mercury"]; 
+window.VIMSHOTTARI_YEARS={Ketu:7,Venus:20,Sun:6,Moon:10,Mars:7,Rahu:18,Jupiter:16,Saturn:19,Mercury:17};
 
-window.CryptoUtils={b64E:s=>btoa(encodeURIComponent(s).replace(/%([0-9A-F]{2})/g,(m,p)=>String.fromCharCode('0x'+p))),b64D:s=>decodeURIComponent(atob(s).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')),encrypt:d=>{if(!d)return d;let s=typeof d==='object'?JSON.stringify(d):String(d);let r='';for(let i=0;i<s.length;i++)r+=String.fromCharCode(s.charCodeAt(i)^"SAGE2026".charCodeAt(i%8));return window.CryptoUtils.b64E(r);},decrypt:b=>{if(!b)return b;try{if(!b.match(/^[A-Za-z0-9+/=]+$/))return b;let d=window.CryptoUtils.b64D(b);let r='';for(let i=0;i<d.length;i++)r+=String.fromCharCode(d.charCodeAt(i)^"SAGE2026".charCodeAt(i%8));try{return JSON.parse(r);}catch(e){return r;}}catch(e){return b;}},hashPassword:async(s)=>{const fb=(str)=>{let h=0;for(let i=0;i<str.length;i++)h=Math.imul(31,h)+str.charCodeAt(i)|0;return "h_"+Math.abs(h).toString(16);};try{if(!window.crypto||!window.crypto.subtle)return fb(s);const b=await window.crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}catch(e){return fb(s);}}};
+window.PLANET_INFO={
+  Sun:{symbol:"☉",color:"#E8A33D",adhidevata:"Lord Rama",gem:"Ruby",beej:"Om Hraam Hreem Hroum Sah Suryaya Namah",mantras:["Aditya Hrudaya Stotram"],charity:"Donate wheat/copper on Sunday.",action:"Offer Arghya facing east at dawn."},
+  Moon:{symbol:"☽",color:"#9FB8D9",adhidevata:"Goddess Gauri",gem:"Pearl",beej:"Om Shraam Shreem Shroum Sah Chandraya Namah",mantras:["Chandra Kavacham"],charity:"Donate white rice/milk on Monday.",action:"Practice moonlit meditation."},
+  Mars:{symbol:"♂",color:"#B23A48",adhidevata:"Lord Hanuman",gem:"Red Coral",beej:"Om Kraam Kreem Kroum Sah Bhaumaya Namah",mantras:["Hanuman Chalisa"],charity:"Donate red lentils on Tuesday.",action:"Physical discipline."},
+  Mercury:{symbol:"☿",color:"#7C9473",adhidevata:"Lord Vishnu",gem:"Emerald",beej:"Om Braam Breem Broum Sah Budhaya Namah",mantras:["Vishnu Sahasranama"],charity:"Feed green spinach to cows on Wednesday.",action:"Refine business communication."},
+  Jupiter:{symbol:"♃",color:"#D4A574",adhidevata:"Lord Dakshinamurthy",gem:"Yellow Sapphire",beej:"Om Graam Greem Groum Sah Gurave Namah",mantras:["Guru Stotram"],charity:"Donate yellow turmeric on Thursday.",action:"Seek guidance from mentors."},
+  Venus:{symbol:"♀",color:"#C98CA7",adhidevata:"Goddess Lakshmi",gem:"Diamond",beej:"Om Draam Dreem Droum Sah Shukraya Namah",mantras:["Sri Suktam"],charity:"Donate white silk/ghee on Friday.",action:"Cultivate aesthetic harmony."},
+  Saturn:{symbol:"♄",color:"#8288A0",adhidevata:"Lord Shani",gem:"Blue Sapphire",beej:"Om Praam Preem Proum Sah Shanaye Namah",mantras:["Shani Chalisa"],charity:"Donate black sesame/mustard oil on Saturday.",action:"Light a mustard-oil lamp at dusk."},
+  Rahu:{symbol:"☊",color:"#A872B2",adhidevata:"Goddess Durga",gem:"Hessonite",beej:"Om Bhraam Bhreem Bhroum Sah Rahave Namah",mantras:["Durga Saptashati"],charity:"Feed stray animals.",action:"Avoid impulsive speculation."},
+  Ketu:{symbol:"☋",color:"#72AAB2",adhidevata:"Lord Ganesha",gem:"Cat's Eye",beej:"Om Sraam Sreem Sroum Sah Ketave Namah",mantras:["Ganesha Atharvashirsha"],charity:"Donate multi-colored items.",action:"Observe silent contemplation."}
+};
+
+window.CryptoUtils={
+    b64E:s=>btoa(encodeURIComponent(s).replace(/%([0-9A-F]{2})/g,(m,p)=>String.fromCharCode('0x'+p))),
+    b64D:s=>decodeURIComponent(atob(s).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')),
+    encrypt:d=>{if(!d)return d;let s=typeof d==='object'?JSON.stringify(d):String(d);let r='';for(let i=0;i<s.length;i++)r+=String.fromCharCode(s.charCodeAt(i)^"SAGE2026".charCodeAt(i%8));return window.CryptoUtils.b64E(r);},
+    decrypt:b=>{if(!b)return b;try{if(!b.match(/^[A-Za-z0-9+/=]+$/))return b;let d=window.CryptoUtils.b64D(b);let r='';for(let i=0;i<d.length;i++)r+=String.fromCharCode(d.charCodeAt(i)^"SAGE2026".charCodeAt(i%8));try{return JSON.parse(r);}catch(e){return r;}}catch(e){return b;}},
+    hashPassword:async(s)=>{const fb=(str)=>{let h=0;for(let i=0;i<str.length;i++)h=Math.imul(31,h)+str.charCodeAt(i)|0;return "h_"+Math.abs(h).toString(16);};try{if(!window.crypto||!window.crypto.subtle)return fb(s);const b=await window.crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}catch(e){return fb(s);}}
+};
 
 window.AppDB={
   config:null,useLocal:false,
@@ -26,7 +47,8 @@ window.AppDB={
   async hashKey(s){return await window.CryptoUtils.hashPassword(s);}
 };
 
-window.norm360 = (x) => { let v=x%360; return v<0?v+360:v; }; window.toRad = (d) => (d*Math.PI)/180;
+window.norm360 = (x) => { let v=x%360; return v<0?v+360:v; }; 
+window.toRad = (d) => (d*Math.PI)/180;
 window.julianDay = (dStr,tStr,utc) => { const [Y,M,D]=(dStr||"2026-01-01").split("-").map(Number); const [h,m]=(tStr||"12:00").split(":").map(Number); return (Date.UTC(Y,M-1,D,h,m,0)-((utc||0)*3600000))/86400000+2440587.5; };
 window.getAya = (Y) => 23.85+(Y-2000)*0.013972;
 window.sunLon = (T) => { const M=window.norm360(357.529+35999.05*T); const L=window.norm360(280.466+36000.77*T+1.915*Math.sin(window.toRad(M))); return {L, R:1.00014-0.01671*Math.cos(window.toRad(M))}; };
@@ -41,7 +63,7 @@ window.calcDasha = (mD,dob) => { const nL=360/27,nI=Math.floor(mD/nL),pP=(mD%nL)
 window.getAntardashas = (mL,mS) => { const p=[],mY=window.VIMSHOTTARI_YEARS[mL]; let cS=mS,lI=window.PLANET_LORDS.indexOf(mL); for(let i=0;i<9;i++){const aL=window.PLANET_LORDS[(lI+i)%9],aY=(mY*window.VIMSHOTTARI_YEARS[aL])/120;p.push({lord:aL,start:cS,end:cS+aY});cS+=aY;} return p; };
 window.getPratyantarDashas = (aL,aS,aE) => { const p=[],aY=aE-aS; let cS=aS,lI=window.PLANET_LORDS.indexOf(aL); for(let i=0;i<9;i++){const pL=window.PLANET_LORDS[(lI+i)%9],pY=(aY*window.VIMSHOTTARI_YEARS[pL])/120;p.push({lord:pL,start:cS,end:cS+pY});cS+=pY;} return p; };
 
-window.computeKundli = (profile, dateObj=null) => {
+window.computeKundli = (profile, dateObj = null) => {
     if(!profile) return null;
     const targetDate = dateObj || new Date(); const JD = window.julianDay(profile.dob, profile.time, profile.utcOffset); const T = (JD-2451545)/36525; const [Y,Mo] = (profile.dob||"2026-01-01").split("-").map(Number); const aya = window.getAya(Y+(Mo-1)/12);
     const s = window.sunLon(T); const e = {x: s.R*Math.cos(window.toRad(window.norm360(s.L+180))), y: s.R*Math.sin(window.toRad(window.norm360(s.L+180)))};
@@ -49,7 +71,7 @@ window.computeKundli = (profile, dateObj=null) => {
     ["Mercury","Venus","Mars","Jupiter","Saturn"].forEach(p => { const h=window.helio(p,T); sid[p] = window.norm360(Math.atan2(h.y-e.y, h.x-e.x)*180/Math.PI - aya); });
     const [hh,mm]=(profile.time||"12:00").split(":").map(Number); const ascL = window.norm360(sid.Sun + ((hh+mm/60)-6)*15);
     const getDiv = (lon, div) => { if(div===1) return window.SIGNS[Math.floor(lon/30)]; if(div===7) return window.SIGNS[ ( (Math.floor(lon/30)%2!==0 ? Math.floor(lon/30)+6 : Math.floor(lon/30)) + Math.floor((lon%30)/(30/7)) ) % 12 ]; if(div===9) return window.SIGNS[ ( [0,9,6,3,0,9,6,3,0,9,6,3][Math.floor(lon/30)] + Math.floor((lon%30)/(30/9)) ) % 12 ]; if(div===10) return window.SIGNS[ ( (Math.floor(lon/30)%2!==0 ? Math.floor(lon/30)+8 : Math.floor(lon/30)) + Math.floor((lon%30)/3) ) % 12 ]; if(div===60) return window.SIGNS[ Math.floor((lon*60)/30) % 12 ]; };
-    const genC = (div) => { const lg=getDiv(ascL,div); const idx=window.SIGNS.indexOf(lg); const hs={}, pl={}; for(let i=1;i<=12;i++) hs[i]=window.SIGNS[(idx+i-1)%12]; Object.entries(sid).forEach(([p, l]) => pl[p] = ((window.SIGNS.indexOf(getDiv(l,div))-idx+12)%12)+1); return { lagna: lg, houses: hs, placements: pl }; };
+    const genC = (div) => { const lg=getDiv(ascL,div); const idx=window.SIGNS.indexOf(lg); const hs={}, pl={}; for(let i=1;i<=12;i++){ hs[i]=window.SIGNS[(idx+i-1)%12]; } Object.entries(sid).forEach(([p, l]) => pl[p] = ((window.SIGNS.indexOf(getDiv(l,div))-idx+12)%12)+1); return { lagna: lg, houses: hs, placements: pl }; };
     const kpTable = Array.from({length: 12}).map((_, i) => { const cuspDegree = window.norm360(ascL + i*30); return { cusp: i+1, sign: window.SIGNS[Math.floor(cuspDegree / 30)], deg: (cuspDegree % 30).toFixed(2), ...window.getKPLords(cuspDegree) }; });
     const shadbala = { Sun: Math.floor(Math.abs(Math.sin(window.toRad(sid.Sun)))*100), Moon: Math.floor(Math.abs(Math.cos(window.toRad(sid.Moon)))*100), Mars: Math.floor(Math.abs(Math.sin(window.toRad(sid.Mars)))*100), Mercury: Math.floor(Math.abs(Math.cos(window.toRad(sid.Mercury)))*100), Jupiter: Math.floor((sid.Jupiter%180)/180 * 100), Venus: Math.floor((sid.Venus%180)/180 * 100), Saturn: Math.floor((sid.Saturn%180)/180 * 100) };
     const dasha = window.calcDasha(sid.Moon, profile.dob); const moonIdx = Math.floor(sid.Moon/(360/27));
@@ -95,9 +117,9 @@ window.executeMultiProviderAI = async (prompt, settings, systemInstruction = "")
     return null;
 };
 
-window.generateDeepGochara = (ch, lagnaSign, bScores) => {
-    const ascIdx = window.SIGNS.indexOf(lagnaSign);
-    const getPIH = (off) => Object.entries(ch.transits).filter(([,s]) => s === window.SIGNS[(ascIdx + off - 1) % 12]).map(([p]) => p);
+window.generateDeepGochara = (ch, lagnaSign, date, pK, bScores) => {
+    const transits = ch.transits; const ascIdx = window.SIGNS.indexOf(lagnaSign);
+    const getPIH = (off) => Object.entries(transits).filter(([,s]) => s === window.SIGNS[(ascIdx + off - 1) % 12]).map(([p]) => p);
     const h1 = getPIH(1), h2 = getPIH(2), h4 = getPIH(4), h6 = getPIH(6), h10 = getPIH(10), h11 = getPIH(11), h12 = getPIH(12);
     
     const hSc = Math.min(98, Math.max(35, Math.floor(70 + (bScores.p/100)*25 + (h1.includes("Jupiter")?10:0) - (h6.includes("Mars")?15:0))));
@@ -141,9 +163,9 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
 
   <script type="text/babel" id="ui-components">
     // =========================================================================
-    // UI COMPONENTS
+    // 3. UI COMPONENTS (MODALS & SETUP)
     // =========================================================================
-    const { useState, useEffect, useMemo, Fragment } = React;
+    const { useState, useEffect, Component } = React;
     const { Icon, SageLogo, AppDB, CryptoUtils } = window;
 
     window.useIdleTimeout = (onTimeout, idleTime = 300000) => {
@@ -199,11 +221,19 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
                 }
             } catch(error) { setErr(error.message); }
         };
+        const handleMfaSubmit = async (ev) => {
+            ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase();
+            try {
+                const emailHash = await AppDB.hashKey(normE); let authFile = await AppDB.getFile('gl_auth.json'); const u = authFile.content.users[emailHash];
+                const secret = CryptoUtils.decrypt(u.mfa); if (!window.OTPAuth) throw new Error("Authenticator library missing.");
+                const totp = new window.OTPAuth.TOTP({ secret: secret }); if (totp.validate({ token: mfaPin, window: 1 }) === null) throw new Error("Invalid 2FA PIN.");
+                await proceedToVault(normE, emailHash, u.req, true);
+            } catch(err) { setErr(err.message); }
+        };
+
         if (mode === "mfa") return (
             <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10 text-center"><Icon name="shield-check" size={48} className="mx-auto text-emerald-400 mb-3" /><h2 className="font-serif text-2xl mt-1 mb-2 text-emerald-200">2FA Protected</h2><p className="text-xs t60 mb-5">Enter your 6-digit Authenticator app PIN.</p>
-                <form onSubmit={async (ev) => { ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase(); try { const emailHash = await AppDB.hashKey(normE); let authFile = await AppDB.getFile('gl_auth.json'); const u = authFile.content.users[emailHash]; const secret = CryptoUtils.decrypt(u.mfa); if (!window.OTPAuth) throw new Error("Authenticator library missing."); const totp = new window.OTPAuth.TOTP({ secret: secret }); if (totp.validate({ token: mfaPin, window: 1 }) === null) throw new Error("Invalid 2FA PIN."); await proceedToVault(normE, emailHash, u.req, true); } catch(err) { setErr(err.message); } }}>
-                    {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<input required type="text" maxLength="6" value={mfaPin} onChange={ev=>setMfaPin(ev.target.value)} onKeyDown={(ev)=>{if(ev.key==='Enter'){ev.preventDefault(); ev.target.form.requestSubmit();}}} placeholder="000000" className="w-full text-center tracking-[0.5em] font-mono font-bold bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-lg outline-none text-emerald-300 focus:border-emerald-400/50 mb-4"/><button type="submit" className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 hover:bg-emerald-400 transition">Unlock Vault</button><button type="button" onClick={()=>setMode("login")} className="mt-4 text-[10px] t50 hover:text-white">Cancel</button>
-                </form></div></div>
+                <form onSubmit={handleMfaSubmit}>{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<input required type="text" maxLength="6" value={mfaPin} onChange={ev=>setMfaPin(ev.target.value)} onKeyDown={(ev)=>{if(ev.key==='Enter'){ev.preventDefault(); ev.target.form.requestSubmit();}}} placeholder="000000" className="w-full text-center tracking-[0.5em] font-mono font-bold bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-lg outline-none text-emerald-300 focus:border-emerald-400/50 mb-4"/><button type="submit" className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 hover:bg-emerald-400 transition">Unlock Vault</button><button type="button" onClick={()=>setMode("login")} className="mt-4 text-[10px] t50 hover:text-white">Cancel</button></form></div></div>
         );
         if (mode === "generated") return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl border border-emerald-500/40 bgcard2 p-6 text-center shadow-2xl"><h2 className="font-serif text-xl t100 mb-1 text-emerald-300">Account Created</h2><p className="text-xs t75 mb-4">Auto-generated secure password:</p><div className="flex gap-2 items-center justify-center mb-3"><div className="flex-1 p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/30 text-base select-all">{gp}</div></div><p className="text-[10px] t50">Save this temporary password.</p><button onClick={()=>setMode("login")} className="w-full rounded-full py-3 text-sm font-semibold bg-emerald-500 text-black mt-5">Proceed to Sign In</button></div></div> );
         return (
@@ -215,78 +245,6 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
     window.ForcePasswordChange = ({ email, emailHash, onComplete }) => {
         const [p, setP] = useState(""); const [loading, setLoading] = useState(false);
         return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/40 shadow-2xl"><form onSubmit={async (e) => { e.preventDefault(); if(p.length < 6) return alert('Password too short.'); setLoading(true); try { let authFile = await AppDB.getFile('gl_auth.json'); authFile.content.users[emailHash].p = await CryptoUtils.hashPassword(p); authFile.content.users[emailHash].req = false; await AppDB.saveFile('gl_auth.json', authFile.content, authFile.sha); onComplete(); } catch (err) { alert(err.message); setLoading(false); } }}><h2 className="font-serif text-xl t100 mb-2 text-emerald-300">Set Custom Password</h2><div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Private Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} onKeyDown={(ev)=>{if(ev.key==='Enter'){ev.preventDefault(); ev.target.form.requestSubmit();}}} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-emerald-500/50"/></div><button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 mt-5 hover:bg-emerald-400 transition">{loading ? "Encrypting..." : "Confirm & Launch"}</button></form></div></div> )
-    };
-
-    window.BiorhythmChart = ({ data, scores }) => {
-        const w = 340, h = 100;
-        const smoothPath = (key) => { if(data.length===0) return ""; let d = `M 0,${50 - data[0][key]*40}`; for (let i = 1; i < data.length; i++) { const x0 = ((i - 1) / (data.length - 1)) * w; const y0 = 50 - data[i - 1][key] * 40; const x1 = (i / (data.length - 1)) * w; const y1 = 50 - data[i][key] * 40; const xc = (x0 + x1) / 2; d += ` Q ${xc},${y0} ${xc},${y1} T ${x1},${y1}`; } return d; };
-        return (
-            <div className="w-full bg-[#121426] rounded-2xl border border-white/10 p-5 gl-fadein shadow-lg mt-4">
-                <div className="flex justify-between items-center mb-6"><span className="font-mono text-[10px] text-amber-200/70 uppercase tracking-widest">15-Day Local Time Synchrony Wave</span><div className="flex gap-3 font-mono text-[9px]"><span className="text-[#E84855]">● Physical</span><span className="text-[#6495ED]">● Emotional</span><span className="text-[#F9C22E]">● Intellectual</span></div></div>
-                <div className="w-full h-32 relative overflow-visible flex flex-col justify-end"><svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full overflow-visible"><line x1="0" y1="50" x2={w} y2="50" stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" /><line x1={w/2} y1="-10" x2={w/2} y2={h+10} stroke="rgba(212,165,116,0.4)" strokeDasharray="3 3" /><path d={smoothPath('P')} fill="none" stroke="#E84855" strokeWidth="2.5" className="drop-shadow-lg" /><path d={smoothPath('E')} fill="none" stroke="#6495ED" strokeWidth="2.5" className="drop-shadow-lg" /><path d={smoothPath('I')} fill="none" stroke="#F9C22E" strokeWidth="2.5" className="drop-shadow-lg" /></svg><div className="flex justify-between w-full px-1 mt-4 font-mono text-[9px] t100 font-bold"><span>-7 Days</span><span className="text-amber-300 bg-black/80 px-3 py-1 rounded shadow-lg border border-amber-400/20">Anchored Target Date</span><span>+7 Days</span></div></div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6"><div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#E84855] font-bold block mb-1">Physical ({scores.p}%)</span><span className="t85 leading-relaxed">{scores.p > 20 ? "Peak phase. High endurance and stamina for physical tasks." : (scores.p > -20 && scores.p <= 20 ? "Critical crossover day. High injury risk, rest." : "Recharge phase. Deep rest and recovery required.")}</span></div><div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#6495ED] font-bold block mb-1">Emotional ({scores.e}%)</span><span className="t85 leading-relaxed">{scores.e > 20 ? "High resilience, empathy, and creative flow." : (scores.e > -20 && scores.e <= 20 ? "Crossover instability. Avoid arguments today." : "Emotional withdrawal phase. Practice solitude.")}</span></div><div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#F9C22E] font-bold block mb-1">Intellectual ({scores.i}%)</span><span className="t85 leading-relaxed">{scores.i > 20 ? "Peak cognitive processing and analytical focus." : (scores.i > -20 && scores.i <= 20 ? "Decision making compromised. Brain fog." : "Reflective period. Delay major contracts.")}</span></div></div>
-            </div>
-        );
-    };
-
-    window.KundaliRenderer = ({ ac, ch, kpTable, style="north", titleDesc="", isExpert }) => {
-        if (!ac) return null;
-        if (!isExpert) {
-            let maxP = "Sun", maxScore = -1, minP = "Sun", minScore = 101;
-            Object.entries(ch.shadbala).forEach(([p, s]) => { if(s > maxScore) { maxScore = s; maxP = p; } if(s < minScore) { minScore = s; minP = p; } });
-            return (
-                <div className="p-5 bg-black/30 rounded-xl border border-white/5 text-[13px] t85 leading-relaxed shadow-inner">
-                    <span className="text-amber-300 font-bold block mb-3 text-base font-serif border-b border-white/10 pb-2">Your Foundation Overview:</span>
-                    Your core outward personality and how others see you (Ascendant) is shaped by <strong>{ac.lagna}</strong>, meaning your natural physical energy is generally <em>{window.SIGN_TRAITS[ac.lagna]||"unique"}</em>.<br/><br/>
-                    Your deep emotional reactions, intuition, and inner thoughts are driven by your Moon sign <strong>{ch.moonSign}</strong> (currently placed in the {ch.nak} constellation). This means your psychological instincts are fundamentally <em>{window.SIGN_TRAITS[ch.moonSign]||"unique"}</em>.
-                    <br/><br/><span className="text-amber-200 font-bold block mt-3 mb-1 text-sm font-serif">Planetary Power Summary (Shadbala):</span>
-                    Your strongest guiding planet is <strong>{maxP} ({maxScore} pts)</strong>, which acts as your primary driving force and natural strength in life. Conversely, your most sensitive planet is <strong>{minP} ({minScore} pts)</strong>, indicating an area where you might need to apply conscious effort, patience, and remedial actions.
-                    <br/><br/><span className="text-[10px] italic t50 mt-2 block">Switch to <strong>Expert Mode</strong> above to view precise geometric astrological charts and planetary transits.</span>
-                </div>
-            );
-        }
-        if (style === "south") {
-            return (
-                <div className="grid grid-cols-4 gap-1 w-full max-w-[340px] mx-auto rounded-2xl border border-white/10 bg-black/40 p-2 shadow-inner mb-2 gl-fadein" style={{aspectRatio: '1/1'}}>
-                    {[ { s: "Pisces", r: 0, c: 0 }, { s: "Aries", r: 0, c: 1 }, { s: "Taurus", r: 0, c: 2 }, { s: "Gemini", r: 0, c: 3 }, { s: "Cancer", r: 1, c: 3 }, { s: "Leo", r: 2, c: 3 }, { s: "Virgo", r: 3, c: 3 }, { s: "Libra", r: 3, c: 2 }, { s: "Scorpio", r: 3, c: 1 }, { s: "Sagittarius", r: 3, c: 0 }, { s: "Capricorn", r: 2, c: 0 }, { s: "Aquarius", r: 1, c: 0 } ].map((bx) => {
-                        const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); const isL = ac.lagna===bx.s; const trs = ch.transits && Object.entries(ch.transits).filter(([,sn])=>sn===bx.s).map(([p])=>p);
-                        return ( <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1.5 rounded-xl border text-[9px] relative overflow-hidden transition-all ${isL?'border-amber-400/60 bg-amber-400/10':'border-white/10 bg-white/5'}`}><div className="flex justify-between font-mono font-semibold t50 mb-0.5"><span>{bx.s.slice(0,3)}</span><span className={isL?'text-amber-300 font-bold':''}>{isL?'Lg':`H${hNum}`}</span></div><div className="flex flex-col gap-0.5 z-10">{pIn.map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color||'#fff'}} className="font-bold drop-shadow">{p.slice(0,3)}</span>)}</div>{trs && trs.length > 0 && <div className="mt-auto pt-1 border-t border-white/10 text-[8px] flex flex-wrap gap-0.5 z-10">{trs.map(p=><span key={'tr'+p} style={{color:window.PLANET_INFO[p]?.color||'#fff'}} className="italic opacity-80">+{p.slice(0,2)}</span>)}</div>}</div> )
-                    })}
-                    <div style={{gridRow:"2/4", gridColumn:"2/4"}} className="flex flex-col items-center justify-center p-2 text-center bg-black/20 rounded-xl border border-white/5 m-1"><span className="font-serif text-sm text-amber-200">South Indian</span><span className="font-mono text-[8px] t50 uppercase mt-0.5">Fixed Zodiac Grid</span><span className="font-mono text-[7px] t40 mt-1 italic max-w-[80%]">{titleDesc}</span></div>
-                </div>
-            );
-        }
-        if (style === "east") {
-            return (
-                <div className="grid grid-cols-3 gap-1 w-full max-w-[340px] mx-auto rounded-2xl border border-white/10 bg-black/40 p-2 shadow-inner mb-2 gl-fadein" style={{aspectRatio: '1/1'}}>
-                    {[ {s:"Pisces",r:0,c:0},{s:"Aries",r:0,c:1},{s:"Taurus",r:0,c:2},{s:"Aquarius",r:1,c:0},{s:"Gemini",r:1,c:2},{s:"Capricorn",r:2,c:0},{s:"Cancer",r:2,c:2},{s:"Sagittarius",r:3,c:0},{s:"Scorpio",r:3,c:1},{s:"Libra",r:3,c:2} ].map((bx) => {
-                         const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); const isL = ac.lagna===bx.s;
-                         return ( <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1.5 rounded-xl border text-[9px] ${isL?'border-amber-400/60 bg-amber-400/10':'border-white/10 bg-white/5'}`}><div className="font-mono font-semibold t50">{bx.s.slice(0,3)}</div><div className="flex flex-col gap-0.5">{pIn.map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color||'#fff'}} className="font-bold">{p.slice(0,3)}</span>)}</div></div> )
-                    })}
-                    <div style={{gridRow:"2/4", gridColumn:"2/2"}} className="flex flex-col items-center justify-center p-2 text-center bg-black/20 rounded-xl border border-white/5 m-1"><span className="font-serif text-sm text-amber-200">East Indian</span><span className="font-mono text-[7px] t40 uppercase mt-1 italic">{titleDesc}</span></div>
-                </div>
-            );
-        }
-        if (style === "kp") {
-            return (
-                <div className="w-full max-w-[360px] mx-auto bg-black/40 rounded-2xl border border-white/10 p-3 mb-4 gl-fadein overflow-x-auto"><div className="flex flex-col items-center border-b border-white/10 pb-2 mb-2"><span className="font-serif text-xs text-amber-300">KP (Krishnamurti Padhdhati) 249 System</span><span className="font-mono text-[7px] t40 mt-1 italic">{titleDesc}</span></div>
-                    <table className="w-full text-left font-mono text-[9px]">
-                        <thead><tr className="t50 border-b border-white/5"><th className="py-1">Cusp</th><th>Sign (Deg)</th><th>Star Lord</th><th>Sub Lord</th><th>Sub-Sub</th></tr></thead>
-                        <tbody>{kpTable.map((row) => ( <tr key={row.cusp} className="border-b border-white/5 hover:bg-white/5"><td className="py-1 text-amber-400 font-bold">H{row.cusp}</td><td>{row.sign.slice(0,3)} {row.deg}°</td><td style={{color: window.PLANET_INFO[row.starLord]?.color}}>{row.starLord.slice(0,3)}</td><td style={{color: window.PLANET_INFO[row.subLord]?.color}} className="font-bold">{row.subLord.slice(0,3)}</td><td style={{color: window.PLANET_INFO[row.subSubLord]?.color}} className="opacity-70">{row.subSubLord.slice(0,3)}</td></tr> ))}</tbody>
-                    </table>
-                </div>
-            );
-        }
-        const hPos = { 1: {x:50, y:22}, 2: {x:25, y:12.5}, 3: {x:12.5, y:25}, 4: {x:25, y:50}, 5: {x:12.5, y:75}, 6: {x:25, y:87.5}, 7: {x:50, y:78}, 8: {x:75, y:87.5}, 9: {x:87.5, y:75}, 10: {x:75, y:50}, 11: {x:87.5, y:25}, 12: {x:75, y:12.5} };
-        return (
-            <div className="w-full max-w-[340px] mx-auto rounded-2xl bg-black/40 p-2 shadow-inner mb-2 relative gl-fadein" style={{aspectRatio: '1/1'}}>
-                <svg viewBox="0 0 100 100" className="w-full h-full"><rect x="0" y="0" width="100" height="100" fill="transparent" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"/><line x1="0" y1="0" x2="100" y2="100" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"/><line x1="100" y1="0" x2="0" y2="100" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"/><polygon points="50,0 100,50 50,100 0,50" fill="transparent" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"/>
-                    {Object.keys(hPos).map(hNum => { const sn = ac.houses[hNum]; const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); const trs = ch.transits && Object.entries(ch.transits).filter(([,snT])=>snT===sn).map(([p])=>p); const {x, y} = hPos[hNum];
-                        return ( <g key={`h${hNum}`}><text x={x} y={y-4} fill="rgba(255,255,255,0.25)" fontSize="5.5" textAnchor="middle" fontFamily="monospace">{sn.slice(0,3)}</text><text x={x} y={y+2.5} fill="#D4A574" fontSize="5" textAnchor="middle" fontWeight="bold">H{hNum}</text>{pIn.map((p, i) => <text key={p} x={x} y={y+8+(i*5)} fill={window.PLANET_INFO[p]?.color} fontSize="5.5" textAnchor="middle" fontWeight="bold">{p.slice(0,3)}</text>)}{trs && trs.length > 0 && <text x={x} y={y+10+(pIn.length*5)} fill="rgba(255,255,255,0.6)" fontSize="4" textAnchor="middle" fontStyle="italic">+{trs.map(p=>p.slice(0,2)).join(',')}</text>}</g> );
-                    })}
-                </svg><div className="absolute top-2 left-3 font-mono text-[8px] t40 uppercase tracking-widest leading-tight">North Indian Diamond<br/><span className="text-[6px] italic lowercase">{titleDesc}</span></div>
-            </div>
-        )
     };
 
     window.AdminAuthModal = ({ u, onClose, onAuthenticated }) => {
@@ -340,10 +298,99 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
 
   <script type="text/babel" id="tabs-module">
     // =========================================================================
-    // TABS (PERSON, PANCHANG, COMPAT, ASK)
+    // 4. TAB COMPONENTS
     // =========================================================================
     const { useState, useEffect, useMemo, Fragment } = React;
-    const { Icon, PLANET_INFO, bio, generateDeepGochara, getAntardashas, getPratyantarDashas, formatYM, BiorhythmChart, KundaliRenderer, panchang, SANSKRIT_DAYS, WEEKDAY, NAKSHATRAS, runVedicRuleEngine, executeMultiProviderAI, AppDB, CryptoUtils } = window;
+    const { Icon, PLANET_INFO, bio, generateDeepGochara, getAntardashas, getPratyantarDashas, formatYM, panchang, SANSKRIT_DAYS, WEEKDAY, NAKSHATRAS, runVedicRuleEngine, executeMultiProviderAI, AppDB, CryptoUtils, SIGN_TRAITS } = window;
+
+    window.BiorhythmChart = ({ data, scores }) => {
+        const w = 340, h = 100;
+        const smoothPath = (key) => {
+            if(data.length===0) return ""; let d = `M 0,${50 - data[0][key]*40}`;
+            for (let i = 1; i < data.length; i++) { const x0 = ((i - 1) / (data.length - 1)) * w; const y0 = 50 - data[i - 1][key] * 40; const x1 = (i / (data.length - 1)) * w; const y1 = 50 - data[i][key] * 40; const xc = (x0 + x1) / 2; d += ` Q ${xc},${y0} ${xc},${y1} T ${x1},${y1}`; }
+            return d;
+        };
+        return (
+            <div className="w-full bg-[#121426] rounded-2xl border border-white/10 p-5 gl-fadein shadow-lg mt-4">
+                <div className="flex justify-between items-center mb-6"><span className="font-mono text-[10px] text-amber-200/70 uppercase tracking-widest">15-Day Local Time Synchrony Wave</span><div className="flex gap-3 font-mono text-[9px]"><span className="text-[#E84855]">● Physical</span><span className="text-[#6495ED]">● Emotional</span><span className="text-[#F9C22E]">● Intellectual</span></div></div>
+                <div className="w-full h-32 relative overflow-visible flex flex-col justify-end">
+                    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
+                        <line x1="0" y1="50" x2={w} y2="50" stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" />
+                        <line x1={w/2} y1="-10" x2={w/2} y2={h+10} stroke="rgba(212,165,116,0.4)" strokeDasharray="3 3" />
+                        <path d={smoothPath('P')} fill="none" stroke="#E84855" strokeWidth="2.5" className="drop-shadow-lg" />
+                        <path d={smoothPath('E')} fill="none" stroke="#6495ED" strokeWidth="2.5" className="drop-shadow-lg" />
+                        <path d={smoothPath('I')} fill="none" stroke="#F9C22E" strokeWidth="2.5" className="drop-shadow-lg" />
+                    </svg>
+                    <div className="flex justify-between w-full px-1 mt-4 font-mono text-[9px] t100 font-bold"><span>-7 Days</span><span className="text-amber-300 bg-black/80 px-3 py-1 rounded shadow-lg border border-amber-400/20">Anchored Target Date</span><span>+7 Days</span></div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#E84855] font-bold block mb-1">Physical ({scores.p}%)</span><span className="t85 leading-relaxed">{scores.p > 20 ? "Peak phase. High endurance and stamina for physical tasks." : (scores.p > -20 && scores.p <= 20 ? "Critical crossover day. High injury risk, rest." : "Recharge phase. Deep rest and recovery required.")}</span></div>
+                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#6495ED] font-bold block mb-1">Emotional ({scores.e}%)</span><span className="t85 leading-relaxed">{scores.e > 20 ? "High resilience, empathy, and creative flow." : (scores.e > -20 && scores.e <= 20 ? "Crossover instability. Avoid arguments today." : "Emotional withdrawal phase. Practice solitude.")}</span></div>
+                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#F9C22E] font-bold block mb-1">Intellectual ({scores.i}%)</span><span className="t85 leading-relaxed">{scores.i > 20 ? "Peak cognitive processing and analytical focus." : (scores.i > -20 && scores.i <= 20 ? "Decision making compromised. Brain fog." : "Reflective period. Delay major contracts.")}</span></div>
+                </div>
+            </div>
+        );
+    };
+
+    window.KundaliRenderer = ({ ac, ch, kpTable, style="north", titleDesc="", isExpert }) => {
+        if (!ac) return null;
+        if (!isExpert) {
+            let maxP = "Sun", maxScore = -1, minP = "Sun", minScore = 101;
+            Object.entries(ch.shadbala).forEach(([p, s]) => { if(s > maxScore) { maxScore = s; maxP = p; } if(s < minScore) { minScore = s; minP = p; } });
+            return (
+                <div className="p-5 bg-black/30 rounded-xl border border-white/5 text-[13px] t85 leading-relaxed shadow-inner">
+                    <span className="text-amber-300 font-bold block mb-3 text-base font-serif border-b border-white/10 pb-2">Your Foundation Overview:</span>
+                    Your core outward personality and how others see you (Ascendant) is shaped by <strong>{ac.lagna}</strong>, meaning your natural physical energy is generally <em>{SIGN_TRAITS[ac.lagna]||"unique"}</em>.<br/><br/>
+                    Your deep emotional reactions, intuition, and inner thoughts are driven by your Moon sign <strong>{ch.moonSign}</strong> (currently placed in the {ch.nak} constellation). This means your psychological instincts are fundamentally <em>{SIGN_TRAITS[ch.moonSign]||"unique"}</em>.
+                    <br/><br/><span className="text-amber-200 font-bold block mt-3 mb-1 text-sm font-serif">Planetary Power Summary (Shadbala):</span>
+                    Your strongest guiding planet is <strong>{maxP} ({maxScore} pts)</strong>, which acts as your primary driving force and natural strength in life. Conversely, your most sensitive planet is <strong>{minP} ({minScore} pts)</strong>, indicating an area where you might need to apply conscious effort, patience, and remedial actions.
+                    <br/><br/><span className="text-[10px] italic t50 mt-2 block">Switch to <strong>Expert Mode</strong> above to view precise geometric astrological charts and planetary transits.</span>
+                </div>
+            );
+        }
+        if (style === "south") {
+            return (
+                <div className="grid grid-cols-4 gap-1 w-full max-w-[340px] mx-auto rounded-2xl border border-white/10 bg-black/40 p-2 shadow-inner mb-2 gl-fadein" style={{aspectRatio: '1/1'}}>
+                    {[ { s: "Pisces", r: 0, c: 0 }, { s: "Aries", r: 0, c: 1 }, { s: "Taurus", r: 0, c: 2 }, { s: "Gemini", r: 0, c: 3 }, { s: "Cancer", r: 1, c: 3 }, { s: "Leo", r: 2, c: 3 }, { s: "Virgo", r: 3, c: 3 }, { s: "Libra", r: 3, c: 2 }, { s: "Scorpio", r: 3, c: 1 }, { s: "Sagittarius", r: 3, c: 0 }, { s: "Capricorn", r: 2, c: 0 }, { s: "Aquarius", r: 1, c: 0 } ].map((bx) => {
+                        const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); const isL = ac.lagna===bx.s; const trs = ch.transits && Object.entries(ch.transits).filter(([,sn])=>sn===bx.s).map(([p])=>p);
+                        return ( <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1.5 rounded-xl border text-[9px] relative overflow-hidden transition-all ${isL?'border-amber-400/60 bg-amber-400/10':'border-white/10 bg-white/5'}`}><div className="flex justify-between font-mono font-semibold t50 mb-0.5"><span>{bx.s.slice(0,3)}</span><span className={isL?'text-amber-300 font-bold':''}>{isL?'Lg':`H${hNum}`}</span></div><div className="flex flex-col gap-0.5 z-10">{pIn.map(p=><span key={p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="font-bold drop-shadow">{p.slice(0,3)}</span>)}</div>{trs && trs.length > 0 && <div className="mt-auto pt-1 border-t border-white/10 text-[8px] flex flex-wrap gap-0.5 z-10">{trs.map(p=><span key={'tr'+p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="italic opacity-80">+{p.slice(0,2)}</span>)}</div>}</div> )
+                    })}
+                    <div style={{gridRow:"2/4", gridColumn:"2/4"}} className="flex flex-col items-center justify-center p-2 text-center bg-black/20 rounded-xl border border-white/5 m-1"><span className="font-serif text-sm text-amber-200">South Indian</span><span className="font-mono text-[8px] t50 uppercase mt-0.5">Fixed Zodiac Grid</span><span className="font-mono text-[7px] t40 mt-1 italic max-w-[80%]">{titleDesc}</span></div>
+                </div>
+            );
+        }
+        if (style === "east") {
+            return (
+                <div className="grid grid-cols-3 gap-1 w-full max-w-[340px] mx-auto rounded-2xl border border-white/10 bg-black/40 p-2 shadow-inner mb-2 gl-fadein" style={{aspectRatio: '1/1'}}>
+                    {[ {s:"Pisces",r:0,c:0},{s:"Aries",r:0,c:1},{s:"Taurus",r:0,c:2},{s:"Aquarius",r:1,c:0},{s:"Gemini",r:1,c:2},{s:"Capricorn",r:2,c:0},{s:"Cancer",r:2,c:2},{s:"Sagittarius",r:3,c:0},{s:"Scorpio",r:3,c:1},{s:"Libra",r:3,c:2} ].map((bx) => {
+                         const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); const isL = ac.lagna===bx.s;
+                         return ( <div key={bx.s} style={{gridRow:bx.r+1, gridColumn:bx.c+1}} className={`flex flex-col p-1.5 rounded-xl border text-[9px] ${isL?'border-amber-400/60 bg-amber-400/10':'border-white/10 bg-white/5'}`}><div className="font-mono font-semibold t50">{bx.s.slice(0,3)}</div><div className="flex flex-col gap-0.5">{pIn.map(p=><span key={p} style={{color:PLANET_INFO[p]?.color||'#fff'}} className="font-bold">{p.slice(0,3)}</span>)}</div></div> )
+                    })}
+                    <div style={{gridRow:"2/4", gridColumn:"2/2"}} className="flex flex-col items-center justify-center p-2 text-center bg-black/20 rounded-xl border border-white/5 m-1"><span className="font-serif text-sm text-amber-200">East Indian</span><span className="font-mono text-[7px] t40 uppercase mt-1 italic">{titleDesc}</span></div>
+                </div>
+            );
+        }
+        if (style === "kp") {
+            return (
+                <div className="w-full max-w-[360px] mx-auto bg-black/40 rounded-2xl border border-white/10 p-3 mb-4 gl-fadein overflow-x-auto"><div className="flex flex-col items-center border-b border-white/10 pb-2 mb-2"><span className="font-serif text-xs text-amber-300">KP (Krishnamurti Padhdhati) 249 System</span><span className="font-mono text-[7px] t40 mt-1 italic">{titleDesc}</span></div>
+                    <table className="w-full text-left font-mono text-[9px]">
+                        <thead><tr className="t50 border-b border-white/5"><th className="py-1">Cusp</th><th>Sign (Deg)</th><th>Star Lord</th><th>Sub Lord</th><th>Sub-Sub</th></tr></thead>
+                        <tbody>{kpTable.map((row) => ( <tr key={row.cusp} className="border-b border-white/5 hover:bg-white/5"><td className="py-1 text-amber-400 font-bold">H{row.cusp}</td><td>{row.sign.slice(0,3)} {row.deg}°</td><td style={{color: PLANET_INFO[row.starLord]?.color}}>{row.starLord.slice(0,3)}</td><td style={{color: PLANET_INFO[row.subLord]?.color}} className="font-bold">{row.subLord.slice(0,3)}</td><td style={{color: PLANET_INFO[row.subSubLord]?.color}} className="opacity-70">{row.subSubLord.slice(0,3)}</td></tr> ))}</tbody>
+                    </table>
+                </div>
+            );
+        }
+        const hPos = { 1: {x:50, y:22}, 2: {x:25, y:12.5}, 3: {x:12.5, y:25}, 4: {x:25, y:50}, 5: {x:12.5, y:75}, 6: {x:25, y:87.5}, 7: {x:50, y:78}, 8: {x:75, y:87.5}, 9: {x:87.5, y:75}, 10: {x:75, y:50}, 11: {x:87.5, y:25}, 12: {x:75, y:12.5} };
+        return (
+            <div className="w-full max-w-[340px] mx-auto rounded-2xl bg-black/40 p-2 shadow-inner mb-2 relative gl-fadein" style={{aspectRatio: '1/1'}}>
+                <svg viewBox="0 0 100 100" className="w-full h-full"><rect x="0" y="0" width="100" height="100" fill="transparent" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"/><line x1="0" y1="0" x2="100" y2="100" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"/><line x1="100" y1="0" x2="0" y2="100" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"/><polygon points="50,0 100,50 50,100 0,50" fill="transparent" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"/>
+                    {Object.keys(hPos).map(hNum => { const sn = ac.houses[hNum]; const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p); const trs = ch.transits && Object.entries(ch.transits).filter(([,snT])=>snT===sn).map(([p])=>p); const {x, y} = hPos[hNum];
+                        return ( <g key={`h${hNum}`}><text x={x} y={y-4} fill="rgba(255,255,255,0.25)" fontSize="5.5" textAnchor="middle" fontFamily="monospace">{sn.slice(0,3)}</text><text x={x} y={y+2.5} fill="#D4A574" fontSize="5" textAnchor="middle" fontWeight="bold">H{hNum}</text>{pIn.map((p, i) => <text key={p} x={x} y={y+8+(i*5)} fill={PLANET_INFO[p]?.color} fontSize="5.5" textAnchor="middle" fontWeight="bold">{p.slice(0,3)}</text>)}{trs && trs.length > 0 && <text x={x} y={y+10+(pIn.length*5)} fill="rgba(255,255,255,0.6)" fontSize="4" textAnchor="middle" fontStyle="italic">+{trs.map(p=>p.slice(0,2)).join(',')}</text>}</g> );
+                    })}
+                </svg><div className="absolute top-2 left-3 font-mono text-[8px] t40 uppercase tracking-widest leading-tight">North Indian Diamond<br/><span className="text-[6px] italic lowercase">{titleDesc}</span></div>
+            </div>
+        )
+    };
 
     window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         const [div, setDiv]=useState(1); const [chartStyle, setChartStyle]=useState(settings.kundaliStyle||"north");
@@ -424,8 +471,7 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
         const [liveValidated, setLiveValidated] = useState(false); const [validating, setValidating] = useState(false);
         const pan = panchang(d, settings.monthSystem, utc); const pK = WEEKDAY[d.getDay()]; const sDay = SANSKRIT_DAYS[pK];
         const fm = dt => dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
-        
-        const validateLivePanchang = async () => { setValidating(true); try { const res = await fetch(`https://api.sunrisesunset.io/json?lat=${p?.lat||25.2}&lng=${p?.lon||55.2}&date=${d.toISOString().slice(0,10)}`); const data = await res.json(); if(data && data.results) setLiveValidated(true); } catch(e) { console.warn("Live API fallback active."); } setValidating(false); };
+        const validateLivePanchang = async () => { setValidating(true); try { const res = await fetch(`https://api.sunrisesunset.io/json?lat=${p?.lat||25.2}&lng=${p?.lon||55.2}&date=${d.toISOString().slice(0,10)}`); const data = await res.json(); if(data && data.results) setLiveValidated(true); } catch(e) { console.warn("Live fallback."); } setValidating(false); };
 
         return (
             <div className="space-y-4 pb-12 gl-fadein mt-4">
@@ -467,13 +513,9 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
             if(e) e.preventDefault(); if(!q.trim()||l) return; setL(true); let ans = ""; let usedProvider = set.aiModel || "offline";
             try {
                 let globalContext = ""; try { const gDB = await AppDB.getGlobalAI(); if(gDB.history.length>0) { const last = CryptoUtils.decrypt(gDB.history[gDB.history.length-1]); globalContext = `[Global Trend: Previous user asked "${last.q}"]`; } } catch(err){}
-                const systemContext = `You are the Graha Ledger Jyotish Sage. Provide Vedic astrology guidance for ${pr?.name||'Native'} (Asc: ${ch?.d1?.lagna||'Aries'}, Moon: ${ch?.moonSign||'Aries'}). Transits: 2026 calculations applied. Today: ${WEEKDAY[date.getDay()]} Hora. ${globalContext}.`;
+                const systemContext = `You are the Graha Ledger Jyotish Sage. Provide Vedic astrology guidance for ${pr?.name||'Native'} (Asc: ${ch?.d1?.lagna||'Aries'}, Moon: ${ch?.moonSign||'Aries'}). Transits: calculations applied. Today: ${WEEKDAY[date.getDay()]} Hora. ${globalContext}.`;
 
-                if (set.aiModel !== 'offline') {
-                    const apiRes = await executeMultiProviderAI(q, set, systemContext);
-                    if (apiRes && apiRes.text) { ans = apiRes.text; usedProvider = apiRes.provider; }
-                }
-
+                if (set.aiModel !== 'offline') { const apiRes = await executeMultiProviderAI(q, set, systemContext); if (apiRes && apiRes.text) { ans = apiRes.text; usedProvider = apiRes.provider; } }
                 if (!ans) { usedProvider = "offline"; ans = runVedicRuleEngine(q, pr, ch, date); }
                 const newQA = { id: Date.now(), q, a: ans, v: usedProvider }; const nx = [...h, newQA]; setH(nx); setQ(""); 
                 try { const chatsFile = await AppDB.getFile(`gl_chats_${emHash}.json`); chatsFile.content.h = CryptoUtils.encrypt(nx); await AppDB.saveFile(`gl_chats_${emHash}.json`, chatsFile.content, chatsFile.sha); await AppDB.appendGlobalAI(newQA); } catch(er){}
@@ -504,7 +546,7 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
     // 12. MAIN APP ORCHESTRATOR
     // =========================================================================
     const { useState, useEffect, useMemo, Fragment } = React;
-    const { SetupModal, AuthModal, ForcePasswordChange, AdminAuthModal, AdminConsoleModal, PersonTab, PanchangTab, CompatTab, AskTab, AppDB, CryptoUtils, computeKundli, useIdleTimeout } = window;
+    const { SetupModal, AuthModal, ForcePasswordChange, AdminAuthModal, AdminConsoleModal, PersonTab, PanchangTab, CompatTab, AskTab, AppDB, CryptoUtils, computeKundli, useIdleTimeout, SageLogo, Icon } = window;
 
     function AppContent() {
         const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
@@ -527,7 +569,7 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
         const aP = prs.find(p=>p.id===activeProfileId) || (prs.length > 0 ? prs[0] : null);
 
         if(!dbC) return <SetupModal onConfig={()=>setDbC(true)}/>;
-        if(!u) return <AuthModal onLogin={(d)=>{ setU(d); if(d?.profiles?.length) setActiveProfileId(d.profiles[0].id); }}/>;
+        if(!u) return <AuthModal onLogin={(d)=>{ setU(d); if(d?.profiles?.length) setActiveProfileId(d.profiles[0].id); }} onReset={resetDbConfig}/>;
         if(u?.requiresPasswordChange) return <ForcePasswordChange email={u.email} emailHash={u.emailHash} onComplete={() => setU({...u, requiresPasswordChange: false})} />;
 
         const hSave = async(e) => {
@@ -582,7 +624,7 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
                 {adminConsoleOpen && <AdminConsoleModal onClose={()=>setAdminConsoleOpen(false)} onResetDb={resetDbConfig}/>}
 
                 <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
-                    <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center">
+                    <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-36">
                         <div className="flex items-center gap-3"><SageLogo size={32}/><div><h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.8</h1><div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.email}</div></div></div>
                         <div className="flex items-center gap-2">
                             {prs.length > 1 && ( <select value={aP?.id||""} onChange={e=>setActiveProfileId(e.target.value)} className="bg-black/40 border border-white/10 rounded-xl px-2 py-1.5 font-serif text-xs text-amber-200 outline-none max-w-[80px] sm:max-w-[120px] truncate">{prs.map(p=><option key={p.id} value={p.id}>{p.name.split(' ')[0]}</option>)}</select> )}
@@ -706,8 +748,9 @@ window.runVedicRuleEngine = (q, pr, ch, date) => {
         );
     }
     
-    const root = React.StrictMode ? window.ReactDOM.createRoot(document.getElementById('root')) : null;
-    if(root) root.render(<ErrorBoundary><AppContent/></ErrorBoundary>);
+    document.getElementById('bootloader').style.display = 'none';
+    const root = window.React.StrictMode ? window.ReactDOM.createRoot(document.getElementById('root')) : null;
+    if(root) root.render(<window.ErrorBoundary><AppContent/></window.ErrorBoundary>);
   </script>
 </body>
 </html>
