@@ -1,3 +1,4 @@
+// src/jsx/app.jsx
 const { useState, useEffect, useMemo, Fragment } = window.React;
 
 function AppContent() {
@@ -200,6 +201,20 @@ function AppContent() {
     );
 }
 
-document.getElementById('bootloader').style.display = 'none';
-const root = window.React.StrictMode ? window.ReactDOM.createRoot(document.getElementById('root')) : null;
-if(root) root.render(<window.ErrorBoundary><AppContent/></window.ErrorBoundary>);
+// --- BULLETPROOF BOOTLOADER ---
+// Waits for Babel to finish compiling ALL external JSX files
+const bootInterval = setInterval(() => {
+    if (
+        window.ErrorBoundary && 
+        window.KundaliRenderer && 
+        window.AuthModal && 
+        window.PersonTab
+    ) {
+        clearInterval(bootInterval);
+        document.getElementById('bootloader').style.display = 'none';
+        const root = window.React.StrictMode ? window.ReactDOM.createRoot(document.getElementById('root')) : null;
+        if(root) {
+            root.render(<window.ErrorBoundary><AppContent/></window.ErrorBoundary>);
+        }
+    }
+}, 50);
