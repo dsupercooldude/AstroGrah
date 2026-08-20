@@ -1,6 +1,24 @@
 // src/jsx/app.jsx
+let bootAttempts = 0;
 const bootInterval = setInterval(() => {
-  if (window.ErrorBoundary && window.PersonTab && window.AuthModal && window.SetupModal && window.SettingsModal && window.KundaliRenderer && window.React) {
+  bootAttempts++;
+  
+  // Checking if all required components have successfully loaded from the other files
+  const deps = {
+    React: !!window.React,
+    ErrorBoundary: !!window.ErrorBoundary,
+    KundaliRenderer: !!window.KundaliRenderer,
+    SetupModal: !!window.SetupModal,
+    AuthModal: !!window.AuthModal,
+    SettingsModal: !!window.SettingsModal,
+    PersonTab: !!window.PersonTab,
+    PanchangTab: !!window.PanchangTab,
+    AskTab: !!window.AskTab
+  };
+
+  const allLoaded = Object.values(deps).every(v => v);
+
+  if (allLoaded) {
     clearInterval(bootInterval);
     document.getElementById("bootloader").style.display = "none";
 
@@ -8,7 +26,9 @@ const bootInterval = setInterval(() => {
     const { useState, useEffect, useMemo, Fragment } = window.React;
 
     function AppContent() {
-      const [dbC, setDbC] = useState(false);
+      // SYNCHRONOUS BOOT: Prevents setup modal from incorrectly popping up on new tabs
+      const [dbC, setDbC] = useState(() => AppDB.loadConfig());
+      
       const [u, setU] = useState(null);
       const [tb, setTb] = useState("person");
       const [dt, setDt] = useState(new Date());
@@ -18,7 +38,6 @@ const bootInterval = setInterval(() => {
       const [adminAuthOpen, setAdminAuthOpen] = useState(false);
       const [adminConsoleOpen, setAdminConsoleOpen] = useState(false);
 
-      // Form State for Profile Modal to guarantee two-way timezone binding
       const [formData, setFormData] = useState({ name: "", dob: "2000-01-01", time: "12:00", place: "", lat: "", lon: "", utcOffset: "5.5", gotra: "", jaati: "", kulDevta: "", gramDevta: "", sthanDevta: "" });
 
       window.useIdleTimeout(() => {
@@ -30,9 +49,8 @@ const bootInterval = setInterval(() => {
       }, 300000);
 
       useEffect(() => {
-        const initApp = async () => {
-          if (AppDB.loadConfig()) {
-            setDbC(true);
+        const fetchVaultIfConfigured = async () => {
+          if (dbC) {
             try {
               const sess = localStorage.getItem("gl_active_user");
               if (sess) {
@@ -46,8 +64,8 @@ const bootInterval = setInterval(() => {
             } catch (e) {}
           }
         };
-        initApp();
-      }, []);
+        fetchVaultIfConfigured();
+      }, [dbC]);
 
       const logoutUser = () => { try { localStorage.removeItem("gl_active_user"); } catch (e) {} setU(null); };
       const resetDbConfig = () => { try { localStorage.removeItem("gl_active_user"); } catch (e) {} AppDB.clearConfig(); setDbC(false); setU(null); setAdminConsoleOpen(false); };
@@ -94,7 +112,7 @@ const bootInterval = setInterval(() => {
       const fetchCityCoordinates = async () => {
         const query = formData.place;
         if (!query) return alert("Please type a city name first.");
-        const preset = window.CITY_PRESETS.find((c) => c.name.toLowerCase().includes(query.toLowerCase()));
+        const preset = window.CITY_PRESETS?.find((c) => c.name.toLowerCase().includes(query.toLowerCase()));
         if (preset) {
           setFormData((prev) => ({ ...prev, place: preset.name, lat: preset.lat.toString(), lon: preset.lon.toString(), utcOffset: preset.utc.toString() }));
           return;
@@ -174,8 +192,8 @@ const bootInterval = setInterval(() => {
 
       return (
         <div className="min-h-screen w-full font-sans pb-10 relative">
-          <datalist id="gotras">{window.GOTRAS.map((g) => (<option key={g} value={g} />))}</datalist>
-          <datalist id="jaatis">{window.JAATIS.map((j) => (<option key={j} value={j} />))}</datalist>
+          <datalist id="gotras">{window.GOTRAS?.map((g) => (<option key={g} value={g} />))}</datalist>
+          <datalist id="jaatis">{window.JAATIS?.map((j) => (<option key={j} value={j} />))}</datalist>
 
           {/* Modals & Dialogs */}
           {adminAuthOpen && <AdminAuthModal u={u} onClose={() => setAdminAuthOpen(false)} onAuthenticated={() => { setAdminAuthOpen(false); setAdminConsoleOpen(true); }} />}
@@ -340,5 +358,12 @@ const bootInterval = setInterval(() => {
     if (root) {
       root.render(<ErrorBoundary><AppContent /></ErrorBoundary>);
     }
+  } else if (bootAttempts > 80) { 
+    // SMART DIAGNOSTIC CACHE BUSTER
+    // If GitHub Pages serves an old file, it will now visibly display exactly which module failed and provide a hard refresh button
+    const missing = Object.keys(deps).filter(k => !deps[k]).join(', ');
+    const bl = document.getElementById("bootloader");
+    if(bl) bl.innerHTML = `<div style="background:#1C1F3D; padding:20px; border-radius:10px; border:1px solid red; text-align:center; max-width: 400px; margin: 0 auto;"><h3 style="color:#F87171; font-family:serif; margin-bottom: 5px;">Browser Cache Desync</h3><p style="color:rgba(255,255,255,0.8); font-size:12px; margin-bottom:15px;">Your browser is loading a stale version of the app from cache.<br/><b>Missing Modules:</b> <span style="color:#F87171;">${missing}</span></p><button onclick="window.location.reload(true);" style="background:#F87171; color:black; padding:8px 16px; border-radius:8px; font-weight:bold; border:none; cursor:pointer;">Force Refresh Page</button><p style="color:gray; font-size:10px; margin-top:10px;">If this persists, press <b>Ctrl + F5</b> (Windows) or <b>Cmd + Shift + R</b> (Mac) to clear the browser cache.</p></div>`;
+    clearInterval(bootInterval);
   }
 }, 50);
