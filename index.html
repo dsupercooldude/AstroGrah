@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Graha Ledger V2.3 Enterprise</title>
+  <title>Graha Ledger V2.4 Enterprise</title>
   
   <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzE0MTYyQiIgc3Ryb2tlPSIjRDRBNTc0IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzZXJpZiIgZm9udC1zaXplPSI0NSIgZmlsbD0iI0Q0QTU3NCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4KWQPC90ZXh0Pjwvc3ZnPg==" type="image/svg+xml" />
   
@@ -16,10 +16,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  
-  <!-- MFA DEPENDENCIES -->
   <script src="https://unpkg.com/otpauth@9.3.1/dist/otpauth.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <style>
     body { background: #121426; margin: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; overflow-x: hidden; }
@@ -48,7 +45,7 @@
   <div id="bootloader" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center;">
       <div style="background: #1C1F3D; border: 1px solid rgba(212,165,116,0.3); padding: 30px; border-radius: 24px; max-width: 400px;">
           <h2 style="font-family: serif; color: #D4A574; font-size: 24px; margin-bottom: 10px;">Graha Ledger Loading...</h2>
-          <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 20px;">If this screen remains, browser scripts failed to load.</p>
+          <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 20px;">If this screen remains, click below to flush local storage.</p>
           <button onclick="localStorage.clear(); window.location.reload();" style="background: #D4A574; color: #121426; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">Hard Reset Cache</button>
       </div>
   </div>
@@ -76,6 +73,17 @@
     const { useState, useEffect, useMemo, Component, Fragment } = React;
     const jsPDF = window.jspdf ? window.jspdf.jsPDF : null;
 
+    // GLOBAL PRESETS (Restored to fix ReferenceError)
+    const CITY_PRESETS = [ 
+        { name: "Dubai, UAE", lat: 25.20, lon: 55.27, utc: 4.0 }, 
+        { name: "Phalodi, India", lat: 27.13, lon: 72.36, utc: 5.5 }, 
+        { name: "Mumbai, India", lat: 19.07, lon: 72.87, utc: 5.5 }, 
+        { name: "New Delhi, India", lat: 28.61, lon: 77.20, utc: 5.5 }, 
+        { name: "Ujjain, India", lat: 23.17, lon: 75.78, utc: 5.5 }, 
+        { name: "London, UK", lat: 51.50, lon: -0.12, utc: 0.0 }, 
+        { name: "New York, USA", lat: 40.71, lon: -74.00, utc: -5.0 }
+    ];
+
     class ErrorBoundary extends Component {
         constructor(props) { super(props); this.state = { hasError: false, error: null }; }
         static getDerivedStateFromError(error) { return { hasError: true, error }; }
@@ -100,31 +108,11 @@
     const CryptoUtils = {
         b64E: (str) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m, p1) => String.fromCharCode('0x' + p1))),
         b64D: (str) => decodeURIComponent(atob(str).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')),
-        encrypt: (data) => {
-            if (!data) return data;
-            const str = typeof data === 'object' ? JSON.stringify(data) : String(data);
-            let res = ''; for(let i=0; i<str.length; i++) res += String.fromCharCode(str.charCodeAt(i) ^ "SAGE2026".charCodeAt(i % 8));
-            return CryptoUtils.b64E(res);
-        },
-        decrypt: (b64) => {
-            if (!b64) return b64;
-            try {
-                if(!b64.match(/^[A-Za-z0-9+/=]+$/)) return b64; 
-                const dec = CryptoUtils.b64D(b64);
-                let res = ''; for(let i=0; i<dec.length; i++) res += String.fromCharCode(dec.charCodeAt(i) ^ "SAGE2026".charCodeAt(i % 8));
-                try { return JSON.parse(res); } catch(e) { return res; }
-            } catch(e) { return b64; }
-        },
-        hashPassword: async (str) => {
-            const fallback = (s) => { let h = 0; for(let i = 0; i < s.length; i++) { h = Math.imul(31, h) + s.charCodeAt(i) | 0; } return "h_" + Math.abs(h).toString(16); };
-            try { if (!window.crypto || !window.crypto.subtle) return fallback(str);
-                const buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-                return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-            } catch (err) { return fallback(str); }
-        }
+        encrypt: (data) => { if (!data) return data; const str = typeof data === 'object' ? JSON.stringify(data) : String(data); let res = ''; for(let i=0; i<str.length; i++) res += String.fromCharCode(str.charCodeAt(i) ^ "SAGE2026".charCodeAt(i % 8)); return CryptoUtils.b64E(res); },
+        decrypt: (b64) => { if (!b64) return b64; try { if(!b64.match(/^[A-Za-z0-9+/=]+$/)) return b64; const dec = CryptoUtils.b64D(b64); let res = ''; for(let i=0; i<dec.length; i++) res += String.fromCharCode(dec.charCodeAt(i) ^ "SAGE2026".charCodeAt(i % 8)); try { return JSON.parse(res); } catch(e) { return res; } } catch(e) { return b64; } },
+        hashPassword: async (str) => { const fallback = (s) => { let h = 0; for(let i = 0; i < s.length; i++) { h = Math.imul(31, h) + s.charCodeAt(i) | 0; } return "h_" + Math.abs(h).toString(16); }; try { if (!window.crypto || !window.crypto.subtle) return fallback(str); const buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); } catch (err) { return fallback(str); } }
     };
 
-    // SEGREGATED DB CONTROLLER
     const AppDB = {
       config: null, useLocal: false,
       setConfig(owner, repo, token) { this.config = { owner, repo, token }; try { localStorage.setItem('gh_db_config', JSON.stringify(this.config)); localStorage.setItem('gh_use_local','false'); } catch(e){} this.useLocal = false; },
@@ -145,24 +133,13 @@
       
       async getFile(filename) {
           if(this.useLocal) { try { return { sha: null, content: JSON.parse(localStorage.getItem(filename)||'{}') }; } catch(e) { return { sha: null, content: {} }; } }
-          try {
-              const data = await this.callApi('GET', filename);
-              if (!data) return { sha: null, content: {} };
-              return { sha: data.sha, content: JSON.parse(CryptoUtils.b64D(data.content.replace(/\n/g, ''))) };
-          } catch(e) { return { sha: null, content: {} }; }
+          try { const data = await this.callApi('GET', filename); if (!data) return { sha: null, content: {} }; return { sha: data.sha, content: JSON.parse(CryptoUtils.b64D(data.content.replace(/\n/g, ''))) }; } catch(e) { return { sha: null, content: {} }; }
       },
       
       async saveFile(filename, contentObj, sha, retryCount = 0) {
           if(this.useLocal) { try { localStorage.setItem(filename, JSON.stringify(contentObj)); } catch(e){} return; }
-          try {
-              await this.callApi('PUT', filename, { message: `Graha Ledger Sync: ${filename}`, content: CryptoUtils.b64E(JSON.stringify(contentObj, null, 2)), ...(sha ? { sha } : {}) });
-          } catch (err) {
-              if ((err.message === "409" || err.message === "422") && retryCount < 2) {
-                  const latestData = await this.callApi('GET', filename);
-                  if (latestData && latestData.sha) { await this.saveFile(filename, contentObj, latestData.sha, retryCount + 1); return; }
-              }
-              throw new Error(`Sync Failed (${filename}): ${err.message}`);
-          }
+          try { await this.callApi('PUT', filename, { message: `Sync: ${filename}`, content: CryptoUtils.b64E(JSON.stringify(contentObj, null, 2)), ...(sha ? { sha } : {}) }); } 
+          catch (err) { if ((err.message === "409" || err.message === "422") && retryCount < 2) { const latestData = await this.callApi('GET', filename); if (latestData && latestData.sha) { await this.saveFile(filename, contentObj, latestData.sha, retryCount + 1); return; } } throw new Error(`Sync Failed (${filename}): ${err.message}`); }
       },
 
       async getGlobalAI() {
@@ -173,7 +150,7 @@
       async appendGlobalAI(qaObject) {
         const dataset = await this.getGlobalAI(); const updatedHistory = [...dataset.history, CryptoUtils.encrypt(qaObject)];
         if(this.useLocal) { try { localStorage.setItem('graha_local_ai', JSON.stringify(updatedHistory)); } catch(e){} return; }
-        try { await this.callApi('PUT', 'gl_global_ai.json', { message: "Global AI Learning Sync", content: CryptoUtils.b64E(JSON.stringify(updatedHistory, null, 2)), ...(dataset.sha ? { sha: dataset.sha } : {}) }); } catch(e){}
+        try { await this.callApi('PUT', 'gl_global_ai.json', { message: "AI Sync", content: CryptoUtils.b64E(JSON.stringify(updatedHistory, null, 2)), ...(dataset.sha ? { sha: dataset.sha } : {}) }); } catch(e){}
       },
 
       async hashKey(str) { return await CryptoUtils.hashPassword(str); }
@@ -218,7 +195,13 @@
         return { starLord: PLANET_LORDS[nakIdx % 9], subLord: PLANET_LORDS[subLordIdx], subSubLord: PLANET_LORDS[(subLordIdx + 2) % 9] };
     }
 
-    // Drilldown Dasha logic
+    function formatYM(decimalYear) {
+        const year = Math.floor(decimalYear);
+        const month = Math.round((decimalYear - year) * 12);
+        const d = new Date(year, month);
+        return d.toLocaleDateString('en-US', {month: 'short', year: 'numeric'});
+    }
+
     function calcDasha(moonDeg, dobStr) {
         const nakLen = 360 / 27; const nakIdx = Math.floor(moonDeg / nakLen); const passedPct = (moonDeg % nakLen) / nakLen;
         let lordIdx = nakIdx % 9; const mahaYrs = VIMSHOTTARI_YEARS[PLANET_LORDS[lordIdx]];
@@ -230,24 +213,27 @@
         }
         return periods;
     }
-    
-    function formatYM(decimalYear) {
-        const year = Math.floor(decimalYear);
-        const month = Math.round((decimalYear - year) * 12);
-        const d = new Date(year, month);
-        return d.toLocaleDateString('en-US', {month: 'short', year: 'numeric'});
-    }
 
     function getAntardashas(mahaLord, mahaStart, mahaEnd) {
-        const periods = [];
-        const mahaYears = VIMSHOTTARI_YEARS[mahaLord];
-        let currentStart = mahaStart;
-        let lordIdx = PLANET_LORDS.indexOf(mahaLord);
+        const periods = []; const mahaYears = VIMSHOTTARI_YEARS[mahaLord];
+        let currentStart = mahaStart; let lordIdx = PLANET_LORDS.indexOf(mahaLord);
         for(let i=0; i<9; i++) {
             const antarLord = PLANET_LORDS[(lordIdx + i) % 9];
             const antarYears = (mahaYears * VIMSHOTTARI_YEARS[antarLord]) / 120;
             periods.push({ lord: antarLord, start: currentStart, end: currentStart + antarYears });
             currentStart += antarYears;
+        }
+        return periods;
+    }
+
+    function getPratyantarDashas(antarLord, antarStart, antarEnd) {
+        const periods = []; const antarYears = antarEnd - antarStart;
+        let currentStart = antarStart; let lordIdx = PLANET_LORDS.indexOf(antarLord);
+        for(let i=0; i<9; i++) {
+            const pLord = PLANET_LORDS[(lordIdx + i) % 9];
+            const pYears = (antarYears * VIMSHOTTARI_YEARS[pLord]) / 120;
+            periods.push({ lord: pLord, start: currentStart, end: currentStart + pYears });
+            currentStart += pYears;
         }
         return periods;
     }
@@ -342,10 +328,11 @@
 
     function BiorhythmChart({ data, scores }) {
         const w = 320, h = 100;
-        const pts = (key) => data.map((d, i) => `${(i/(data.length-1))*w},${50 - d[key]*45}`).join(" L ");
+        // Fix: Ensure proper SVG path mapping over the 15 data points width
+        const pts = (key) => data.map((d, i) => `${(i/(data.length-1))*w},${50 - d[key]*40}`).join(" L ");
         return (
             <div className="w-full bg-black/30 rounded-2xl border border-white/10 p-4 gl-fadein">
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-4">
                     <span className="font-mono text-[9px] t60 uppercase tracking-wider">15-Day Local Time Synchrony Wave</span>
                     <div className="flex gap-2 font-mono text-[8px]">
                         <span className="text-[#B23A48]">● Physical</span><span className="text-[#9FB8D9]">● Emotional</span><span className="text-[#D4A574]">● Intellectual</span>
@@ -354,17 +341,17 @@
                 <div className="w-full h-24 relative overflow-hidden flex flex-col justify-end">
                     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
                         <line x1="0" y1="50" x2={w} y2="50" stroke="rgba(255,255,255,0.15)" strokeDasharray="3 3" />
-                        <line x1={w/2} y1="0" x2={w/2} y2={h} stroke="rgba(212,165,116,0.5)" strokeDasharray="2 2" />
+                        <line x1={w/2} y1="0" x2={w/2} y2={h} stroke="rgba(212,165,116,0.3)" strokeDasharray="2 2" />
                         <path d={`M ${pts('P')}`} fill="none" stroke="#B23A48" strokeWidth="2.5" />
                         <path d={`M ${pts('E')}`} fill="none" stroke="#9FB8D9" strokeWidth="2.5" />
                         <path d={`M ${pts('I')}`} fill="none" stroke="#D4A574" strokeWidth="2.5" />
                     </svg>
                     <div className="flex justify-between w-full px-1 mt-1 font-mono text-[8px] t50"><span>-7 Days</span><span className="text-amber-300 font-bold bg-black/50 px-2 py-0.5 rounded">Anchored Today</span><span>+7 Days</span></div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-4">
-                    <div className="p-3 bg-black/30 rounded-xl border border-white/5 text-[11px]"><span className="text-[#B23A48] font-bold block mb-1">Physical ({scores.p}%)</span><span className="t75">{scores.p > 0 ? "Peak phase. High endurance." : (scores.p > -10 && scores.p < 10 ? "Critical crossover day. Rest." : "Recharge phase. Deep rest required.")}</span></div>
-                    <div className="p-3 bg-black/30 rounded-xl border border-white/5 text-[11px]"><span className="text-[#9FB8D9] font-bold block mb-1">Emotional ({scores.e}%)</span><span className="t75">{scores.e > 0 ? "High resilience and empathy." : (scores.e > -10 && scores.e < 10 ? "Crossover instability. Avoid arguments." : "Emotional withdrawal phase.")}</span></div>
-                    <div className="p-3 bg-black/30 rounded-xl border border-white/5 text-[11px]"><span className="text-[#D4A574] font-bold block mb-1">Intellectual ({scores.i}%)</span><span className="t75">{scores.i > 0 ? "Peak cognitive processing." : (scores.i > -10 && scores.i < 10 ? "Decision making compromised." : "Brain fog. Delay contracts.")}</span></div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-5">
+                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#B23A48] font-bold block mb-1">Physical ({scores.p}%)</span><span className="t75">{scores.p > 20 ? "Peak phase. High endurance and stamina for tasks." : (scores.p > -20 && scores.p <= 20 ? "Critical crossover day. High injury risk, rest." : "Recharge phase. Deep rest and recovery required.")}</span></div>
+                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#9FB8D9] font-bold block mb-1">Emotional ({scores.e}%)</span><span className="t75">{scores.e > 20 ? "High resilience, empathy, and creative flow." : (scores.e > -20 && scores.e <= 20 ? "Crossover instability. Avoid arguments today." : "Emotional withdrawal phase. Practice solitude.")}</span></div>
+                    <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-[11px]"><span className="text-[#D4A574] font-bold block mb-1">Intellectual ({scores.i}%)</span><span className="t75">{scores.i > 20 ? "Peak cognitive processing and analytical focus." : (scores.i > -20 && scores.i <= 20 ? "Decision making compromised. Brain fog." : "Reflective period. Delay major contracts.")}</span></div>
                 </div>
             </div>
         );
@@ -375,11 +362,11 @@
         
         if (!isExpert) {
             return (
-                <div className="p-4 bg-black/30 rounded-xl border border-white/5 text-sm t85 leading-relaxed">
-                    <span className="text-amber-300 font-bold block mb-1">Your Foundation Overview:</span>
-                    Your core identity (Ascendant) is rooted in <strong>{ac.lagna}</strong>. 
-                    Your inner mind processes the world through your Moon sign <strong>{ch.moonSign}</strong> in the Nakshatra of <strong>{ch.nak}</strong> (Pada {ch.pada}). 
-                    This combination dictates your fundamental approach to life and relationships. Switch to Expert Mode to view precise geometrical layouts and house-by-house planetary placements.
+                <div className="p-5 bg-black/30 rounded-xl border border-white/5 text-sm t85 leading-relaxed">
+                    <span className="text-amber-300 font-bold block mb-2 text-base">Your Foundation Overview:</span>
+                    Your core outward identity and body (Ascendant/Lagna) is rooted in <strong>{ac.lagna}</strong>. 
+                    Your inner mind, emotions, and intuition process the world through your Moon sign <strong>{ch.moonSign}</strong>, occupying the cosmic sector of <strong>{ch.nak}</strong> (Pada {ch.pada}). 
+                    This specific alignment dictates your fundamental psychological approach to life and relationships. Switch to Expert Mode to view precise geometric layouts and house-by-house planetary transits.
                 </div>
             );
         }
@@ -631,15 +618,16 @@
 
     function PersonTab({ pr, ch, date, setDate, settings, onEditProfile }) {
         const [div, setDiv]=useState(1); const [chartStyle, setChartStyle]=useState(settings.kundaliStyle||"north");
-        const [expert, setExpert] = useState(true);
+        const [expert, setExpert] = useState(false);
         const [expandedDasha, setExpandedDasha] = useState(null);
+        const [expandedAntar, setExpandedAntar] = useState(null);
 
         if(!ch) return <div className="p-4 border border-white/10 rounded-xl text-center text-sm t60 bgfaint mt-4">Compute Error. Check coordinates.</div>;
         
         const ac = div===1?ch.d1:(div===7?ch.d7:(div===9?ch.d9:(div===10?ch.d10:ch.d60))); 
         const pK = WEEKDAY[date.getDay()]; const pI = PLANET_INFO[pK];
         
-        const bs = []; for(let i=-7;i<=7;i++){ const d=new Date(date); d.setDate(d.getDate()+i); const b=bio(pr.dob, d, pr.utcOffset); bs.push({ label: i===0?"Today":`${d.getMonth()+1}/${d.getDate()}`, P: +b.p.toFixed(2), E: +b.e.toFixed(2), I: +b.i.toFixed(2), S: +b.s.toFixed(2) }); }
+        const bs = []; for(let i=-7;i<=7;i++){ const d=new Date(date.getTime()); d.setDate(d.getDate()+i); const b=bio(pr.dob, d, pr.utcOffset); bs.push({ label: i===0?"Today":`${d.getMonth()+1}/${d.getDate()}`, P: +b.p.toFixed(2), E: +b.e.toFixed(2), I: +b.i.toFixed(2), S: +b.s.toFixed(2) }); }
         const bT = bs[7];
         const scores = { p: Math.floor(bT.P*100), e: Math.floor(bT.E*100), i: Math.floor(bT.I*100) };
 
@@ -685,13 +673,13 @@
                 <div className="bgcard rounded-2xl border border-white/10 p-3 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div className="flex items-center gap-2"><Icon name="clock-countdown" size={18} className="text-amber-300"/><span className="font-serif text-sm">Transit Time Travel</span></div>
                     <div className="flex flex-wrap gap-1 font-mono text-[10px]">
-                        <button onClick={()=>setDate(new Date(date.setMonth(date.getMonth()-1)))} className="px-2 py-1 rounded bg-black/40 border border-white/5">-1M</button>
-                        <button onClick={()=>setDate(new Date(date.setDate(date.getDate()-7)))} className="px-2 py-1 rounded bg-black/40 border border-white/5">-1W</button>
-                        <button onClick={()=>setDate(new Date(date.setDate(date.getDate()-1)))} className="px-2 py-1 rounded bg-black/40 border border-white/5">-1D</button>
+                        <button onClick={()=>setDate(new Date(date.getTime() - 30*24*60*60*1000))} className="px-2 py-1 rounded bg-black/40 border border-white/5">-1M</button>
+                        <button onClick={()=>setDate(new Date(date.getTime() - 7*24*60*60*1000))} className="px-2 py-1 rounded bg-black/40 border border-white/5">-1W</button>
+                        <button onClick={()=>setDate(new Date(date.getTime() - 24*60*60*1000))} className="px-2 py-1 rounded bg-black/40 border border-white/5">-1D</button>
                         <button onClick={()=>setDate(new Date())} className="px-2.5 py-1 text-amber-300 font-bold bg-amber-400/10 border border-amber-400/30 rounded">Today</button>
-                        <button onClick={()=>setDate(new Date(date.setDate(date.getDate()+1)))} className="px-2 py-1 rounded bg-black/40 border border-white/5">+1D</button>
-                        <button onClick={()=>setDate(new Date(date.setDate(date.getDate()+7)))} className="px-2 py-1 rounded bg-black/40 border border-white/5">+1W</button>
-                        <button onClick={()=>setDate(new Date(date.setMonth(date.getMonth()+1)))} className="px-2 py-1 rounded bg-black/40 border border-white/5">+1M</button>
+                        <button onClick={()=>setDate(new Date(date.getTime() + 24*60*60*1000))} className="px-2 py-1 rounded bg-black/40 border border-white/5">+1D</button>
+                        <button onClick={()=>setDate(new Date(date.getTime() + 7*24*60*60*1000))} className="px-2 py-1 rounded bg-black/40 border border-white/5">+1W</button>
+                        <button onClick={()=>setDate(new Date(date.getTime() + 30*24*60*60*1000))} className="px-2 py-1 rounded bg-black/40 border border-white/5">+1M</button>
                     </div>
                 </div>
 
@@ -707,7 +695,7 @@
                             </Fragment>}
                         </div>
                         <div className="flex gap-1 bg-black/40 border border-white/10 rounded-xl p-1 font-mono text-[10px]">
-                            <button onClick={()=>setExpert(!expert)} className="px-2 py-1 rounded-lg transition t85 hover:text-white border border-white/10 mr-2">{expert?"Switch to Basic":"Switch to Expert"}</button>
+                            <button onClick={()=>setExpert(!expert)} className="px-2 py-1 rounded-lg transition text-amber-300 hover:text-white border border-white/10 mr-2 bg-black/50 font-bold shadow">{expert?"« Switch to Basic":"Switch to Expert »"}</button>
                             {expert && <Fragment>
                                 <button onClick={()=>setChartStyle("north")} className={`px-2 py-1 rounded-lg transition ${chartStyle==="north"?'bg-white/15 text-white font-bold':'t40'}`}>North</button>
                                 <button onClick={()=>setChartStyle("south")} className={`px-2 py-1 rounded-lg transition ${chartStyle==="south"?'bg-white/15 text-white font-bold':'t40'}`}>South</button>
@@ -735,12 +723,27 @@
                                         </div>
                                         {isExp && (
                                             <div className="pl-4 pr-2 py-2 mt-1 space-y-1 bg-black/40 rounded-xl border border-white/5 text-[10px] font-mono">
-                                                {getAntardashas(d.lord, d.start, d.end).map((ant, idx) => (
-                                                    <div key={idx} className="flex justify-between items-center py-1 border-b border-white/5 last:border-0 t85">
-                                                        <span><span style={{color: PLANET_INFO[d.lord]?.color}}>{d.lord}</span> - <span style={{color: PLANET_INFO[ant.lord]?.color}}>{ant.lord}</span></span>
-                                                        <span>{formatYM(ant.start)} to {formatYM(ant.end)}</span>
-                                                    </div>
-                                                ))}
+                                                {getAntardashas(d.lord, d.start, d.end).map((ant, idx) => {
+                                                    const isAntarExp = expandedAntar === `${i}-${idx}`;
+                                                    return (
+                                                        <div key={idx}>
+                                                            <div onClick={()=>setExpandedAntar(isAntarExp?null:`${i}-${idx}`)} className="flex justify-between items-center py-1 border-b border-white/5 last:border-0 t85 cursor-pointer hover:text-white">
+                                                                <span><span style={{color: PLANET_INFO[d.lord]?.color}}>{d.lord}</span> - <span style={{color: PLANET_INFO[ant.lord]?.color}}>{ant.lord}</span></span>
+                                                                <div className="flex items-center gap-2"><span>{formatYM(ant.start)} to {formatYM(ant.end)}</span><Icon name={isAntarExp?"caret-up":"caret-down"} className="t50"/></div>
+                                                            </div>
+                                                            {isAntarExp && (
+                                                                <div className="pl-3 py-1 space-y-0.5 border-l border-white/10 ml-2 mt-1 mb-2">
+                                                                    {getPratyantarDashas(ant.lord, ant.start, ant.end).map((prat, pIdx) => (
+                                                                         <div key={pIdx} className="flex justify-between items-center text-[9px] t60">
+                                                                             <span>➔ <span style={{color: PLANET_INFO[prat.lord]?.color}}>{prat.lord}</span></span>
+                                                                             <span>{formatYM(prat.start)} to {formatYM(prat.end)}</span>
+                                                                         </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })}
                                             </div>
                                         )}
                                     </div>
@@ -764,10 +767,10 @@
                 <div className="rounded-3xl border border-white/10 bgcard p-5 space-y-4">
                     <div className="flex justify-between items-center"><h3 className="font-serif text-base text-amber-200">Deep Gochara Forecast</h3><span className="font-mono text-[9px] t50 uppercase">{date.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}</span></div>
                     <div className="space-y-3">
-                        <div className="p-3.5 rounded-2xl bg-black/30 border border-emerald-500/20"><div className="flex justify-between text-xs font-medium text-emerald-300 mb-1"><span>Health & Vitality</span><span>{gochara.health.sc}/100</span></div><p className="text-[10px] t70 leading-relaxed">{gochara.health.text}</p></div>
-                        <div className="p-3.5 rounded-2xl bg-black/30 border border-amber-500/20"><div className="flex justify-between text-xs font-medium text-amber-300 mb-1"><span>Wealth & Finance</span><span>{gochara.wealth.sc}/100</span></div><p className="text-[10px] t70 leading-relaxed">{gochara.wealth.text}</p></div>
-                        <div className="p-3.5 rounded-2xl bg-black/30 border border-blue-500/20"><div className="flex justify-between text-xs font-medium text-blue-300 mb-1"><span>Career & Ambition</span><span>{gochara.career.sc}/100</span></div><p className="text-[10px] t70 leading-relaxed">{gochara.career.text}</p></div>
-                        <div className="p-3.5 rounded-2xl bg-black/30 border border-purple-500/20"><div className="flex justify-between text-xs font-medium text-purple-300 mb-1"><span>Home & Harmony</span><span>{gochara.home.sc}/100</span></div><p className="text-[10px] t70 leading-relaxed">{gochara.home.text}</p></div>
+                        <div className="p-3.5 rounded-2xl bg-black/30 border border-emerald-500/20"><div className="flex justify-between text-xs font-medium text-emerald-300 mb-1"><span>Health & Vitality</span><span>{gochara.health.sc}/100</span></div><div className="w-full bg-white/5 rounded-full h-1 mb-2"><div className="h-full rounded-full bg-emerald-400" style={{width: `${gochara.health.sc}%`}}></div></div><p className="text-[10px] t70 leading-relaxed">{gochara.health.text}</p></div>
+                        <div className="p-3.5 rounded-2xl bg-black/30 border border-amber-500/20"><div className="flex justify-between text-xs font-medium text-amber-300 mb-1"><span>Wealth & Finance</span><span>{gochara.wealth.sc}/100</span></div><div className="w-full bg-white/5 rounded-full h-1 mb-2"><div className="h-full rounded-full bg-amber-400" style={{width: `${gochara.wealth.sc}%`}}></div></div><p className="text-[10px] t70 leading-relaxed">{gochara.wealth.text}</p></div>
+                        <div className="p-3.5 rounded-2xl bg-black/30 border border-blue-500/20"><div className="flex justify-between text-xs font-medium text-blue-300 mb-1"><span>Career & Ambition</span><span>{gochara.career.sc}/100</span></div><div className="w-full bg-white/5 rounded-full h-1 mb-2"><div className="h-full rounded-full bg-blue-400" style={{width: `${gochara.career.sc}%`}}></div></div><p className="text-[10px] t70 leading-relaxed">{gochara.career.text}</p></div>
+                        <div className="p-3.5 rounded-2xl bg-black/30 border border-purple-500/20"><div className="flex justify-between text-xs font-medium text-purple-300 mb-1"><span>Home & Harmony</span><span>{gochara.home.sc}/100</span></div><div className="w-full bg-white/5 rounded-full h-1 mb-2"><div className="h-full rounded-full bg-purple-400" style={{width: `${gochara.home.sc}%`}}></div></div><p className="text-[10px] t70 leading-relaxed">{gochara.home.text}</p></div>
                     </div>
                 </div>
 
@@ -833,6 +836,11 @@
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                         {pan.chogDay.map((c,i)=><div key={i} className="p-2 bg-black/30 border border-white/5 rounded-xl text-[10px]"><span style={{color:c.c}} className="font-bold block">{c.n}</span><span className="t50 text-[8px] font-mono uppercase">{c.d}</span><div className="font-mono t85 text-[9px] mt-0.5">{fm(c.s)} - {fm(c.e)}</div></div>)}
                     </div>
+                    
+                    <h4 className="font-serif text-xs text-blue-200 pt-2">Planetary Hora Tracking</h4>
+                    <div className="space-y-1">
+                        {pan.horas.map((h,i)=><div key={i} className="flex justify-between items-center p-2 bg-black/30 border border-white/5 rounded-xl text-xs"><span style={{color:PLANET_INFO[h.p]?.color}} className="font-bold">{h.p}</span><div className="font-mono t85 text-[10px]">{fm(h.s)} - {fm(h.e)}</div></div>)}
+                    </div>
                 </div>
             </div>
         );
@@ -874,7 +882,7 @@
             let globalContext = "";
             try { const gDB = await AppDB.getGlobalAI(); if(gDB.history.length>0) { const last = CryptoUtils.decrypt(gDB.history[gDB.history.length-1]); globalContext = `[Global Trend: Previous user asked "${last.q}"]`; } } catch(err){}
 
-            const systemContext = `You are the Graha Ledger Jyotish Sage. Provide Vedic astrology guidance for ${pr?.name||'Native'} (Asc: ${ch?.d1?.lagna||'Aries'}, Moon: ${ch?.moonSign||'Aries'}). Transits: 2026 calculations applied. Today: ${pK} Hora, ${pan.tithi} Tithi. Biorhythms: Emotional ${(b.e*100).toFixed(0)}%. ${globalContext}. If query is general, provide a 7-day outlook.`;
+            const systemContext = `You are the Graha Ledger Jyotish Sage. Provide Vedic astrology guidance for ${pr?.name||'Native'} (Asc: ${ch?.d1?.lagna||'Aries'}, Moon: ${ch?.moonSign||'Aries'}). Transits: 2026 calculations applied. Today: ${pK} Hora, ${pan.tithi} Tithi. Biorhythms: Emotional ${(b.e*100).toFixed(0)}%. ${globalContext}.`;
 
             if (set.aiModel !== 'offline') {
                 const apiRes = await executeMultiProviderAI(q, set, systemContext);
@@ -883,7 +891,20 @@
 
             if (!ans) {
                 usedProvider = "offline";
-                ans = `[Global Offline Dynamic Engine]\n\nAnalysis for ${pr?.name||'Native'}:\n• Lagna: ${ch?.d1?.lagna||'Aries'} | Moon: ${ch?.moonSign||'Aries'}\n• 2026 Hora: ${pK} (${PLANET_INFO[pK]?.action})\n• Resonance: Emotional ${(b.e*100).toFixed(0)}%\n\nRegarding "${q}":\nOver the next 7 days, transit alignments in 2026 suggest discipline. Your biorhythm dictates ${b.i > 0 ? 'clarity for execution' : 'restraint'}. Use ${PLANET_INFO[pK]?.gem} and chant "${PLANET_INFO[pK]?.beej.split('(')[0]}" to balance this energy.`;
+                const lowerQ = q.toLowerCase();
+                let contextResponse = "";
+                
+                if (lowerQ.includes('week') || lowerQ.includes('7 day')) {
+                    contextResponse = `Over the next 7 days, planetary movements suggest steady progression. With ${pK} ruling today's starting energy, discipline is key. Your biorhythms show Intellectual clarity at ${(b.i*100).toFixed(0)}%, making this an excellent week for structured planning and logic.`;
+                } else if (lowerQ.includes('month') || lowerQ.includes('30 day')) {
+                    contextResponse = `Looking at the month ahead, transit alignments highlight long-term execution. Ensure you balance your physical energy (currently ${(b.p*100).toFixed(0)}%) with adequate rest.`;
+                } else if (lowerQ.includes('career') || lowerQ.includes('job') || lowerQ.includes('work')) {
+                    contextResponse = `Focusing on your career: The 10th house transits indicate a need for backend strategy right now. Avoid direct confrontations with management. Utilize your ${(b.e*100).toFixed(0)}% emotional resonance to navigate office politics gracefully.`;
+                } else {
+                    contextResponse = `For today's alignment: Transit alignments suggest focus and discipline. Your biorhythm dictates ${b.i > 0 ? 'clarity for execution' : 'restraint'}. Use ${PLANET_INFO[pK]?.gem} and chant "${PLANET_INFO[pK]?.beej.split('(')[0]}" to balance this energy.`;
+                }
+
+                ans = `[Global Offline Dynamic Engine]\n\nAnalysis for ${pr?.name||'Native'}:\n• Lagna: ${ch?.d1?.lagna||'Aries'} | Moon: ${ch?.moonSign||'Aries'}\n• 2026 Hora: ${pK} (${PLANET_INFO[pK]?.action})\n• Resonance: Emotional ${(b.e*100).toFixed(0)}%\n\nRegarding "${q}":\n${contextResponse}`;
             }
 
             const newQA = { id: Date.now(), q, a: ans, v: usedProvider };
@@ -900,13 +921,20 @@
         return (
             <div className="space-y-4 pb-12 gl-fadein mt-4">
                 <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-blue-950/40 via-black/20 to-transparent shadow-xl"><div className="flex justify-between items-center"><div><span className="font-mono text-[9px] uppercase tracking-[0.2em] text-blue-400">Global Learning AI</span><h2 className="font-serif text-2xl text-blue-100 mt-0.5">Ask the Sage</h2></div><span className="text-[10px] font-mono bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-amber-300 uppercase">{set.aiModel||'offline'}</span></div></div>
-                <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                
+                <div className="flex gap-2 overflow-x-auto pb-1 text-[10px] font-mono scrollbar-hide">
+                    <button onClick={()=>{setQ("How does my career look this week?");}} className="whitespace-nowrap px-3 py-1.5 bg-black/40 border border-white/10 rounded-full hover:text-white transition">Suggest: Career Week?</button>
+                    <button onClick={()=>{setQ("What is the general outlook for this month?");}} className="whitespace-nowrap px-3 py-1.5 bg-black/40 border border-white/10 rounded-full hover:text-white transition">Suggest: Month Outlook?</button>
+                    <button onClick={()=>{setQ("What are my remedies for today?");}} className="whitespace-nowrap px-3 py-1.5 bg-black/40 border border-white/10 rounded-full hover:text-white transition">Suggest: Today Remedies?</button>
+                </div>
+
+                <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
                     {h.map(x=>( <div key={x.id} className="space-y-1.5"><div className="flex gap-2"><span className="text-amber-400 font-bold text-sm">Q:</span><span className="text-xs t90 font-medium">{x.q}</span></div><div className="p-4 bgcard rounded-2xl border border-white/5 text-xs t85 leading-relaxed whitespace-pre-wrap">{x.a}<div className="text-[8px] t40 font-mono mt-3 uppercase border-t border-white/5 pt-2">Via {x.v}</div></div></div> ))}
                     {l && <div className="text-xs t50 italic p-3">Synthesizing global transits & history...</div>}
                 </div>
                 <form onSubmit={ask} className="flex gap-2 p-2 bgcard2 border border-white/10 rounded-2xl shadow-2xl">
                     <button type="button" onClick={startListening} className={`px-3 py-2 rounded-xl transition ${isMic ? 'bg-red-500 text-white animate-pulse' : 'bg-black/30 text-amber-300 hover:bg-white/10'}`}><Icon name="microphone" size={20}/></button>
-                    <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about 2026 transits, career..." className="flex-1 bg-transparent text-xs focus:outline-none px-2 text-white"/>
+                    <input value={q} onChange={e=>setQ(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault();ask(e);}}} placeholder="Ask about 2026 transits, career..." className="flex-1 bg-transparent text-xs focus:outline-none px-2 text-white"/>
                     <button type="submit" disabled={l} className="px-5 py-2.5 bg-amber-400 text-black text-xs font-semibold rounded-xl disabled:opacity-50 hover:bg-amber-300">Ask</button>
                 </form>
             </div>
@@ -915,7 +943,7 @@
 
     function AppContent() {
         const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
-        const [dt, setDt]=useState(new Date("2026-08-20T10:08:57+04:00")); 
+        const [dt, setDt]=useState(new Date()); 
         const [ss, setSs]=useState(false); const [ed, setEd]=useState(null); const [activeProfileId, setActiveProfileId]=useState(null);
         const [mfaSetup, setMfaSetup]=useState(null);
 
@@ -960,19 +988,19 @@
         }
 
         const enableMFA = () => {
-            if (!window.OTPAuth) return alert("Authenticator library failed to load from CDN. Check connection.");
             const secret = new window.OTPAuth.Secret({ size: 20 }).base32;
             const totp = new window.OTPAuth.TOTP({ issuer: "Graha Ledger", label: u.email, algorithm: "SHA1", digits: 6, period: 30, secret: secret });
             const uri = totp.toString();
+            // Robust Dual-Fallback approach bypassing CDN blocks
             if (window.QRCode) {
                 window.QRCode.toDataURL(uri, (err, url) => { setMfaSetup({ secret, qr: url, pin: '' }); });
             } else {
-                // Dual-Fallback: Use external API if local library is blocked
                 setMfaSetup({ secret, qr: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`, pin: '' });
             }
         }
 
         const verifyAndSaveMfa = async () => {
+            if (!window.OTPAuth) return alert("Authenticator validation engine offline.");
             const totp = new window.OTPAuth.TOTP({ secret: mfaSetup.secret });
             if (totp.validate({ token: mfaSetup.pin, window: 1 }) === null) return alert("Invalid PIN. Please try again.");
             const authDB = await AppDB.getFile('gl_auth.json');
@@ -981,11 +1009,27 @@
             alert("MFA Enabled Successfully! Your vault is now locked."); setMfaSetup(null);
         }
 
+        const fetchCityCoordinates = async () => {
+            const cityInput = document.getElementById("searchCityInput").value;
+            if(!cityInput) return alert("Please enter a city name first.");
+            document.getElementById("fetchBtn").innerText = "Searching...";
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityInput)}&format=json&limit=1`);
+                const data = await res.json();
+                if(data && data.length > 0) {
+                    document.querySelector('input[name="lt"]').value = parseFloat(data[0].lat).toFixed(4);
+                    document.querySelector('input[name="ln"]').value = parseFloat(data[0].lon).toFixed(4);
+                    document.querySelector('input[name="pl"]').value = data[0].display_name.split(",")[0];
+                } else { alert("City not found. Try a broader search."); }
+            } catch(e) { alert("Search failed."); }
+            document.getElementById("fetchBtn").innerText = "Auto-Fetch";
+        }
+
         return (
             <div className="min-h-screen w-full font-sans pb-10 relative">
                 <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
                     <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-36">
-                        <div className="flex items-center gap-3"><SageLogo size={32}/><div><h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.3</h1><div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.email}</div></div></div>
+                        <div className="flex items-center gap-3"><SageLogo size={32}/><div><h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.4</h1><div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.email}</div></div></div>
                         <div className="flex items-center gap-2">
                             {prs.length > 1 && ( <select value={aP?.id||""} onChange={e=>setActiveProfileId(e.target.value)} className="bg-black/40 border border-white/10 rounded-xl px-2 py-1.5 font-serif text-xs text-amber-200 outline-none">{prs.map(p=><option key={p.id} value={p.id}>{p.name.split(' ')[0]}</option>)}</select> )}
                             <button onClick={()=>setEd({})} title="Add Profile" className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-amber-300"><Icon name="user-plus" size={17}/></button>
@@ -1070,11 +1114,11 @@
                                 </div>
 
                                 <div>
-                                    <label className="text-[9px] t50 uppercase font-mono mb-1 block">Birth Place Name</label>
-                                    <input required list="cities" name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" placeholder="Type city name..." />
-                                    <datalist id="cities">
-                                        {CITY_PRESETS.map(c=><option key={c.name} value={c.name} />)}
-                                    </datalist>
+                                    <label className="text-[9px] t50 uppercase font-mono mb-1 block">Birth Place Name / Auto-Fetch</label>
+                                    <div className="flex gap-2">
+                                        <input required id="searchCityInput" name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" placeholder="Type city name..." />
+                                        <button type="button" id="fetchBtn" onClick={fetchCityCoordinates} className="px-3 py-2 bg-white/10 rounded-xl text-xs hover:bg-white/20 transition">Search</button>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-2">
