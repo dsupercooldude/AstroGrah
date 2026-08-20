@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Graha Ledger V2.4 Enterprise</title>
+  <title>Graha Ledger V2.5 Enterprise</title>
   
   <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzE0MTYyQiIgc3Ryb2tlPSIjRDRBNTc0IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzZXJpZiIgZm9udC1zaXplPSI0NSIgZmlsbD0iI0Q0QTU3NCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4KWQPC90ZXh0Pjwvc3ZnPg==" type="image/svg+xml" />
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   
-  <!-- CORE DEPENDENCIES -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -73,7 +72,6 @@
     const { useState, useEffect, useMemo, Component, Fragment } = React;
     const jsPDF = window.jspdf ? window.jspdf.jsPDF : null;
 
-    // GLOBAL PRESETS (Restored to fix ReferenceError)
     const CITY_PRESETS = [ 
         { name: "Dubai, UAE", lat: 25.20, lon: 55.27, utc: 4.0 }, 
         { name: "Phalodi, India", lat: 27.13, lon: 72.36, utc: 5.5 }, 
@@ -315,7 +313,7 @@
             tithi: ["Pratipada","Dwitiya","Tritiya","Chaturthi","Panchami","Shashthi","Saptami","Ashtami","Navami","Dashami","Ekadashi","Dwadashi","Trayodashi","Chaturdashi",isS?"Purnima":"Amavasya"][tIdx%15],
             paksha: isS?"Shukla":"Krishna", masa, nak: NAKSHATRAS[Math.floor(ml/(360/27))], yoga: YOGAS[Math.floor(norm360(ml+sl)/(360/27))],
             karana: KARANAS[Math.floor(diff/6)%7]||"Kimstughna", sr, ss, mr, msr, abh, chogDay, chogNight, horas, 
-            rahu: getS(sr.getTime()+dMs*0.8, dMs*0.1), yamaganda: getS(sr.getTime()+dMs*0.4, dMs*0.1), gulika: getS(sr.getTime()+dMs*0.2, dMs*0.1),
+            rahu: getS(sr.getTime()+dMs*0.8, dMs*0.1), yamaganda: getS(sr.getTime()+dMs*0.4, dMs*0.1), gulika: getS(sr.getTime()+dMs*0.2, dMs*0.1), brahma: getS(sr.getTime()-dMs*0.15, dMs*0.08),
             vikram: dObj.getFullYear() + 57, saka: dObj.getFullYear() - 78
         };
     }
@@ -328,7 +326,6 @@
 
     function BiorhythmChart({ data, scores }) {
         const w = 320, h = 100;
-        // Fix: Ensure proper SVG path mapping over the 15 data points width
         const pts = (key) => data.map((d, i) => `${(i/(data.length-1))*w},${50 - d[key]*40}`).join(" L ");
         return (
             <div className="w-full bg-black/30 rounded-2xl border border-white/10 p-4 gl-fadein">
@@ -827,6 +824,7 @@
                     <h3 className="font-serif text-sm text-white">Muhurta Windows</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="p-3 rounded-2xl border border-emerald-500/30 bg-emerald-950/20"><span className="font-mono text-[9px] uppercase text-emerald-400 block mb-0.5">Abhijit (Auspicious)</span><span className="font-mono text-sm font-bold">{fm(pan.abh.s)} - {fm(pan.abh.e)}</span></div>
+                        <div className="p-3 rounded-2xl border border-blue-500/30 bg-blue-950/20"><span className="font-mono text-[9px] uppercase text-blue-400 block mb-0.5">Brahma Muhurta (Meditative)</span><span className="font-mono text-sm font-bold">{fm(pan.brahma.s)} - {fm(pan.brahma.e)}</span></div>
                         <div className="p-3 rounded-2xl border border-red-500/30 bg-red-950/20"><span className="font-mono text-[9px] uppercase text-red-400 block mb-0.5">Rahu Kaalam (Avoid Starts)</span><span className="font-mono text-sm font-bold">{fm(pan.rahu.s)} - {fm(pan.rahu.e)}</span></div>
                         <div className="p-3 rounded-2xl border border-orange-500/30 bg-orange-950/20"><span className="font-mono text-[9px] uppercase text-orange-400 block mb-0.5">Yamaganda</span><span className="font-mono text-sm font-bold">{fm(pan.yamaganda.s)} - {fm(pan.yamaganda.e)}</span></div>
                         <div className="p-3 rounded-2xl border border-gray-500/30 bg-gray-900/20"><span className="font-mono text-[9px] uppercase text-gray-400 block mb-0.5">Gulika Kaal</span><span className="font-mono text-sm font-bold">{fm(pan.gulika.s)} - {fm(pan.gulika.e)}</span></div>
@@ -836,7 +834,7 @@
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                         {pan.chogDay.map((c,i)=><div key={i} className="p-2 bg-black/30 border border-white/5 rounded-xl text-[10px]"><span style={{color:c.c}} className="font-bold block">{c.n}</span><span className="t50 text-[8px] font-mono uppercase">{c.d}</span><div className="font-mono t85 text-[9px] mt-0.5">{fm(c.s)} - {fm(c.e)}</div></div>)}
                     </div>
-                    
+
                     <h4 className="font-serif text-xs text-blue-200 pt-2">Planetary Hora Tracking</h4>
                     <div className="space-y-1">
                         {pan.horas.map((h,i)=><div key={i} className="flex justify-between items-center p-2 bg-black/30 border border-white/5 rounded-xl text-xs"><span style={{color:PLANET_INFO[h.p]?.color}} className="font-bold">{h.p}</span><div className="font-mono t85 text-[10px]">{fm(h.s)} - {fm(h.e)}</div></div>)}
@@ -876,13 +874,20 @@
         }
 
         async function ask(e){
-            e.preventDefault(); if(!q.trim()||l) return; setL(true); let ans = ""; let usedProvider = set.aiModel || "offline";
-            const b = bio(pr?.dob, new Date(), pr?.utcOffset); const pK = WEEKDAY[new Date().getDay()]; const pan = panchang(new Date(), set.monthSystem, pr?.utcOffset||5.5);
+            if(e) e.preventDefault(); 
+            if(!q.trim()||l) return; 
+            setL(true); 
+            let ans = ""; 
+            let usedProvider = set.aiModel || "offline";
+            
+            const b = bio(pr?.dob, new Date(), pr?.utcOffset); 
+            const pK = WEEKDAY[new Date().getDay()]; 
+            const pan = panchang(new Date(), set.monthSystem, pr?.utcOffset||5.5);
             
             let globalContext = "";
             try { const gDB = await AppDB.getGlobalAI(); if(gDB.history.length>0) { const last = CryptoUtils.decrypt(gDB.history[gDB.history.length-1]); globalContext = `[Global Trend: Previous user asked "${last.q}"]`; } } catch(err){}
 
-            const systemContext = `You are the Graha Ledger Jyotish Sage. Provide Vedic astrology guidance for ${pr?.name||'Native'} (Asc: ${ch?.d1?.lagna||'Aries'}, Moon: ${ch?.moonSign||'Aries'}). Transits: 2026 calculations applied. Today: ${pK} Hora, ${pan.tithi} Tithi. Biorhythms: Emotional ${(b.e*100).toFixed(0)}%. ${globalContext}.`;
+            const systemContext = `You are the Graha Ledger Jyotish Sage. Provide Vedic astrology guidance for ${pr?.name||'Native'} (Asc: ${ch?.d1?.lagna||'Aries'}, Moon: ${ch?.moonSign||'Aries'}). Transits: 2026 calculations applied. Today: ${pK} Hora, ${pan.tithi} Tithi. Biorhythms: Emotional ${(b.e*100).toFixed(0)}%. ${globalContext}. If query is general, provide a 7-day outlook.`;
 
             if (set.aiModel !== 'offline') {
                 const apiRes = await executeMultiProviderAI(q, set, systemContext);
@@ -932,11 +937,11 @@
                     {h.map(x=>( <div key={x.id} className="space-y-1.5"><div className="flex gap-2"><span className="text-amber-400 font-bold text-sm">Q:</span><span className="text-xs t90 font-medium">{x.q}</span></div><div className="p-4 bgcard rounded-2xl border border-white/5 text-xs t85 leading-relaxed whitespace-pre-wrap">{x.a}<div className="text-[8px] t40 font-mono mt-3 uppercase border-t border-white/5 pt-2">Via {x.v}</div></div></div> ))}
                     {l && <div className="text-xs t50 italic p-3">Synthesizing global transits & history...</div>}
                 </div>
-                <form onSubmit={ask} className="flex gap-2 p-2 bgcard2 border border-white/10 rounded-2xl shadow-2xl">
+                <div className="flex gap-2 p-2 bgcard2 border border-white/10 rounded-2xl shadow-2xl">
                     <button type="button" onClick={startListening} className={`px-3 py-2 rounded-xl transition ${isMic ? 'bg-red-500 text-white animate-pulse' : 'bg-black/30 text-amber-300 hover:bg-white/10'}`}><Icon name="microphone" size={20}/></button>
-                    <input value={q} onChange={e=>setQ(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault();ask(e);}}} placeholder="Ask about 2026 transits, career..." className="flex-1 bg-transparent text-xs focus:outline-none px-2 text-white"/>
-                    <button type="submit" disabled={l} className="px-5 py-2.5 bg-amber-400 text-black text-xs font-semibold rounded-xl disabled:opacity-50 hover:bg-amber-300">Ask</button>
-                </form>
+                    <input value={q} onChange={e=>setQ(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault(); ask();}}} placeholder="Ask about 2026 transits, career..." className="flex-1 bg-transparent text-xs focus:outline-none px-2 text-white"/>
+                    <button onClick={ask} disabled={l} className="px-5 py-2.5 bg-amber-400 text-black text-xs font-semibold rounded-xl disabled:opacity-50 hover:bg-amber-300">Ask</button>
+                </div>
             </div>
         );
     }
@@ -991,7 +996,6 @@
             const secret = new window.OTPAuth.Secret({ size: 20 }).base32;
             const totp = new window.OTPAuth.TOTP({ issuer: "Graha Ledger", label: u.email, algorithm: "SHA1", digits: 6, period: 30, secret: secret });
             const uri = totp.toString();
-            // Robust Dual-Fallback approach bypassing CDN blocks
             if (window.QRCode) {
                 window.QRCode.toDataURL(uri, (err, url) => { setMfaSetup({ secret, qr: url, pin: '' }); });
             } else {
@@ -1029,7 +1033,7 @@
             <div className="min-h-screen w-full font-sans pb-10 relative">
                 <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
                     <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-36">
-                        <div className="flex items-center gap-3"><SageLogo size={32}/><div><h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.4</h1><div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.email}</div></div></div>
+                        <div className="flex items-center gap-3"><SageLogo size={32}/><div><h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.5</h1><div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.email}</div></div></div>
                         <div className="flex items-center gap-2">
                             {prs.length > 1 && ( <select value={aP?.id||""} onChange={e=>setActiveProfileId(e.target.value)} className="bg-black/40 border border-white/10 rounded-xl px-2 py-1.5 font-serif text-xs text-amber-200 outline-none">{prs.map(p=><option key={p.id} value={p.id}>{p.name.split(' ')[0]}</option>)}</select> )}
                             <button onClick={()=>setEd({})} title="Add Profile" className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-amber-300"><Icon name="user-plus" size={17}/></button>
@@ -1116,7 +1120,10 @@
                                 <div>
                                     <label className="text-[9px] t50 uppercase font-mono mb-1 block">Birth Place Name / Auto-Fetch</label>
                                     <div className="flex gap-2">
-                                        <input required id="searchCityInput" name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" placeholder="Type city name..." />
+                                        <input required list="cities" id="searchCityInput" name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" placeholder="Type city name..." />
+                                        <datalist id="cities">
+                                            {CITY_PRESETS.map(c=><option key={c.name} value={c.name} />)}
+                                        </datalist>
                                         <button type="button" id="fetchBtn" onClick={fetchCityCoordinates} className="px-3 py-2 bg-white/10 rounded-xl text-xs hover:bg-white/20 transition">Search</button>
                                     </div>
                                 </div>
