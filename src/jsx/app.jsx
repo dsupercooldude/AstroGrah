@@ -1,24 +1,11 @@
-const { useState, useEffect, useMemo, Fragment } = window.React;
-
 const bootInterval = setInterval(() => {
-    if (window.ErrorBoundary && window.PersonTab && window.AuthModal && window.SetupModal && window.KundaliRenderer) {
+    // Only boot when every single global component is verified to exist on the window
+    if (window.ErrorBoundary && window.PersonTab && window.AuthModal && window.SetupModal && window.KundaliRenderer && window.React) {
         clearInterval(bootInterval);
         document.getElementById('bootloader').style.display = 'none';
 
-        const ErrorBoundary = window.ErrorBoundary;
-        const SetupModal = window.SetupModal;
-        const AuthModal = window.AuthModal;
-        const ForcePasswordChange = window.ForcePasswordChange;
-        const AdminAuthModal = window.AdminAuthModal;
-        const AdminConsoleModal = window.AdminConsoleModal;
-        const PersonTab = window.PersonTab;
-        const PanchangTab = window.PanchangTab;
-        const CompatTab = window.CompatTab;
-        const AskTab = window.AskTab;
-        const SageLogo = window.SageLogo;
-        const Icon = window.Icon;
-        const AppDB = window.AppDB;
-        const CryptoUtils = window.CryptoUtils;
+        const { ErrorBoundary, SetupModal, AuthModal, ForcePasswordChange, AdminAuthModal, AdminConsoleModal, PersonTab, PanchangTab, CompatTab, AskTab, SageLogo, Icon, AppDB, CryptoUtils } = window;
+        const { useState, useEffect, useMemo, Fragment } = window.React;
 
         function AppContent() {
             const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
