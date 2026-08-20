@@ -6,6 +6,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
 
   const [div, setDiv] = useState(1);
   const [chartStyle, setChartStyle] = useState(settings.kundaliStyle || "north");
+  const [expert, setExpert] = useState(false); // Controls Basic vs Expert toggle
   const [expandedDasha, setExpandedDasha] = useState(null);
   const [expandedAntar, setExpandedAntar] = useState(null);
 
@@ -29,7 +30,6 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
 
   return (
     <div className="space-y-4 pb-12 gl-fadein">
-      {/* 1. ACTIVE PROFILE HEADER */}
       <div className="rounded-3xl border border-white/10 p-5 mt-4 bgcard2 shadow-xl">
         <div className="flex justify-between items-start">
           <div>
@@ -47,7 +47,6 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         </div>
       </div>
 
-      {/* 2. PROMINENT TIME-TRAVEL CONTROL BAR */}
       <div className="bgcard rounded-2xl border border-amber-400/20 p-4 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300">
@@ -77,127 +76,130 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         </div>
       </div>
 
-      {/* 3. KUNDALI CHART SECTION */}
       <div className="rounded-3xl border border-white/10 bgcard p-4">
         <div className="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-white/5 pb-3">
           <div className="flex gap-1 flex-wrap bg-black/40 border border-white/10 rounded-xl p-1 font-mono text-[10px]">
-            {["D-1 (Rashi)", "D-7 (Saptamsha)", "D-9 (Navamsha)", "D-10 (Dashamsha)", "D-60 (Shashtiamsha)"].map((label, idx) => {
-              const divNum = [1, 7, 9, 10, 60][idx];
-              return (
+            {expert && <Fragment>
+              {[1, 7, 9, 10, 60].map((divNum) => (
                 <button key={divNum} onClick={() => setDiv(divNum)} className={`px-2 py-1 rounded-lg transition ${div === divNum ? "bg-amber-400/20 text-amber-300 font-bold" : "t40"}`}>
                   D-{divNum}
                 </button>
-              );
-            })}
+              ))}
+            </Fragment>}
           </div>
           <div className="flex gap-1 bg-black/40 border border-white/10 rounded-xl p-1 font-mono text-[10px]">
-            {["north", "south", "east", "kp"].map((st) => (
-              <button key={st} onClick={() => setChartStyle(st)} className={`px-2 py-1 rounded-lg capitalize transition ${chartStyle === st ? "bg-white/15 text-white font-bold" : "t40"}`}>
-                {st}
-              </button>
-            ))}
+            <button onClick={() => setExpert(!expert)} className="px-2 py-1 rounded-lg transition text-amber-300 hover:text-white border border-white/10 mr-2 bg-black/50 font-bold shadow">
+              {expert ? "« Switch to Basic" : "Switch to Expert »"}
+            </button>
+            {expert && <Fragment>
+              {["north", "south", "east", "kp"].map((st) => (
+                <button key={st} onClick={() => setChartStyle(st)} className={`px-2 py-1 rounded-lg capitalize transition ${chartStyle === st ? "bg-white/15 text-white font-bold" : "t40"}`}>
+                  {st}
+                </button>
+              ))}
+            </Fragment>}
           </div>
         </div>
-        <KundaliRenderer ac={ac} ch={ch} kpTable={ch.kpTable} style={chartStyle} titleDesc={`Divisional View: D-${div}`} isExpert={true} />
+        
+        {/* Basic Mode has been dynamically restored using `isExpert={expert}` instead of true */}
+        <KundaliRenderer ac={ac} ch={ch} kpTable={ch.kpTable} style={chartStyle} titleDesc={`Divisional View: D-${div}`} isExpert={expert} />
       </div>
 
-      {/* 4. PLANETARY STRENGTH & VIMSHOTTARI DASHA DRILLDOWN (Always Visible) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Vimshottari Nested Dasha */}
-        <div className="rounded-3xl border border-white/10 bgcard p-5">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-serif text-sm text-amber-200">Vimshottari Dasha Drilldown</h3>
-            <span className="font-mono text-[9px] t50 uppercase">Maha / Antar / Pratyantar</span>
-          </div>
-          <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
-            {ch.dasha.map((d, i) => {
-              const isActive = currentDecYear >= d.start && currentDecYear < d.end;
-              const isExp = expandedDasha === i;
-              return (
-                <div key={i}>
-                  <div
-                    onClick={() => setExpandedDasha(isExp ? null : i)}
-                    className={`flex justify-between items-center p-2.5 rounded-xl text-xs font-mono border cursor-pointer transition ${isActive ? "bg-amber-400/10 border-amber-400/40 font-bold text-amber-100 shadow-sm" : "bg-black/30 border-white/5 hover:border-white/20"}`}
-                  >
-                    <span style={{ color: PLANET_INFO[d.lord]?.color }}>{d.lord} Mahadasha</span>
-                    <div className="flex items-center gap-2">
-                      <span className={isActive ? "text-amber-200" : "t70"}>{Math.floor(d.start)} - {Math.floor(d.end)}</span>
-                      <Icon name={isExp ? "caret-up" : "caret-down"} className="t50" />
+      {expert && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-3xl border border-white/10 bgcard p-5">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-serif text-sm text-amber-200">Vimshottari Dasha Drilldown</h3>
+              <span className="font-mono text-[9px] t50 uppercase">Maha / Antar / Pratyantar</span>
+            </div>
+            <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+              {ch.dasha.map((d, i) => {
+                const isActive = currentDecYear >= d.start && currentDecYear < d.end;
+                const isExp = expandedDasha === i;
+                return (
+                  <div key={i}>
+                    <div
+                      onClick={() => setExpandedDasha(isExp ? null : i)}
+                      className={`flex justify-between items-center p-2.5 rounded-xl text-xs font-mono border cursor-pointer transition ${isActive ? "bg-amber-400/10 border-amber-400/40 font-bold text-amber-100 shadow-sm" : "bg-black/30 border-white/5 hover:border-white/20"}`}
+                    >
+                      <span style={{ color: PLANET_INFO[d.lord]?.color }}>{d.lord} Mahadasha</span>
+                      <div className="flex items-center gap-2">
+                        <span className={isActive ? "text-amber-200" : "t70"}>{Math.floor(d.start)} - {Math.floor(d.end)}</span>
+                        <Icon name={isExp ? "caret-up" : "caret-down"} className="t50" />
+                      </div>
                     </div>
-                  </div>
-                  {isExp && (
-                    <div className="pl-3 pr-2 py-2 mt-1 space-y-1 bg-black/40 rounded-xl border border-white/5 text-[10px] font-mono">
-                      {getAntardashas(d.lord, d.start, d.end).map((ant, idx) => {
-                        const isAntarActive = currentDecYear >= ant.start && currentDecYear < ant.end;
-                        const isAntarExp = expandedAntar === `${i}-${idx}`;
-                        return (
-                          <div key={idx}>
-                            <div
-                              onClick={() => setExpandedAntar(isAntarExp ? null : `${i}-${idx}`)}
-                              className={`flex justify-between items-center py-1 border-b border-white/5 last:border-0 cursor-pointer hover:text-white transition ${isAntarActive ? "text-amber-300 font-bold bg-amber-400/5 px-2 rounded" : ""}`}
-                            >
-                              <span>{d.lord} - <span style={{ color: PLANET_INFO[ant.lord]?.color }}>{ant.lord}</span></span>
-                              <div className="flex items-center gap-2">
-                                <span>{formatYM(ant.start)} to {formatYM(ant.end)}</span>
-                                <Icon name={isAntarExp ? "caret-up" : "caret-down"} className="t50" />
+                    {isExp && (
+                      <div className="pl-3 pr-2 py-2 mt-1 space-y-1 bg-black/40 rounded-xl border border-white/5 text-[10px] font-mono">
+                        {getAntardashas(d.lord, d.start, d.end).map((ant, idx) => {
+                          const isAntarActive = currentDecYear >= ant.start && currentDecYear < ant.end;
+                          const isAntarExp = expandedAntar === `${i}-${idx}`;
+                          return (
+                            <div key={idx}>
+                              <div
+                                onClick={() => setExpandedAntar(isAntarExp ? null : `${i}-${idx}`)}
+                                className={`flex justify-between items-center py-1 border-b border-white/5 last:border-0 cursor-pointer hover:text-white transition ${isAntarActive ? "text-amber-300 font-bold bg-amber-400/5 px-2 rounded" : ""}`}
+                              >
+                                <span>{d.lord} - <span style={{ color: PLANET_INFO[ant.lord]?.color }}>{ant.lord}</span></span>
+                                <div className="flex items-center gap-2">
+                                  <span>{formatYM(ant.start)} to {formatYM(ant.end)}</span>
+                                  <Icon name={isAntarExp ? "caret-up" : "caret-down"} className="t50" />
+                                </div>
                               </div>
+                              {isAntarExp && (
+                                <div className="pl-3 py-1 space-y-0.5 border-l border-white/10 ml-2 mt-1 mb-1">
+                                  {getPratyantarDashas(ant.lord, ant.start, ant.end).map((prat, pIdx) => {
+                                    const isPratActive = currentDecYear >= prat.start && currentDecYear < prat.end;
+                                    return (
+                                      <div key={pIdx} className={`flex justify-between items-center text-[9px] ${isPratActive ? "text-amber-200 font-bold" : "t60"}`}>
+                                        <span>➔ <span style={{ color: PLANET_INFO[prat.lord]?.color }}>{prat.lord}</span></span>
+                                        <span>{formatYM(prat.start)} to {formatYM(prat.end)}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
-                            {isAntarExp && (
-                              <div className="pl-3 py-1 space-y-0.5 border-l border-white/10 ml-2 mt-1 mb-1">
-                                {getPratyantarDashas(ant.lord, ant.start, ant.end).map((prat, pIdx) => {
-                                  const isPratActive = currentDecYear >= prat.start && currentDecYear < prat.end;
-                                  return (
-                                    <div key={pIdx} className={`flex justify-between items-center text-[9px] ${isPratActive ? "text-amber-200 font-bold" : "t60"}`}>
-                                      <span>➔ <span style={{ color: PLANET_INFO[prat.lord]?.color }}>{prat.lord}</span></span>
-                                      <span>{formatYM(prat.start)} to {formatYM(prat.end)}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* Shadbala & Dignities */}
-        <div className="rounded-3xl border border-white/10 bgcard p-5">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-serif text-sm text-amber-200">Shadbala & Planetary Power</h3>
-            <span className="font-mono text-[9px] t50 uppercase">Rupas & Dignity</span>
-          </div>
-          <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
-            {Object.entries(ch.shadbala).map(([planet, score]) => {
-              const signPlaced = ch.d1.houses[ch.d1.placements[planet]] || "Aries";
-              const dignity = getPlanetaryDignity(planet, signPlaced);
-              return (
-                <div key={planet} className="text-xs bg-black/25 p-2 rounded-xl border border-white/5">
-                  <div className="flex justify-between items-center mb-1 font-mono">
-                    <span style={{ color: PLANET_INFO[planet]?.color }} className="font-bold flex items-center gap-1.5">
-                      <span>{PLANET_INFO[planet]?.symbol}</span> {planet}
-                    </span>
-                    <div className="flex items-center gap-2 text-[10px]">
-                      <span style={{ color: dignity.color }} className="font-semibold px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{dignity.status}</span>
-                      <span className="text-amber-200 font-bold">{(score / 60).toFixed(1)} Rupas ({score} pts)</span>
+          <div className="rounded-3xl border border-white/10 bgcard p-5">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-serif text-sm text-amber-200">Shadbala & Planetary Power</h3>
+              <span className="font-mono text-[9px] t50 uppercase">Rupas & Dignity</span>
+            </div>
+            <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+              {Object.entries(ch.shadbala).map(([planet, score]) => {
+                const signPlaced = ch.d1.houses[ch.d1.placements[planet]] || "Aries";
+                const dignity = getPlanetaryDignity(planet, signPlaced);
+                return (
+                  <div key={planet} className="text-xs bg-black/25 p-2 rounded-xl border border-white/5">
+                    <div className="flex justify-between items-center mb-1 font-mono">
+                      <span style={{ color: PLANET_INFO[planet]?.color }} className="font-bold flex items-center gap-1.5">
+                        <span>{PLANET_INFO[planet]?.symbol}</span> {planet}
+                      </span>
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span style={{ color: dignity.color }} className="font-semibold px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{dignity.status}</span>
+                        <span className="text-amber-200 font-bold">{(score / 60).toFixed(1)} Rupas ({score} pts)</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (score / 600) * 100)}%`, backgroundColor: PLANET_INFO[planet]?.color }}></div>
                     </div>
                   </div>
-                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (score / 600) * 100)}%`, backgroundColor: PLANET_INFO[planet]?.color }}></div>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 5. DEEP GOCHARA FORECAST */}
       <div className="rounded-3xl border border-white/10 bgcard p-5 space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-serif text-base text-amber-200">Gochara (Transit) Impact</h3>
@@ -235,7 +237,6 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         </div>
       </div>
 
-      {/* 6. DAILY PRESCRIPTIONS */}
       <div className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/10 via-transparent to-transparent p-5 space-y-3">
         <div className="flex justify-between items-center">
           <h3 className="font-serif text-base text-amber-300 flex items-center gap-2"><Icon name="sparkle" /> Prescriptions for {pK}</h3>
@@ -265,7 +266,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
 };
 
 window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
-  const { Icon, panchang, WEEKDAY } = window;
+  const { Icon, panchang, WEEKDAY, PLANET_INFO } = window;
   const [liveValidated, setLiveValidated] = useState(false);
   const [validating, setValidating] = useState(false);
 
@@ -277,7 +278,11 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
     try {
       const res = await fetch(`https://api.sunrisesunset.io/json?lat=${p?.lat || 25.2}&lng=${p?.lon || 55.2}&date=${d.toISOString().slice(0, 10)}`);
       const data = await res.json();
-      if (data && data.results) setLiveValidated(true);
+      // Allowing infinite button clicks by toggling text rather than locking it
+      if (data && data.results) {
+          setLiveValidated(true);
+          setTimeout(() => setLiveValidated(false), 4000); 
+      }
     } catch (e) {}
     setValidating(false);
   };
@@ -293,7 +298,7 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
           </div>
         </div>
         <button onClick={validateLivePanchang} disabled={validating} className="px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-mono text-[10px] hover:bg-emerald-500/20 transition flex items-center gap-1.5">
-          <Icon name="broadcast" className={validating ? "animate-pulse" : ""} /> {liveValidated ? "API Verified" : "Validate Live API"}
+          <Icon name="broadcast" className={validating ? "animate-pulse" : ""} /> {validating ? "Verifying..." : liveValidated ? "API Synced!" : "Validate Live API"}
         </button>
       </div>
 
@@ -338,18 +343,49 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
           <div className="p-3 rounded-2xl border border-gray-500/30 bg-gray-900/20 sm:col-span-2"><span className="font-mono text-[9px] uppercase text-gray-400 block mb-0.5">Gulika Kaal</span><span className="font-mono text-sm font-bold">{fm(pan.gulika.s)} - {fm(pan.gulika.e)}</span></div>
         </div>
       </div>
+
+      {/* ISOLATED AND PROMINENT CHOGHADIYA SECTION */}
+      <div className="rounded-3xl border border-white/10 bgcard p-5">
+        <h3 className="font-serif text-sm text-amber-200 mb-4">Day Choghadiya Timings</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {pan.chogDay.map((c, i) => (
+                <div key={i} className="p-3 bg-black/40 border border-white/5 rounded-xl text-[10px] flex flex-col justify-center shadow-inner">
+                    <span style={{ color: c.c }} className="font-bold text-xs block mb-0.5">{c.n}</span>
+                    <span className="t50 text-[8px] font-mono uppercase">{c.d}</span>
+                    <div className="font-mono t85 text-[10px] mt-2 bg-white/5 py-1 px-2 rounded">{fm(c.s)} - {fm(c.e)}</div>
+                </div>
+            ))}
+        </div>
+      </div>
+
+      {/* ISOLATED AND PROMINENT HORA SECTION */}
+      <div className="rounded-3xl border border-white/10 bgcard p-5">
+        <h3 className="font-serif text-sm text-blue-200 mb-4">Planetary Hora Tracking</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {pan.horas.map((h, i) => (
+                <div key={i} className="flex justify-between items-center p-3 bg-black/30 border border-white/5 rounded-xl text-xs hover:bg-white/5 transition">
+                    <div className="flex items-center gap-2">
+                        <span className="text-lg opacity-80" style={{ color: PLANET_INFO[h.p]?.color }}>{PLANET_INFO[h.p]?.symbol}</span>
+                        <span style={{ color: PLANET_INFO[h.p]?.color }} className="font-bold tracking-wide">{h.p}</span>
+                    </div>
+                    <div className="font-mono t85 text-[10px] bg-black/50 px-2 py-1 rounded border border-white/5">{fm(h.s)} - {fm(h.e)}</div>
+                </div>
+            ))}
+        </div>
+      </div>
     </div>
   );
 };
 
 window.CompatTab = ({ prs, chs, settings, date }) => {
+  const { NAKSHATRAS } = window;
   const [pairIds, setPairIds] = useState(prs.length >= 2 ? [prs[0].id, prs[1].id] : [prs[0]?.id, prs[0]?.id]);
   if (prs.length < 2) return <div className="p-8 text-center text-sm t60 border border-dashed border-white/20 rounded-3xl mt-6 bgfaint">Add at least two natal profiles to unlock 36-point Ashtakoot Milan.</div>;
   const p1 = prs.find((p) => p.id === pairIds[0]) || prs[0];
   const p2 = prs.find((p) => p.id === pairIds[1]) || prs[1];
   const c1 = chs[p1.id], c2 = chs[p2.id];
   if (!c1 || !c2) return null;
-  const score = Math.max(12, Math.min(36, 36 - ((Math.abs(window.NAKSHATRAS.indexOf(c1.nak) - window.NAKSHATRAS.indexOf(c2.nak)) % 10) * 1.8)));
+  const score = Math.max(12, Math.min(36, 36 - ((Math.abs(NAKSHATRAS.indexOf(c1.nak) - NAKSHATRAS.indexOf(c2.nak)) % 10) * 1.8)));
   return (
     <div className="space-y-4 pb-12 gl-fadein mt-4">
       <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-pink-950/40 via-black/20 to-transparent flex flex-col sm:flex-row justify-between items-center gap-4 shadow-xl">
