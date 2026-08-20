@@ -1,10 +1,10 @@
 // src/jsx/app.jsx
 const bootInterval = setInterval(() => {
-  if (window.ErrorBoundary && window.PersonTab && window.AuthModal && window.SetupModal && window.KundaliRenderer && window.React) {
+  if (window.ErrorBoundary && window.PersonTab && window.AuthModal && window.SetupModal && window.SettingsModal && window.KundaliRenderer && window.React) {
     clearInterval(bootInterval);
     document.getElementById("bootloader").style.display = "none";
 
-    const { ErrorBoundary, SetupModal, AuthModal, ForcePasswordChange, AdminAuthModal, AdminConsoleModal, PersonTab, PanchangTab, CompatTab, AskTab, SageLogo, Icon, AppDB, CryptoUtils } = window;
+    const { ErrorBoundary, SetupModal, AuthModal, ForcePasswordChange, AdminAuthModal, AdminConsoleModal, SettingsModal, PersonTab, PanchangTab, CompatTab, AskTab, SageLogo, Icon, AppDB, CryptoUtils } = window;
     const { useState, useEffect, useMemo, Fragment } = window.React;
 
     function AppContent() {
@@ -15,7 +15,6 @@ const bootInterval = setInterval(() => {
       const [ss, setSs] = useState(false);
       const [ed, setEd] = useState(null);
       const [activeProfileId, setActiveProfileId] = useState(null);
-      const [mfaSetup, setMfaSetup] = useState(null);
       const [adminAuthOpen, setAdminAuthOpen] = useState(false);
       const [adminConsoleOpen, setAdminConsoleOpen] = useState(false);
 
@@ -67,13 +66,9 @@ const bootInterval = setInterval(() => {
       if (u?.requiresPasswordChange) return <ForcePasswordChange email={u.email} emailHash={u.emailHash} onComplete={() => setU({ ...u, requiresPasswordChange: false })} />;
 
       const calculateTimezone = (lat, lon) => {
-        // UAE Bounding Box
-        if (lat >= 22.5 && lat <= 26.5 && lon >= 51.0 && lon <= 56.5) return "4.0";
-        // India Bounding Box
-        if (lat >= 6.0 && lat <= 37.5 && lon >= 68.0 && lon <= 97.5) return "5.5";
-        // UK Bounding Box
-        if (lat >= 49.5 && lat <= 61.0 && lon >= -8.0 && lon <= 2.0) return "0.0";
-        // General Longitudinal Approximation
+        if (lat >= 22.5 && lat <= 26.5 && lon >= 51.0 && lon <= 56.5) return "4.0"; // UAE
+        if (lat >= 6.0 && lat <= 37.5 && lon >= 68.0 && lon <= 97.5) return "5.5";  // India
+        if (lat >= 49.5 && lat <= 61.0 && lon >= -8.0 && lon <= 2.0) return "0.0";  // UK
         return (Math.round((lon / 15) * 2) / 2).toFixed(1);
       };
 
@@ -98,7 +93,7 @@ const bootInterval = setInterval(() => {
 
       const fetchCityCoordinates = async () => {
         const query = formData.place;
-        if (!query) return alert("Please type a city or place name first.");
+        if (!query) return alert("Please type a city name first.");
         const preset = window.CITY_PRESETS.find((c) => c.name.toLowerCase().includes(query.toLowerCase()));
         if (preset) {
           setFormData((prev) => ({ ...prev, place: preset.name, lat: preset.lat.toString(), lon: preset.lon.toString(), utcOffset: preset.utc.toString() }));
@@ -182,9 +177,12 @@ const bootInterval = setInterval(() => {
           <datalist id="gotras">{window.GOTRAS.map((g) => (<option key={g} value={g} />))}</datalist>
           <datalist id="jaatis">{window.JAATIS.map((j) => (<option key={j} value={j} />))}</datalist>
 
+          {/* Modals & Dialogs */}
           {adminAuthOpen && <AdminAuthModal u={u} onClose={() => setAdminAuthOpen(false)} onAuthenticated={() => { setAdminAuthOpen(false); setAdminConsoleOpen(true); }} />}
           {adminConsoleOpen && <AdminConsoleModal onClose={() => setAdminConsoleOpen(false)} onResetDb={resetDbConfig} />}
+          {ss && <SettingsModal u={u} settings={set} onClose={() => setSs(false)} onUpdateSettings={updateSettings} onMfaSuccess={() => setU({ ...u, mfaEnabled: true })} />}
 
+          {/* Header Bar */}
           <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
             <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-36">
               <div className="flex items-center gap-3">
@@ -216,6 +214,7 @@ const bootInterval = setInterval(() => {
             </div>
           </div>
 
+          {/* Main Body */}
           <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-6 relative z-10">
             {prs.length === 0 ? (
               <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10 bgfaint gl-fadein">
@@ -243,7 +242,7 @@ const bootInterval = setInterval(() => {
               </Fragment>
             )}
 
-            {/* Profile Form Modal with Auto-Timezone Binding */}
+            {/* Profile Form Modal */}
             {ed && (
               <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={() => setEd(null)}>
                 <form onClick={(e) => e.stopPropagation()} onSubmit={hSave} className="w-full max-w-md bgcard2 rounded-3xl border border-white/10 p-6 space-y-3.5 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl relative">
