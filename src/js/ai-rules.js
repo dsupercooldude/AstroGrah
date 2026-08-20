@@ -4,24 +4,91 @@ window.executeMultiProviderAI = async (prompt, settings, systemInstruction = "")
   const providers = [
     {
       id: "gemini",
+      name: "Google Gemini 1.5 Flash",
       run: async (k) => {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ contents: [{ parts: [{ text: `${systemInstruction}\n\n${prompt}` }] }] })
         });
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error(`Gemini Status ${res.status}`);
         const data = await res.json();
         return data.candidates?.[0]?.content?.parts?.[0]?.text;
       }
     },
     {
       id: "openai",
+      name: "OpenAI GPT-4o Mini",
       run: async (k) => {
         const res = await fetch(`https://api.openai.com/v1/chat/completions`, {
           method: "POST", headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
           body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "system", content: systemInstruction }, { role: "user", content: prompt }] })
         });
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error(`OpenAI Status ${res.status}`);
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content;
+      }
+    },
+    {
+      id: "groq",
+      name: "Groq (Llama 3.1 8B Instant)",
+      run: async (k) => {
+        const res = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+          method: "POST", headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "system", content: systemInstruction }, { role: "user", content: prompt }] })
+        });
+        if (!res.ok) throw new Error(`Groq Status ${res.status}`);
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content;
+      }
+    },
+    {
+      id: "deepseek",
+      name: "DeepSeek V3",
+      run: async (k) => {
+        const res = await fetch(`https://api.deepseek.com/chat/completions`, {
+          method: "POST", headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "system", content: systemInstruction }, { role: "user", content: prompt }] })
+        });
+        if (!res.ok) throw new Error(`DeepSeek Status ${res.status}`);
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content;
+      }
+    },
+    {
+      id: "kimi",
+      name: "Moonshot / Kimi",
+      run: async (k) => {
+        const res = await fetch(`https://api.moonshot.cn/v1/chat/completions`, {
+          method: "POST", headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "moonshot-v1-8k", messages: [{ role: "system", content: systemInstruction }, { role: "user", content: prompt }] })
+        });
+        if (!res.ok) throw new Error(`Kimi Status ${res.status}`);
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content;
+      }
+    },
+    {
+      id: "openrouter",
+      name: "OpenRouter Gateway",
+      run: async (k) => {
+        const res = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
+          method: "POST", headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "meta-llama/llama-3.1-8b-instruct:free", messages: [{ role: "system", content: systemInstruction }, { role: "user", content: prompt }] })
+        });
+        if (!res.ok) throw new Error(`OpenRouter Status ${res.status}`);
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content;
+      }
+    },
+    {
+      id: "huggingface",
+      name: "Hugging Face Inference",
+      run: async (k) => {
+        const res = await fetch(`https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3/v1/chat/completions`, {
+          method: "POST", headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "mistralai/Mistral-7B-Instruct-v0.3", messages: [{ role: "system", content: systemInstruction }, { role: "user", content: prompt }], max_tokens: 500 })
+        });
+        if (!res.ok) throw new Error(`Hugging Face Status ${res.status}`);
         const data = await res.json();
         return data.choices?.[0]?.message?.content;
       }
@@ -31,17 +98,23 @@ window.executeMultiProviderAI = async (prompt, settings, systemInstruction = "")
   const primaryModel = settings.aiModel || "gemini";
   if (primaryModel === "offline") return null;
 
-  const order = [primaryModel, ...providers.map((p) => p.id).filter((id) => id !== primaryModel)];
-  for (const provId of order) {
+  // Build priority cascade: selected model first, followed by all other configured providers
+  const priorityOrder = [primaryModel, ...providers.map((p) => p.id).filter((id) => id !== primaryModel)];
+
+  for (const provId of priorityOrder) {
     const key = settings.apiKeys?.[provId];
     if (key && key.trim().length > 5) {
       try {
         const executor = providers.find((p) => p.id === provId);
         if (executor) {
           const answer = await executor.run(key.trim());
-          if (answer) return { text: answer, provider: provId };
+          if (answer && answer.trim().length > 0) {
+            return { text: answer, provider: executor.name };
+          }
         }
-      } catch (e) {}
+      } catch (err) {
+        console.warn(`[AI Matrix Cascade] Provider '${provId}' failed or exhausted (${err.message}). Trying next fallback...`);
+      }
     }
   }
   return null;
@@ -83,7 +156,6 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
   const b = window.bio(profile?.dob, targetDate, profile?.utcOffset);
   const pK = window.WEEKDAY[targetDate.getDay()];
   
-  // Real Ephemeris Data Extraction
   const lagna = kundli.d1.lagna;
   const moonSign = kundli.moonSign;
   const nak = kundli.nak;
@@ -92,14 +164,13 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
   const satDeg = kundli.planetaryDegrees.Saturn.toFixed(2);
   const moonDeg = kundli.planetaryDegrees.Moon.toFixed(2);
 
-  // Deep Dasha Extraction
   const currentDecYear = targetDate.getFullYear() + (targetDate.getMonth() / 12) + (targetDate.getDate() / 365);
   const mahaObj = kundli.dasha.find((d) => currentDecYear >= d.start && currentDecYear < d.end);
   const activeMaha = mahaObj ? mahaObj.lord : "Jupiter";
   let activeAntar = activeMaha;
-  if(mahaObj) {
-      const antarList = window.getAntardashas(activeMaha, mahaObj.start, mahaObj.end);
-      activeAntar = antarList.find((a) => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha;
+  if (mahaObj) {
+    const antarList = window.getAntardashas(activeMaha, mahaObj.start, mahaObj.end);
+    activeAntar = antarList.find((a) => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha;
   }
 
   let domain = "Holistic Jyotish & Gochara Synthesis";
@@ -109,29 +180,29 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
 
   if (lQ.includes("target") || lQ.includes("commission") || lQ.includes("career") || lQ.includes("job") || lQ.includes("work") || lQ.includes("promotion")) {
     domain = "Career Milestones & Revenue Achievement";
-    analysis = `• Real-Time Transit Data: Jupiter is transiting ${kundli.transits.Jupiter} at ${jupDeg}°, while Saturn sits in ${kundli.transits.Saturn} at ${satDeg}°.\n`
-      + `• Dasha Reality: Your active ${activeMaha} Mahadasha & ${activeAntar} Antardasha are heavily influencing your 10th/11th axis.\n`
-      + `• Mental Execution: Your calculated intellectual biorhythm is at ${(b.i * 100).toFixed(0)}%, indicating high bandwidth for complex negotiations.`;
-    roadmap = `1. Target Alignment: Execute formal contract milestones during your ruling ${pK} Horas.\n2. Negotiation Vector: Anchor multi-party deliverables with verifiable data to satisfy Saturn's demand for structure.`;
-    muhurtaRemedy = `Chant "${window.PLANET_INFO[activeMaha]?.beej}" and wear ${window.PLANET_INFO[activeMaha]?.gem} for sustained momentum.`;
+    analysis = `• Real-Time Transit Matrix: Jupiter transits ${kundli.transits.Jupiter} (${jupDeg}°), Saturn transits ${kundli.transits.Saturn} (${satDeg}°).\n`
+      + `• Active Vimshottari Cycle: ${activeMaha} Mahadasha / ${activeAntar} Antardasha governing the 10th/11th house axis.\n`
+      + `• Cognitive Resonance: Intellectual biorhythm wave is calculated at ${(b.i * 100).toFixed(0)}%, indicating high bandwidth for complex negotiations.`;
+    roadmap = `1. Target Alignment: Execute formal contract milestones during your ruling ${pK} Horas and Abhijit Muhurta.\n2. Negotiation Vector: Anchor multi-party deliverables with verifiable data to satisfy Saturnian rigor.`;
+    muhurtaRemedy = `Chant "${window.PLANET_INFO[activeMaha]?.beej}" and align with ${window.PLANET_INFO[activeMaha]?.gem} for sustained career momentum.`;
   } else if (lQ.includes("marriage") || lQ.includes("wife") || lQ.includes("spouse") || lQ.includes("relationship") || lQ.includes("family") || lQ.includes("home")) {
     domain = "Domestic Acceptance & Relational Harmony";
-    analysis = `• Relational Axis Math: Your natal Moon sits at ${moonDeg}° in ${moonSign} (Nakshatra: ${nak}, Pada ${pada}).\n`
-      + `• Planetary Aura: Venus transiting ${kundli.transits.Venus} brings relational ease. Your emotional resonance vector is calculated at ${(b.e * 100).toFixed(0)}%, fostering highly receptive communication.`;
+    analysis = `• Relational Axis: Natal Moon at ${moonDeg}° in ${moonSign} (Nakshatra: ${nak}, Pada ${pada}).\n`
+      + `• Planetary Aura: Venus transiting ${kundli.transits.Venus} brings relational ease. Calculated emotional resonance sits at ${(b.e * 100).toFixed(0)}%, fostering receptive communication.`;
     roadmap = `1. Family Integration: Mutual understanding is mathematically favored as benefic transits protect domestic discourse today.\n2. Milestone Timing: Select Shukla Paksha (waxing) lunar phases for significant household announcements.`;
     muhurtaRemedy = `Recite the Sri Suktam or "${window.PLANET_INFO.Venus.beej}" to invoke lasting household peace (Griha Shanti).`;
   } else if (lQ.includes("year") || lQ.includes("month") || lQ.includes("week") || lQ.includes("transit") || lQ.includes("future") || lQ.includes("prediction")) {
     domain = "Temporal Horizon & Gochara Matrix";
     analysis = `• Ephemeris Target: ${dateFormatted}\n`
       + `• Ascendant: ${lagna} | Janma Rashi: ${moonSign}\n`
-      + `• Current Rulers: ${activeMaha}-${activeAntar} timeframe active. Jupiter (${jupDeg}°) and Saturn (${satDeg}°) anchor your macro-trends.`;
-    roadmap = `1. Physical Rhythm: Vitality wave stands at ${(b.p * 100).toFixed(0)}%.\n2. Strategic Focus: Maintain consistent execution; avoid over-leveraging during Rahu/Ketu transit windows in ${kundli.transits.Rahu}.`;
+      + `• Active Dasha Timeline: ${activeMaha}-${activeAntar} cycle. Key anchor transits: Jupiter in ${kundli.transits.Jupiter} (${jupDeg}°), Saturn in ${kundli.transits.Saturn} (${satDeg}°).`;
+    roadmap = `1. Vitality Wave: Physical biorhythm stands at ${(b.p * 100).toFixed(0)}%.\n2. Strategic Focus: Maintain consistent execution; avoid over-leveraging during Rahu/Ketu transit windows in ${kundli.transits.Rahu}.`;
     muhurtaRemedy = `Observe the prescribed day charity on ${pK} (${window.PLANET_INFO[pK]?.charity}).`;
   } else {
     domain = "Comprehensive Vedic Life Guidance";
     analysis = `• Native: ${profile?.name || "Native"} | Target Date: ${dateFormatted}\n`
       + `• Core Matrix: ${lagna} Lagna, Moon at ${moonDeg}° in ${nak} (Pada ${pada}).\n`
-      + `• Active Dasha Timeline: You are currently operating under the ${activeMaha} Mahadasha and ${activeAntar} Antardasha.`;
+      + `• Current Cosmic Rulers: ${activeMaha} Mahadasha is guiding your overarching karmic trajectory, with day energy governed by ${pK}.`;
     roadmap = `1. Decisions: Align high-value tasks with favorable Choghadiya windows (Amrit, Shubh, Labh) visible in your Panchang tab.\n2. Energy: Maintain balanced output tailored to your biorhythms (P: ${(b.p * 100).toFixed(0)}%, E: ${(b.e * 100).toFixed(0)}%, I: ${(b.i * 100).toFixed(0)}%).`;
     muhurtaRemedy = `Recite the Beej Mantra for the active Hora ruler (${pK}): "${window.PLANET_INFO[pK]?.beej}".`;
   }
