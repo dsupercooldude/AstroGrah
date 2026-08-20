@@ -4,9 +4,10 @@ window.executeMultiProviderAI = async (prompt, settings, systemInstruction = "")
   const providers = [
     {
       id: "gemini",
-      name: "Google Gemini 1.5 Flash",
+      name: "Google Gemini 3.5 Flash",
       run: async (k) => {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
+        // Updated to the current, active Gemini API endpoint to fix the 404 Not Found error
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${k}`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ contents: [{ parts: [{ text: `${systemInstruction}\n\n${prompt}` }] }] })
         });
@@ -98,7 +99,6 @@ window.executeMultiProviderAI = async (prompt, settings, systemInstruction = "")
   const primaryModel = settings.aiModel || "gemini";
   if (primaryModel === "offline") return null;
 
-  // Build priority cascade: selected model first, followed by all other configured providers
   const priorityOrder = [primaryModel, ...providers.map((p) => p.id).filter((id) => id !== primaryModel)];
 
   for (const provId of priorityOrder) {
