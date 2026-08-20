@@ -10,11 +10,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   
+  <!-- CORE ENGINE & ENCRYPTION DEPENDENCIES -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <!-- NEW: MFA DEPENDENCIES -->
+  <script src="https://unpkg.com/otpauth@9.3.1/dist/otpauth.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <style>
     body { background: #121426; margin: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; overflow-x: hidden; }
@@ -43,6 +48,7 @@
   <div id="bootloader" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center;">
       <div style="background: #1C1F3D; border: 1px solid rgba(212,165,116,0.3); padding: 30px; border-radius: 24px; max-width: 400px;">
           <h2 style="font-family: serif; color: #D4A574; font-size: 24px; margin-bottom: 10px;">Graha Ledger Loading...</h2>
+          <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 20px;">If this screen remains, browser CDN scripts or network connections are blocked.</p>
           <button onclick="localStorage.clear(); window.location.reload();" style="background: #D4A574; color: #121426; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">Hard Reset Cache</button>
       </div>
   </div>
@@ -67,7 +73,7 @@
     document.getElementById('bootloader').style.display = 'none';
 
     const React = window.React || {};
-    const { useState, useEffect, useMemo, useRef, Component, Fragment } = React;
+    const { useState, useEffect, useMemo, Component, Fragment } = React;
     const jsPDF = window.jspdf ? window.jspdf.jsPDF : null;
 
     class ErrorBoundary extends Component {
@@ -103,7 +109,7 @@
         decrypt: (b64) => {
             if (!b64) return b64;
             try {
-                if(!b64.match(/^[A-Za-z0-9+/=]+$/)) return b64; // Auto-detect unencrypted legacy data
+                if(!b64.match(/^[A-Za-z0-9+/=]+$/)) return b64; 
                 const dec = CryptoUtils.b64D(b64);
                 let res = ''; for(let i=0; i<dec.length; i++) res += String.fromCharCode(dec.charCodeAt(i) ^ "SAGE2026".charCodeAt(i % 8));
                 try { return JSON.parse(res); } catch(e) { return res; }
@@ -118,9 +124,7 @@
         }
     };
 
-    const DB_FILE_NAME = 'graha_db_v1.20.json';
-    const AI_DATASET_FILE = 'graha_ai_dataset_v1.json';
-    
+    // SEGREGATED SERVERLESS DATABASE CONTROLLER
     const AppDB = {
       config: null, useLocal: false,
       setConfig(owner, repo, token) { this.config = { owner, repo, token }; try { localStorage.setItem('gh_db_config', JSON.stringify(this.config)); localStorage.setItem('gh_use_local','false'); } catch(e){} this.useLocal = false; },
@@ -139,58 +143,29 @@
         return await res.json();
       },
       
-      async getDB() {
-        if(this.useLocal) { try { return { sha: null, content: JSON.parse(localStorage.getItem('graha_local_db')||'{"users":{}}') }; } catch(e) { return { sha: null, content: { users: {} } }; } }
-        const data = await this.callApi('GET', DB_FILE_NAME);
-        if (!data) return { sha: null, content: { users: {} } }; 
-        return { sha: data.sha, content: JSON.parse(CryptoUtils.b64D(data.content.replace(/\n/g, ''))) };
+      async getFile(filename) {
+          if(this.useLocal) { try { return { sha: null, content: JSON.parse(localStorage.getItem(filename)||'{}') }; } catch(e) { return { sha: null, content: {} }; } }
+          try {
+              const data = await this.callApi('GET', filename);
+              if (!data) return { sha: null, content: {} };
+              return { sha: data.sha, content: JSON.parse(CryptoUtils.b64D(data.content.replace(/\n/g, ''))) };
+          } catch(e) { return { sha: null, content: {} }; }
       },
       
-      async saveDB(contentObj, sha, retryCount = 0) {
-        if(this.useLocal) { try { localStorage.setItem('graha_local_db', JSON.stringify(contentObj)); } catch(e){} return; }
-        try { await this.callApi('PUT', DB_FILE_NAME, { message: "Graha Ledger Sync", content: CryptoUtils.b64E(JSON.stringify(contentObj, null, 2)), ...(sha ? { sha } : {}) });
-        } catch (err) { if ((err.message === "409" || err.message === "422") && retryCount < 2) { const latestData = await this.callApi('GET', DB_FILE_NAME); if (latestData && latestData.sha) { await this.saveDB(contentObj, latestData.sha, retryCount + 1); return; } } throw new Error(`Database Sync Failed: ${err.message}`); }
+      async saveFile(filename, contentObj, sha, retryCount = 0) {
+          if(this.useLocal) { try { localStorage.setItem(filename, JSON.stringify(contentObj)); } catch(e){} return; }
+          try {
+              await this.callApi('PUT', filename, { message: `Graha Ledger Sync: ${filename}`, content: CryptoUtils.b64E(JSON.stringify(contentObj, null, 2)), ...(sha ? { sha } : {}) });
+          } catch (err) {
+              if ((err.message === "409" || err.message === "422") && retryCount < 2) {
+                  const latestData = await this.callApi('GET', filename);
+                  if (latestData && latestData.sha) { await this.saveFile(filename, contentObj, latestData.sha, retryCount + 1); return; }
+              }
+              throw new Error(`Database Sync Failed (${filename}): ${err.message}`);
+          }
       },
 
-      // Global AI Dataset functions
-      async getGlobalAI() {
-        if(this.useLocal) { try { return { sha: null, history: JSON.parse(localStorage.getItem('graha_local_ai')||'[]') }; } catch(e) { return { sha: null, history: [] }; } }
-        try {
-            const data = await this.callApi('GET', AI_DATASET_FILE);
-            if (!data) return { sha: null, history: [] };
-            const parsed = JSON.parse(CryptoUtils.b64D(data.content.replace(/\n/g, '')));
-            return { sha: data.sha, history: Array.isArray(parsed) ? parsed : [] };
-        } catch(e) { return { sha: null, history: [] }; }
-      },
-      
-      async appendGlobalAI(qaObject) {
-        const dataset = await this.getGlobalAI();
-        const updatedHistory = [...dataset.history, CryptoUtils.encrypt(qaObject)];
-        if(this.useLocal) { try { localStorage.setItem('graha_local_ai', JSON.stringify(updatedHistory)); } catch(e){} return; }
-        try { await this.callApi('PUT', AI_DATASET_FILE, { message: "Global AI Learning Sync", content: CryptoUtils.b64E(JSON.stringify(updatedHistory, null, 2)), ...(dataset.sha ? { sha: dataset.sha } : {}) }); } catch(e){}
-      },
-      
-      async getUserData(email) {
-          const normE = email.trim().toLowerCase();
-          const db = await this.getDB(); 
-          if(!db.content.users || !db.content.users[normE]) return null;
-          const user = db.content.users[normE];
-          
-          // Auto-Encrypt Legacy Unencrypted Data Check
-          const p = typeof user.profiles === 'string' ? CryptoUtils.decrypt(user.profiles) : user.profiles;
-          const s = typeof user.settings === 'string' ? CryptoUtils.decrypt(user.settings) : user.settings;
-          const c = typeof user.chatHistory === 'string' ? CryptoUtils.decrypt(user.chatHistory) : user.chatHistory;
-          
-          if(typeof user.profiles !== 'string') this.syncUserData(normE, {profiles: p, settings: s, chatHistory: c}); // Silent Upgrade
-          return { ...user, profiles: p || [], settings: s || {}, chatHistory: c || [] };
-      },
-      async syncUserData(email, userData) {
-        const normE = email.trim().toLowerCase();
-        const db = await this.getDB(); 
-        if(!db.content.users) db.content.users = {};
-        db.content.users[normE] = { ...db.content.users[normE], profiles: CryptoUtils.encrypt(userData.profiles || []), settings: CryptoUtils.encrypt(userData.settings || {}), chatHistory: CryptoUtils.encrypt(userData.chatHistory || []) };
-        await this.saveDB(db.content, db.sha);
-      }
+      async hashKey(str) { return await CryptoUtils.hashPassword(str); }
     };
 
     const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
@@ -233,28 +208,11 @@
         return { starLord: stLord, subLord: PLANET_LORDS[subLordIdx], subSubLord: PLANET_LORDS[(subLordIdx + 2) % 9] };
     }
 
-    // VIMSHOTTARI DASHA GENERATOR
     function calcDasha(moonDeg, dobStr) {
-        const nakLen = 360 / 27;
-        const nakIdx = Math.floor(moonDeg / nakLen);
-        const remDeg = moonDeg % nakLen;
-        const passedPct = remDeg / nakLen;
-        
-        let lordIdx = nakIdx % 9;
-        const currentMahaLord = PLANET_LORDS[lordIdx];
-        const totalYrs = VIMSHOTTARI_YEARS[currentMahaLord];
-        const yrsPassed = totalYrs * passedPct;
-        
-        const bDate = new Date(dobStr);
-        let startYear = bDate.getFullYear() + (bDate.getMonth()/12) - yrsPassed;
-        
-        const periods = [];
-        for (let i = 0; i < 9; i++) {
-            const lrd = PLANET_LORDS[(lordIdx + i) % 9];
-            const dur = VIMSHOTTARI_YEARS[lrd];
-            periods.push({ lord: lrd, start: startYear, end: startYear + dur });
-            startYear += dur;
-        }
+        const nakLen = 360 / 27; const nakIdx = Math.floor(moonDeg / nakLen); const remDeg = moonDeg % nakLen; const passedPct = remDeg / nakLen;
+        let lordIdx = nakIdx % 9; const currentMahaLord = PLANET_LORDS[lordIdx]; const totalYrs = VIMSHOTTARI_YEARS[currentMahaLord]; const yrsPassed = totalYrs * passedPct;
+        const bDate = new Date(dobStr); let startYear = bDate.getFullYear() + (bDate.getMonth()/12) - yrsPassed;
+        const periods = []; for (let i = 0; i < 9; i++) { const lrd = PLANET_LORDS[(lordIdx + i) % 9]; const dur = VIMSHOTTARI_YEARS[lrd]; periods.push({ lord: lrd, start: startYear, end: startYear + dur }); startYear += dur; }
         return periods;
     }
 
@@ -273,10 +231,10 @@
         
         const getDiv = (lon, div) => {
             if(div===1) return SIGNS[Math.floor(lon/30)];
-            if(div===7) return SIGNS[ ( (Math.floor(lon/30)%2!==0 ? Math.floor(lon/30)+6 : Math.floor(lon/30)) + Math.floor((lon%30)/(30/7)) ) % 12 ]; // Saptamsha D-7
+            if(div===7) return SIGNS[ ( (Math.floor(lon/30)%2!==0 ? Math.floor(lon/30)+6 : Math.floor(lon/30)) + Math.floor((lon%30)/(30/7)) ) % 12 ]; 
             if(div===9) return SIGNS[ ( [0,9,6,3,0,9,6,3,0,9,6,3][Math.floor(lon/30)] + Math.floor((lon%30)/(30/9)) ) % 12 ];
             if(div===10) return SIGNS[ ( (Math.floor(lon/30)%2!==0 ? Math.floor(lon/30)+8 : Math.floor(lon/30)) + Math.floor((lon%30)/3) ) % 12 ];
-            if(div===60) return SIGNS[ Math.floor((lon*60)/30) % 12 ]; // Shashtiamsha D-60
+            if(div===60) return SIGNS[ Math.floor((lon*60)/30) % 12 ];
         };
         const genC = (div) => {
             const lg=getDiv(ascL,div); const idx=SIGNS.indexOf(lg);
@@ -290,7 +248,6 @@
             return { cusp: i+1, sign: SIGNS[Math.floor(cuspDegree / 30)], deg: (cuspDegree % 30).toFixed(2), ...getKPLords(cuspDegree) };
         });
 
-        // Shadbala (Simplified Form for Client)
         const shadbala = {
             Sun: Math.floor(Math.abs(Math.sin(toRad(sid.Sun)))*100), Moon: Math.floor(Math.abs(Math.cos(toRad(sid.Moon)))*100),
             Mars: Math.floor(Math.abs(Math.sin(toRad(sid.Mars)))*100), Mercury: Math.floor(Math.abs(Math.cos(toRad(sid.Mercury)))*100),
@@ -343,7 +300,6 @@
 
     function bio(dob, td, utc) {
         const [Y,M,D]=(dob||"2026-01-01").split("-").map(Number);
-        // Correct timezone anchoring logic using exact utc offset for the target day
         const eD = (Date.UTC(td.getFullYear(),td.getMonth(),td.getDate(),12,0,0)-((utc||0)*3600000) - (Date.UTC(Y,M-1,D,12,0,0)-((utc||0)*3600000))) / 86400000;
         return { p: Math.sin(2*Math.PI*eD/23), e: Math.sin(2*Math.PI*eD/28), i: Math.sin(2*Math.PI*eD/33), s: Math.sin(2*Math.PI*eD/38) };
     }
@@ -404,14 +360,6 @@
         if (style === "east") {
             return (
                 <div className="grid grid-cols-3 gap-1 w-full max-w-[340px] mx-auto rounded-2xl border border-white/10 bg-black/40 p-2 shadow-inner mb-2 gl-fadein" style={{aspectRatio: '1/1'}}>
-                    {[ {s:"Aries",r:0,c:1},{s:"Taurus",r:0,c:2},{s:"Gemini",r:1,c:2},{s:"Cancer",r:2,c:2},{s:"Leo",r:2,c:1},{s:"Virgo",r:2,c:0},{s:"Libra",r:1,c:0},{s:"Scorpio",r:0,c:0}, {s:"Pisces", r:0, c:1, split:true}, {s:"Aquarius", r:0, c:0, split:true}, {s:"Capricorn", r:1, c:0, split:true}, {s:"Sagittarius", r:2, c:0, split:true} ].map((bx, idx) => {
-                        // Simplified representation mapping signs to outer 8 squares of a 3x3 grid (Bengali style mapping logic varies slightly, but we represent the 12 signs sequentially)
-                        // For exact Bengali, the top middle is Aries.
-                        if (bx.split) return null; // Logic needs exact 12 divs. We will do a direct 3x4 or 4x3 mapping for simplicity.
-                        const mapE = [{s:"Pisces",r:0,c:0}, {s:"Aries",r:0,c:1}, {s:"Taurus",r:0,c:2}, {s:"Aquarius",r:1,c:0}, {s:"Gemini",r:1,c:2}, {s:"Capricorn",r:2,c:0}, {s:"Cancer",r:2,c:2}, {s:"Sagittarius",r:3,c:0}, {s:"Scorpio",r:3,c:1}, {s:"Libra",r:3,c:2}, {s:"Leo",r:2,c:1,hide:true}, {s:"Virgo",r:3,c:2,hide:true}];
-                        return null; 
-                    })}
-                    {/* Hardcoded 3x4 Grid for East Indian */}
                     {[ {s:"Pisces",r:0,c:0},{s:"Aries",r:0,c:1},{s:"Taurus",r:0,c:2},{s:"Aquarius",r:1,c:0},{s:"Gemini",r:1,c:2},{s:"Capricorn",r:2,c:0},{s:"Cancer",r:2,c:2},{s:"Sagittarius",r:3,c:0},{s:"Scorpio",r:3,c:1},{s:"Libra",r:3,c:2} ].map((bx) => {
                          const hNum = Object.entries(ac.houses||{}).find(([,sn])=>sn===bx.s)?.[0]; 
                          const pIn = Object.entries(ac.placements||{}).filter(([,h])=>String(h)===String(hNum)).map(([p])=>p);
@@ -503,24 +451,21 @@
         return null;
     }
 
-    // --- DEEP GOCHARA (TRANSIT) ENGINE ---
     function generateDeepGochara(ch, lagnaSign, date, pK) {
         const transits = ch.transits;
         const ascIdx = SIGNS.indexOf(lagnaSign);
-        
-        // Find which moving planet occupies specific houses relative to Lagna
         const getPlanetInHouse = (houseOffset) => {
             const targetSign = SIGNS[(ascIdx + houseOffset - 1) % 12];
             return Object.entries(transits).filter(([,sign]) => sign === targetSign).map(([p]) => p);
         };
 
-        const h1 = getPlanetInHouse(1); const h2 = getPlanetInHouse(2); const h6 = getPlanetInHouse(6);
-        const h7 = getPlanetInHouse(7); const h10 = getPlanetInHouse(10); const h11 = getPlanetInHouse(11);
+        const h1 = getPlanetInHouse(1); const h2 = getPlanetInHouse(2); const h4 = getPlanetInHouse(4); const h6 = getPlanetInHouse(6);
+        const h7 = getPlanetInHouse(7); const h10 = getPlanetInHouse(10); const h11 = getPlanetInHouse(11); const h12 = getPlanetInHouse(12);
 
         const health = h1.includes("Saturn") || h6.includes("Mars") ? "Saturn/Mars transits in key health houses suggest prioritizing rest. Joint care required." : (h1.includes("Jupiter") ? "Jupiter transiting Lagna grants immense vitality and divine protection today." : "Steady prana flow. Solar alignments encourage early morning physical exertion.");
-        const wealth = h2.includes("Jupiter") || h11.includes("Venus") ? "Auspicious Dhan Yoga active via transit! Excellent day for investments and contracting." : (h12?.includes("Rahu") ? "Rahu induces unexpected expenses. Audit digital transactions carefully." : "Financial parameters stable. Mercury's position supports slow, analytical wealth planning.");
-        const career = h10.includes("Sun") || h10.includes("Mars") ? "Powerful Digbala (Directional Strength) in the 10th House. Highly authoritative day for career." : "Focus on backend strategy. Avoid direct confrontations with management today.");
-        const home = getPlanetInHouse(4).includes("Moon") || getPlanetInHouse(4).includes("Venus") ? "Harmonious domestic aura. Auspicious for property matters and maternal connection." : "Practice mindful patience during family discourse to avoid minor friction.";
+        const wealth = h2.includes("Jupiter") || h11.includes("Venus") ? "Auspicious Dhan Yoga active via transit! Excellent day for investments and contracting." : (h12.includes("Rahu") ? "Rahu induces unexpected expenses. Audit digital transactions carefully." : "Financial parameters stable. Mercury's position supports slow, analytical wealth planning.");
+        const career = h10.includes("Sun") || h10.includes("Mars") ? "Powerful Digbala (Directional Strength) in the 10th House. Highly authoritative day for career." : "Focus on backend strategy. Avoid direct confrontations with management today.";
+        const home = h4.includes("Moon") || h4.includes("Venus") ? "Harmonious domestic aura. Auspicious for property matters and maternal connection." : "Practice mindful patience during family discourse to avoid minor friction.";
 
         return { health, wealth, career, home };
     }
@@ -548,13 +493,71 @@
 
     function AuthModal({ onLogin, onReset }) {
         const [mode, setMode] = useState("login"); const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState("");
-        const handleSubmit = async (ev) => { ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase(); 
-            try { const db = await AppDB.getDB(); if(!db.content.users) db.content.users = {};
-                if(mode === "signup") { if(db.content.users[normE]) throw new Error("Email address already registered."); const gen="Om-"+Math.random().toString(36).slice(-6)+"!"; const hashedPw = await CryptoUtils.hashPassword(gen); db.content.users[normE] = { password: hashedPw, requiresPasswordChange: true }; await AppDB.saveDB(db.content, db.sha); setGp(gen); setMode("generated");
-                } else if(mode === "login") { const u = db.content.users[normE]; if(!u) { if (Object.keys(db.content.users).length === 0) throw new Error("Empty Database! Please Sign Up."); throw new Error("Account not found."); } const hashedInput = await CryptoUtils.hashPassword(p); if(u.password !== p && u.password !== hashedInput) throw new Error("Invalid password."); const parsedData = await AppDB.getUserData(normE); onLogin(normE, parsedData); }
-            } catch(error) { setErr(error.message); if(error.message==="401" || error.message==="404") setErr("Database auth failed. Verify repo permissions."); }
+        const [mfaPin, setMfaPin] = useState("");
+        
+        const proceedToVault = async (normE, emailHash, reqChange) => {
+            const vaultFile = await AppDB.getFile(`gl_vault_${emailHash}.json`);
+            const p = typeof vaultFile.content.profiles === 'string' ? CryptoUtils.decrypt(vaultFile.content.profiles) : (vaultFile.content.profiles || []);
+            const s = typeof vaultFile.content.settings === 'string' ? CryptoUtils.decrypt(vaultFile.content.settings) : (vaultFile.content.settings || {});
+            onLogin({ email: normE, emailHash, profiles: p, settings: s, requiresPasswordChange: reqChange });
         };
+
+        const handleSubmit = async (ev) => { 
+            ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase(); 
+            try { 
+                const emailHash = await AppDB.hashKey(normE);
+                let authFile = await AppDB.getFile('gl_auth.json');
+                if(!authFile.content.users) authFile.content.users = {};
+                
+                if(mode === "signup") { 
+                    if(authFile.content.users[emailHash]) throw new Error("Email already registered."); 
+                    const gen="Om-"+Math.random().toString(36).slice(-6)+"!"; 
+                    const hashedPw = await CryptoUtils.hashPassword(gen); 
+                    authFile.content.users[emailHash] = { p: hashedPw, req: true }; 
+                    await AppDB.saveFile('gl_auth.json', authFile.content, authFile.sha); 
+                    setGp(gen); setMode("generated");
+                } else if(mode === "login") { 
+                    const u = authFile.content.users[emailHash]; 
+                    if(!u) { if (Object.keys(authFile.content.users).length === 0) throw new Error("Empty Vault! Please Sign Up."); throw new Error("Account not found."); } 
+                    const hashedInput = await CryptoUtils.hashPassword(p); 
+                    if(u.p !== p && u.p !== hashedInput) throw new Error("Invalid password."); 
+                    if (u.mfa) { setMode("mfa"); return; }
+                    await proceedToVault(normE, emailHash, u.req); 
+                }
+            } catch(error) { setErr(error.message); }
+        };
+
+        const handleMfaSubmit = async (ev) => {
+            ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase();
+            try {
+                const emailHash = await AppDB.hashKey(normE);
+                let authFile = await AppDB.getFile('gl_auth.json');
+                const u = authFile.content.users[emailHash];
+                const secret = CryptoUtils.decrypt(u.mfa);
+                const totp = new window.OTPAuth.TOTP({ secret: secret });
+                if (totp.validate({ token: mfaPin, window: 1 }) === null) throw new Error("Invalid 2FA PIN.");
+                await proceedToVault(normE, emailHash, u.req);
+            } catch(err) { setErr(err.message); }
+        };
+
+        if (mode === "mfa") return (
+            <div className="min-h-screen flex flex-col items-center justify-center p-4 gl-fadein">
+                <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10 relative text-center">
+                    <Icon name="shield-check" size={48} className="mx-auto text-emerald-400 mb-3" />
+                    <h2 className="font-serif text-2xl mt-1 mb-2 text-emerald-200">2FA Protected</h2>
+                    <p className="text-xs t60 mb-5">Enter the 6-digit pin from your Authenticator app to unlock your vault.</p>
+                    <form onSubmit={handleMfaSubmit}>
+                        {err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}
+                        <input required type="text" maxLength="6" value={mfaPin} onChange={ev=>setMfaPin(ev.target.value)} placeholder="000000" className="w-full text-center tracking-[0.5em] font-mono font-bold bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-lg outline-none text-emerald-300 focus:border-emerald-400/50 mb-4"/>
+                        <button type="submit" className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 hover:bg-emerald-400 transition">Unlock Vault</button>
+                        <button type="button" onClick={()=>setMode("login")} className="mt-4 text-[10px] t50 hover:text-white">Cancel</button>
+                    </form>
+                </div>
+            </div>
+        );
+
         if (mode === "generated") return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl border border-emerald-500/40 bgcard2 p-6 text-center shadow-2xl"><h2 className="font-serif text-xl t100 mb-1 text-emerald-300">Account Created</h2><p className="text-xs t75 mb-4">Auto-generated secure password:</p><div className="flex gap-2 items-center justify-center mb-3"><div className="flex-1 p-3 bg-black/40 rounded-xl font-mono text-emerald-300 border border-emerald-500/30 text-base select-all">{gp}</div></div><p className="text-[10px] t50">Save this temporary password.</p><button onClick={()=>setMode("login")} className="w-full rounded-full py-3 text-sm font-semibold bg-emerald-500 text-black mt-5">Proceed to Sign In</button></div></div> );
+        
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-4 gl-fadein">
                 <div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10 relative">
@@ -565,9 +568,9 @@
         );
     }
 
-    function ForcePasswordChange({ email, onComplete }) {
-        const [p, setP] = useState(""); const [loading, setLoading] = useState(false); const normE = email.trim().toLowerCase();
-        return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/40 shadow-2xl"><form onSubmit={async (e) => { e.preventDefault(); if(p.length < 6) return alert('Password too short.'); setLoading(true); try { const db = await AppDB.getDB(); db.content.users[normE].password = await CryptoUtils.hashPassword(p); db.content.users[normE].requiresPasswordChange = false; await AppDB.saveDB(db.content, db.sha); onComplete(); } catch (err) { alert(err.message); setLoading(false); } }}><h2 className="font-serif text-xl t100 mb-2 text-emerald-300">Set Custom Password</h2><div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Private Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-emerald-500/50"/></div><button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 mt-5 hover:bg-emerald-400 transition">{loading ? "Encrypting..." : "Confirm & Launch"}</button></form></div></div> )
+    function ForcePasswordChange({ email, emailHash, onComplete }) {
+        const [p, setP] = useState(""); const [loading, setLoading] = useState(false);
+        return ( <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 border border-emerald-500/40 shadow-2xl"><form onSubmit={async (e) => { e.preventDefault(); if(p.length < 6) return alert('Password too short.'); setLoading(true); try { let authFile = await AppDB.getFile('gl_auth.json'); authFile.content.users[emailHash].p = await CryptoUtils.hashPassword(p); authFile.content.users[emailHash].req = false; await AppDB.saveFile('gl_auth.json', authFile.content, authFile.sha); onComplete(); } catch (err) { alert(err.message); setLoading(false); } }}><h2 className="font-serif text-xl t100 mb-2 text-emerald-300">Set Custom Password</h2><div><label className="text-[10px] t40 uppercase font-mono mb-1 block">New Private Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-emerald-500/50"/></div><button type="submit" disabled={loading} className="w-full bg-emerald-500 text-black font-semibold rounded-full py-3 mt-5 hover:bg-emerald-400 transition">{loading ? "Encrypting..." : "Confirm & Launch"}</button></form></div></div> )
     }
 
     function PersonTab({ pr, ch, date, setDate, settings, onEditProfile }) {
@@ -651,7 +654,6 @@
                     <KundaliRenderer ac={ac} ch={ch} kpTable={ch.kpTable} style={chartStyle} titleDesc={`Divisional Filter: D-${div}`} />
                 </div>
 
-                {/* VIMSHOTTARI DASHA & SHADBALA ROW */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="rounded-3xl border border-white/10 bgcard p-5">
                         <h3 className="font-serif text-sm text-amber-200 mb-3">Vimshottari Mahadasha (120 Yrs)</h3>
@@ -756,23 +758,13 @@
                         <div className="p-3 rounded-2xl border border-gray-500/30 bg-gray-900/20"><span className="font-mono text-[9px] uppercase text-gray-400 block mb-0.5">Gulika Kaal</span><span className="font-mono text-sm font-bold">{fm(pan.gulika.s)} - {fm(pan.gulika.e)}</span></div>
                     </div>
                 </div>
-
-                <div className="rounded-3xl border border-white/10 bgcard p-5 space-y-3">
-                    <h3 className="font-serif text-sm text-amber-200">Global Ephemeris & 3rd-Party Astro Feeds</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                        <div className="p-3 bg-black/30 rounded-xl border border-emerald-500/10"><span className="font-mono text-[9px] text-emerald-400 block uppercase mb-1">1. Drik Astronomical Feed</span><p className="t70 text-[10px] leading-relaxed">Solar longitude aligned with Lahiri Ayanamsha.</p></div>
-                        <div className="p-3 bg-black/30 rounded-xl border border-blue-500/10"><span className="font-mono text-[9px] text-blue-400 block uppercase mb-1">2. Planetary Ingress Radar</span><p className="t70 text-[10px] leading-relaxed">Transits tracked for 2026 Gochara cycles.</p></div>
-                        <div className="p-3 bg-black/30 rounded-xl border border-amber-500/10"><span className="font-mono text-[9px] text-amber-400 block uppercase mb-1">3. Global Vedic Panchang Stream</span><p className="t70 text-[10px] leading-relaxed">Ujjain/Kashi ephemeris sync valid.</p></div>
-                        <div className="p-3 bg-black/30 rounded-xl border border-purple-500/10"><span className="font-mono text-[9px] text-purple-400 block uppercase mb-1">4. Cosmic Space Weather</span><p className="t70 text-[10px] leading-relaxed">Geomagnetic conditions nominal (Kp index 2).</p></div>
-                    </div>
-                </div>
             </div>
         );
     }
 
     function CompatTab({ prs, chs, settings, date }) {
         const [pairIds, setPairIds] = useState(prs.length >= 2 ? [prs[0].id, prs[1].id] : [prs[0]?.id, prs[0]?.id]);
-        if(prs.length<2) return <div className="p-8 text-center text-sm t60 border border-dashed border-white/20 rounded-3xl mt-6 bgfaint">Add at least two natal profiles in your vault to unlock 36-point Ashtakoot Guna Milan.</div>;
+        if(prs.length<2) return <div className="p-8 text-center text-sm t60 border border-dashed border-white/20 rounded-3xl mt-6 bgfaint">Add at least two natal profiles to unlock 36-point Ashtakoot Milan.</div>;
         const p1=prs.find(p=>p.id===pairIds[0])||prs[0]; const p2=prs.find(p=>p.id===pairIds[1])||prs[1]; const c1=chs[p1.id], c2=chs[p2.id]; if(!c1||!c2) return null;
         const score = Math.max(12, Math.min(36, 36 - (Math.abs(NAKSHATRAS.indexOf(c1.nak) - NAKSHATRAS.indexOf(c2.nak))%10)*1.8));
         return (
@@ -785,11 +777,10 @@
         );
     }
 
-    function AskTab({ em, set, pr, ch }) {
+    function AskTab({ em, emHash, set, pr, ch }) {
         const [q, setQ]=useState(""); const [h, setH]=useState([]); const [l, setL]=useState(false); const [isMic, setIsMic]=useState(false);
-        const normE = em.trim().toLowerCase();
         
-        useEffect(()=>{ let isMounted = true; const loadHistory = async () => { try { const u = await AppDB.getUserData(normE); if(isMounted && u && u.chatHistory) setH(u.chatHistory); } catch(e){} }; loadHistory(); return () => { isMounted = false }; },[normE]);
+        useEffect(()=>{ let isMounted = true; const loadHistory = async () => { try { const chatsFile = await AppDB.getFile(`gl_chats_${emHash}.json`); const decH = typeof chatsFile.content.h === 'string' ? CryptoUtils.decrypt(chatsFile.content.h) : (chatsFile.content.h || []); if(isMounted && decH) setH(decH); } catch(e){} }; loadHistory(); return () => { isMounted = false }; },[emHash]);
         
         const startListening = () => {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -804,7 +795,6 @@
             e.preventDefault(); if(!q.trim()||l) return; setL(true); let ans = ""; let usedProvider = set.aiModel || "offline";
             const b = bio(pr?.dob, new Date(), pr?.utcOffset); const pK = WEEKDAY[new Date().getDay()]; const pan = panchang(new Date(), set.monthSystem, pr?.utcOffset||5.5);
             
-            // Global DB Fetch (Anonymized Context)
             let globalContext = "";
             try { const gDB = await AppDB.getGlobalAI(); if(gDB.history.length>0) { const last = CryptoUtils.decrypt(gDB.history[gDB.history.length-1]); globalContext = `[Global DB Trend: Previous user asked "${last.q}"]`; } } catch(err){}
 
@@ -824,16 +814,16 @@
             const nx = [...h, newQA]; setH(nx); setQ(""); setL(false);
             
             try {
-                const u = await AppDB.getUserData(normE); if(u) await AppDB.syncUserData(normE, {...u, chatHistory: nx});
-                await AppDB.appendGlobalAI(newQA); // Sync to global repository
+                const chatsFile = await AppDB.getFile(`gl_chats_${emHash}.json`);
+                chatsFile.content.h = CryptoUtils.encrypt(nx);
+                await AppDB.saveFile(`gl_chats_${emHash}.json`, chatsFile.content, chatsFile.sha);
+                await AppDB.appendGlobalAI(newQA); 
             } catch(er){}
         }
 
         return (
             <div className="space-y-4 pb-12 gl-fadein mt-4">
-                <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-blue-950/40 via-black/20 to-transparent shadow-xl">
-                    <div className="flex justify-between items-center"><div><span className="font-mono text-[9px] uppercase tracking-[0.2em] text-blue-400">Global Learning AI</span><h2 className="font-serif text-2xl text-blue-100 mt-0.5">Ask the Sage</h2></div><span className="text-[10px] font-mono bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-amber-300 uppercase">{set.aiModel||'offline'}</span></div>
-                </div>
+                <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-blue-950/40 via-black/20 to-transparent shadow-xl"><div className="flex justify-between items-center"><div><span className="font-mono text-[9px] uppercase tracking-[0.2em] text-blue-400">Global Learning AI</span><h2 className="font-serif text-2xl text-blue-100 mt-0.5">Ask the Sage</h2></div><span className="text-[10px] font-mono bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-amber-300 uppercase">{set.aiModel||'offline'}</span></div></div>
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
                     {h.map(x=>( <div key={x.id} className="space-y-1.5"><div className="flex gap-2"><span className="text-amber-400 font-bold text-sm">Q:</span><span className="text-xs t90 font-medium">{x.q}</span></div><div className="p-4 bgcard rounded-2xl border border-white/5 text-xs t85 leading-relaxed whitespace-pre-wrap">{x.a}<div className="text-[8px] t40 font-mono mt-3 uppercase border-t border-white/5 pt-2">Via {x.v}</div></div></div> ))}
                     {l && <div className="text-xs t50 italic p-3">Synthesizing global transits & history...</div>}
@@ -849,33 +839,70 @@
 
     function AppContent() {
         const [dbC, setDbC]=useState(false); const [u, setU]=useState(null); const [tb, setTb]=useState("person");
-        const [dt, setDt]=useState(new Date("2026-08-20T09:58:58+04:00")); // Temporal 2026 Alignment Default
+        const [dt, setDt]=useState(new Date("2026-08-20T10:08:57+04:00")); 
         const [ss, setSs]=useState(false); const [ed, setEd]=useState(null); const [activeProfileId, setActiveProfileId]=useState(null);
+        const [mfaSetup, setMfaSetup]=useState(null);
 
         useEffect(()=>{ if(AppDB.loadConfig()) setDbC(true); },[]);
         const resetConfig = () => { AppDB.clearConfig(); setDbC(false); setU(null); };
 
-        const prs = u?.d?.profiles || []; const set = u?.d?.settings || { aiModel: "offline", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {} };
+        const prs = u?.profiles || []; const set = u?.settings || { aiModel: "offline", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {} };
         const chs = useMemo(()=>{ const o={}; if(prs) { prs.forEach(p=>o[p.id]=computeKundli(p, dt)); } return o; }, [prs, dt]);
         const aP = prs.find(p=>p.id===activeProfileId) || (prs.length > 0 ? prs[0] : null);
 
         if(!dbC) return <SetupModal onConfig={()=>setDbC(true)}/>;
-        if(!u) return <AuthModal onLogin={(e,d)=>{ setU({e: e.trim().toLowerCase(), d}); if(d?.profiles?.length) setActiveProfileId(d.profiles[0].id); }} onReset={resetConfig}/>;
-        if(u?.d?.requiresPasswordChange) return <ForcePasswordChange email={u.e} onComplete={() => setU({...u, d: {...u.d, requiresPasswordChange: false}})} />;
+        if(!u) return <AuthModal onLogin={(d)=>{ setU(d); if(d?.profiles?.length) setActiveProfileId(d.profiles[0].id); }} onReset={resetConfig}/>;
+        if(u?.requiresPasswordChange) return <ForcePasswordChange email={u.email} emailHash={u.emailHash} onComplete={() => setU({...u, requiresPasswordChange: false})} />;
 
         const hSave = async(e) => {
             e.preventDefault(); const f=e.target;
             const pD = { name: f.nm.value, dob: f.dob.value, time: f.tm.value, place: f.pl.value, lat: parseFloat(f.lt.value), lon: parseFloat(f.ln.value), utcOffset: parseFloat(f.ut.value), gotra: f.gt.value, jaati: f.jt.value, kulDevta: f.kd.value, gramDevta: f.gd.value, sthanDevta: f.sd.value, id: ed.id || Date.now().toString() };
             const nP = ed.id ? prs.map(p=>p.id===pD.id?pD:p) : [...prs, pD];
-            await AppDB.syncUserData(u.e, {...u.d, profiles:nP}); setU({...u, d:{...u.d, profiles:nP}}); setActiveProfileId(pD.id); setEd(null);
+            
+            const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`);
+            vaultFile.content.profiles = CryptoUtils.encrypt(nP);
+            vaultFile.content.settings = vaultFile.content.settings || CryptoUtils.encrypt(set);
+            await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha);
+            
+            setU({...u, profiles:nP}); setActiveProfileId(pD.id); setEd(null);
         };
-        const deleteProfile = async (id) => { if (!confirm("Are you sure?")) return; const nP = prs.filter(p=>p.id!==id); await AppDB.syncUserData(u.e, {...u.d, profiles:nP}); setU({...u, d:{...u.d, profiles:nP}}); if (nP.length > 0) setActiveProfileId(nP[0].id); };
+        
+        const deleteProfile = async (id) => { 
+            if (!confirm("Are you sure?")) return; const nP = prs.filter(p=>p.id!==id); 
+            const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`);
+            vaultFile.content.profiles = CryptoUtils.encrypt(nP);
+            await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha);
+            setU({...u, profiles:nP}); if (nP.length > 0) setActiveProfileId(nP[0].id); 
+        };
+
+        const updateSettings = async (ns) => {
+            const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`);
+            vaultFile.content.settings = CryptoUtils.encrypt(ns);
+            vaultFile.content.profiles = vaultFile.content.profiles || CryptoUtils.encrypt(prs);
+            await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha);
+            setU({...u, settings:ns});
+        }
+
+        const enableMFA = () => {
+            const secret = new window.OTPAuth.Secret({ size: 20 }).base32;
+            const totp = new window.OTPAuth.TOTP({ issuer: "Graha Ledger", label: u.email, algorithm: "SHA1", digits: 6, period: 30, secret: secret });
+            window.QRCode.toDataURL(totp.toString(), (err, url) => { setMfaSetup({ secret, qr: url, pin: '' }); });
+        }
+
+        const verifyAndSaveMfa = async () => {
+            const totp = new window.OTPAuth.TOTP({ secret: mfaSetup.secret });
+            if (totp.validate({ token: mfaSetup.pin, window: 1 }) === null) return alert("Invalid PIN. Please try again.");
+            const authDB = await AppDB.getFile('gl_auth.json');
+            authDB.content.users[u.emailHash].mfa = CryptoUtils.encrypt(mfaSetup.secret);
+            await AppDB.saveFile('gl_auth.json', authDB.content, authDB.sha);
+            alert("MFA Enabled Successfully!"); setMfaSetup(null);
+        }
 
         return (
             <div className="min-h-screen w-full font-sans pb-10 relative">
                 <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
                     <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-36">
-                        <div className="flex items-center gap-3"><SageLogo size={32}/><div><h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.2</h1><div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.e}</div></div></div>
+                        <div className="flex items-center gap-3"><SageLogo size={32}/><div><h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.2</h1><div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.email}</div></div></div>
                         <div className="flex items-center gap-2">
                             {prs.length > 1 && ( <select value={aP?.id||""} onChange={e=>setActiveProfileId(e.target.value)} className="bg-black/40 border border-white/10 rounded-xl px-2 py-1.5 font-serif text-xs text-amber-200 outline-none">{prs.map(p=><option key={p.id} value={p.id}>{p.name.split(' ')[0]}</option>)}</select> )}
                             <button onClick={()=>setEd({})} title="Add Profile" className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-amber-300"><Icon name="user-plus" size={17}/></button>
@@ -894,38 +921,46 @@
                             {tb==="person" && <PersonTab pr={aP} ch={chs[aP?.id]} date={dt} setDate={setDt} settings={set} onEditProfile={setEd}/>}
                             {tb==="panchang" && <PanchangTab d={dt} p={aP} utc={aP?.utcOffset||5.5} settings={set}/>}
                             {tb==="union" && <CompatTab prs={prs} chs={chs} settings={set} date={dt}/>}
-                            {tb==="ask" && <AskTab em={u.e} set={set} pr={aP} ch={chs[aP?.id]}/>}
+                            {tb==="ask" && <AskTab em={u.email} emHash={u.emailHash} set={set} pr={aP} ch={chs[aP?.id]}/>}
                         </Fragment>
                     )}
 
                     {ss && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={()=>setSs(false)}>
                             <div onClick={e=>e.stopPropagation()} className="w-full max-w-md p-6 rounded-3xl border border-white/10 bgcard2 space-y-5 max-h-[85vh] overflow-y-auto gl-fadein shadow-2xl relative">
-                                <div className="flex justify-between items-center border-b border-white/10 pb-3"><h3 className="font-serif text-lg text-white">Security & API Vault</h3><button onClick={()=>setSs(false)} className="p-1 rounded-full hover:bg-white/10 transition"><Icon name="x"/></button></div>
+                                <div className="flex justify-between items-center border-b border-white/10 pb-3"><h3 className="font-serif text-lg text-white">Security & App Vault</h3><button onClick={()=>setSs(false)} className="p-1 rounded-full hover:bg-white/10 transition"><Icon name="x"/></button></div>
                                 
                                 <div>
-                                    <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Update Master Password</label>
-                                    <div className="flex gap-2"><input id="new_pw_input" type="password" placeholder="Enter new password" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white focus:border-amber-400/50"/><button type="button" onClick={async () => { const v = document.getElementById('new_pw_input').value; if(!v || v.length < 6) return alert('Password too short.'); try { const db = await AppDB.getDB(); db.content.users[u.e].password = await CryptoUtils.hashPassword(v); await AppDB.saveDB(db.content, db.sha); alert('Password updated successfully!'); document.getElementById('new_pw_input').value = ''; } catch (err) { alert('Error: ' + err.message); } }} className="px-4 py-2 bg-amber-400 text-black font-semibold rounded-xl text-xs hover:bg-amber-300">Save</button></div>
+                                    <label className="text-[9px] font-mono uppercase text-emerald-400 mb-1.5 block">2FA Authenticator Setup</label>
+                                    {!mfaSetup && <button type="button" onClick={enableMFA} className="w-full py-2 bg-emerald-500/20 text-emerald-300 font-semibold rounded-xl text-xs hover:bg-emerald-500/30 transition border border-emerald-500/30">Enable 2FA Authenticator App</button>}
+                                    {mfaSetup && (
+                                        <div className="bg-black/40 p-3 rounded-xl border border-emerald-500/30 text-center">
+                                            <img src={mfaSetup.qr} alt="QR Code" className="w-32 h-32 mx-auto rounded-lg mb-2 shadow-lg"/>
+                                            <div className="text-[9px] font-mono t85 mb-3 select-all">Secret: {mfaSetup.secret}</div>
+                                            <input value={mfaSetup.pin} onChange={e=>setMfaSetup({...mfaSetup, pin: e.target.value})} maxLength="6" placeholder="Enter 6-digit PIN" className="w-full text-center tracking-[0.5em] font-mono font-bold bg-black/50 border border-white/10 rounded-lg px-2 py-2 text-sm outline-none text-emerald-300 focus:border-emerald-400/50 mb-3"/>
+                                            <button type="button" onClick={verifyAndSaveMfa} className="w-full py-2 bg-emerald-500 text-black font-semibold rounded-lg text-xs hover:bg-emerald-400 transition">Verify & Activate</button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2">
-                                    <div><label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Default Kundali Style</label><select value={set.kundaliStyle} onChange={e=> { const ns={...set,kundaliStyle:e.target.value}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"><option value="north">North Indian</option><option value="south">South Indian</option><option value="east">East Indian</option><option value="kp">KP System</option></select></div>
-                                    <div className="notranslate"><label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Month System</label><select value={set.monthSystem} onChange={e=> { const ns={...set,monthSystem:e.target.value}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white notranslate"><option value="amanta">Amanta (Amavasya)</option><option value="purnimanta">Purnimanta (Purnima)</option></select></div>
+                                    <div><label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Default Kundali Style</label><select value={set.kundaliStyle} onChange={e=> updateSettings({...set,kundaliStyle:e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white"><option value="north">North Indian</option><option value="south">South Indian</option><option value="east">East Indian</option><option value="kp">KP System</option></select></div>
+                                    <div className="notranslate"><label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Month System</label><select value={set.monthSystem} onChange={e=> updateSettings({...set,monthSystem:e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white notranslate"><option value="amanta">Amanta (Amavasya)</option><option value="purnimanta">Purnimanta (Purnima)</option></select></div>
                                 </div>
 
                                 <div>
                                     <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">AI Provider Engine</label>
-                                    <select value={set.aiModel} onChange={e=> { const ns={...set,aiModel:e.target.value}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white">
-                                        <option value="offline">Offline Global Jyotish Engine (100% Local)</option><option value="gemini">Google Gemini 1.5 Flash</option><option value="openai">OpenAI (GPT-4o Mini)</option><option value="kimi">Moonshot / Kimi</option><option value="deepseek">DeepSeek AI</option>
+                                    <select value={set.aiModel} onChange={e=> updateSettings({...set,aiModel:e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white">
+                                        <option value="offline">Offline Global Engine (100% Local)</option><option value="gemini">Google Gemini 1.5 Flash</option><option value="openai">OpenAI (GPT-4o Mini)</option><option value="kimi">Moonshot / Kimi</option><option value="deepseek">DeepSeek AI</option>
                                     </select>
                                 </div>
 
-                                <div className="p-4 border border-emerald-500/30 bg-emerald-950/20 rounded-2xl space-y-2.5">
-                                    <label className="text-[10px] text-emerald-400 font-mono uppercase block">Encrypted Fallback API Keys</label>
-                                    <div><div className="flex justify-between text-[8px] t50 mb-0.5 font-mono"><span>Gemini Key</span><a href="https://aistudio.google.com/app/apikey" target="_blank" className="hover:text-emerald-300" title="Get Gemini Key"><Icon name="question"/></a></div><input type="password" value={set.apiKeys?.gemini||""} onChange={e=>{ const ns={...set,apiKeys:{...set.apiKeys,gemini:e.target.value}}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} placeholder="AIzaSy..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white"/></div>
-                                    <div><div className="flex justify-between text-[8px] t50 mb-0.5 font-mono"><span>OpenAI Key</span><a href="https://platform.openai.com/api-keys" target="_blank" className="hover:text-emerald-300" title="Get OpenAI Key"><Icon name="question"/></a></div><input type="password" value={set.apiKeys?.openai||""} onChange={e=>{ const ns={...set,apiKeys:{...set.apiKeys,openai:e.target.value}}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} placeholder="sk-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white"/></div>
-                                    <div><div className="flex justify-between text-[8px] t50 mb-0.5 font-mono"><span>Kimi Key</span><a href="https://platform.moonshot.cn/console/api-keys" target="_blank" className="hover:text-emerald-300" title="Get Kimi Key"><Icon name="question"/></a></div><input type="password" value={set.apiKeys?.kimi||""} onChange={e=>{ const ns={...set,apiKeys:{...set.apiKeys,kimi:e.target.value}}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} placeholder="sk-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white"/></div>
-                                    <div><div className="flex justify-between text-[8px] t50 mb-0.5 font-mono"><span>DeepSeek Key</span><a href="https://platform.deepseek.com/api_keys" target="_blank" className="hover:text-emerald-300" title="Get DeepSeek Key"><Icon name="question"/></a></div><input type="password" value={set.apiKeys?.deepseek||""} onChange={e=>{ const ns={...set,apiKeys:{...set.apiKeys,deepseek:e.target.value}}; AppDB.syncUserData(u.e, {...u.d, settings:ns}); setU({...u, d:{...u.d, settings:ns}}); }} placeholder="sk-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                <div className="p-4 border border-amber-500/30 bg-amber-950/10 rounded-2xl space-y-2.5">
+                                    <label className="text-[10px] text-amber-400 font-mono uppercase block">Encrypted Fallback API Keys</label>
+                                    <div><div className="flex justify-between text-[8px] t50 mb-0.5 font-mono"><span>Gemini Key</span><a href="https://aistudio.google.com/app/apikey" target="_blank" className="hover:text-amber-300" title="Get Gemini Key"><Icon name="question"/></a></div><input type="password" value={set.apiKeys?.gemini||""} onChange={e=> updateSettings({...set,apiKeys:{...set.apiKeys,gemini:e.target.value}})} placeholder="AIzaSy..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                    <div><div className="flex justify-between text-[8px] t50 mb-0.5 font-mono"><span>OpenAI Key</span><a href="https://platform.openai.com/api-keys" target="_blank" className="hover:text-amber-300" title="Get OpenAI Key"><Icon name="question"/></a></div><input type="password" value={set.apiKeys?.openai||""} onChange={e=> updateSettings({...set,apiKeys:{...set.apiKeys,openai:e.target.value}})} placeholder="sk-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                    <div><div className="flex justify-between text-[8px] t50 mb-0.5 font-mono"><span>Kimi Key</span><a href="https://platform.moonshot.cn/console/api-keys" target="_blank" className="hover:text-amber-300" title="Get Kimi Key"><Icon name="question"/></a></div><input type="password" value={set.apiKeys?.kimi||""} onChange={e=> updateSettings({...set,apiKeys:{...set.apiKeys,kimi:e.target.value}})} placeholder="sk-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                    <div><div className="flex justify-between text-[8px] t50 mb-0.5 font-mono"><span>DeepSeek Key</span><a href="https://platform.deepseek.com/api_keys" target="_blank" className="hover:text-amber-300" title="Get DeepSeek Key"><Icon name="question"/></a></div><input type="password" value={set.apiKeys?.deepseek||""} onChange={e=> updateSettings({...set,apiKeys:{...set.apiKeys,deepseek:e.target.value}})} placeholder="sk-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white"/></div>
                                 </div>
                             </div>
                         </div>
@@ -934,14 +969,18 @@
                     {ed && (
                         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={()=>setEd(null)}>
                             <form onClick={e=>e.stopPropagation()} onSubmit={hSave} className="w-full max-w-md bgcard2 rounded-3xl border border-white/10 p-6 space-y-3.5 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl relative">
-                                <div className="flex justify-between items-center border-b border-white/10 pb-3"><h3 className="font-serif text-lg text-white">{ed.id?"Modify Profile Details":"Create Natal Profile"}</h3>{ed.id && <button type="button" onClick={()=>deleteProfile(ed.id)} className="text-[10px] text-red-400 font-mono border border-red-400/30 px-2 py-1 rounded">Delete</button>}</div>
+                                <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                                    <h3 className="font-serif text-lg text-white">{ed.id?"Modify Profile Details":"Create Natal Profile"}</h3>
+                                    {ed.id && <button type="button" onClick={()=>deleteProfile(ed.id)} className="text-[10px] text-red-400 font-mono border border-red-400/30 px-2 py-1 rounded">Delete</button>}
+                                </div>
                                 <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Full Name</label><input required name="nm" defaultValue={ed.name||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
-                                <div className="grid grid-cols-2 gap-2"><div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Date of Birth</label><input required type="date" name="dob" defaultValue={ed.dob||"2000-01-01"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div><div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Time (24h)</label><input required type="time" name="tm" defaultValue={ed.time||"12:00"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div></div>
-                                
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Date of Birth</label><input required type="date" name="dob" defaultValue={ed.dob||"2000-01-01"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
+                                    <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Time (24h)</label><input required type="time" name="tm" defaultValue={ed.time||"12:00"} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
+                                </div>
                                 <div className="pt-2 border-t border-white/10">
                                     <label className="text-[9px] t50 uppercase font-mono mb-1 flex justify-between items-center"><span>GPS Auto-Locate</span><button type="button" onClick={()=>{ if(navigator.geolocation) { navigator.geolocation.getCurrentPosition(async pos => { document.querySelector('input[name="lt"]').value = pos.coords.latitude.toFixed(4); document.querySelector('input[name="ln"]').value = pos.coords.longitude.toFixed(4); try { const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`); const d = await r.json(); document.querySelector('input[name="pl"]').value = d.address.city || d.address.town || d.address.village || 'Auto GPS Location'; } catch(e){ document.querySelector('input[name="pl"]').value = 'GPS Coord'; } }); } else alert('Geolocation not supported'); }} className="text-amber-300 hover:text-amber-200">Use GPS <Icon name="crosshair"/></button></label>
                                 </div>
-                                
                                 <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Birth Place Name</label><input required name="pl" defaultValue={ed.place||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white"/></div>
                                 <div className="grid grid-cols-3 gap-2">
                                     <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Latitude</label><input required type="number" step="any" name="lt" defaultValue={ed.lat||""} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-xs outline-none text-white"/></div>
@@ -950,11 +989,17 @@
                                 </div>
                                 <div className="pt-2 border-t border-white/10">
                                     <div className="text-[10px] text-amber-400 uppercase font-mono mb-2 tracking-widest text-center">Spiritual Lineage (Optional)</div>
-                                    <div className="grid grid-cols-2 gap-2 mb-2"><div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Gotra</label><input name="gt" defaultValue={ed.gotra||""} placeholder="e.g. Kashyapa" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div><div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Jaati / Varg</label><input name="jt" defaultValue={ed.jaati||""} placeholder="e.g. Brahmin" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div></div>
-                                    <div className="grid grid-cols-2 gap-2 mb-2"><div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Kul Devta</label><input name="kd" defaultValue={ed.kulDevta||""} placeholder="e.g. Chamunda" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div><div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Gram Devta</label><input name="gd" defaultValue={ed.gramDevta||""} placeholder="e.g. Bhairava" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div></div>
+                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                        <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Gotra</label><input name="gt" defaultValue={ed.gotra||""} placeholder="e.g. Kashyapa" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                        <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Jaati / Varg</label><input name="jt" defaultValue={ed.jaati||""} placeholder="e.g. Brahmin" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                        <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Kul Devta</label><input name="kd" defaultValue={ed.kulDevta||""} placeholder="e.g. Chamunda" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                        <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Gram Devta</label><input name="gd" defaultValue={ed.gramDevta||""} placeholder="e.g. Bhairava" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
+                                    </div>
                                     <div><label className="text-[8px] t50 uppercase font-mono mb-1 block">Sthan Devta</label><input name="sd" defaultValue={ed.sthanDevta||""} placeholder="e.g. Hanumanji" className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs outline-none text-white"/></div>
                                 </div>
-                                <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-2 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">Save Profile Encrypted</button>
+                                <button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-2 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">Save Encrypted Vault Profile</button>
                             </form>
                         </div>
                     )}
