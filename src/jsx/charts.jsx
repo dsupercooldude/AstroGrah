@@ -1,4 +1,3 @@
-// src/jsx/charts.jsx
 const { Fragment } = window.React;
 
 window.BiorhythmChart = ({ data, scores }) => {
