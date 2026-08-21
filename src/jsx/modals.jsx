@@ -3,7 +3,10 @@ const { useState } = window.React;
 
 window.SetupModal = ({ onConfig }) => {
   const { SageLogo, AppDB } = window;
-  const [o, setO] = useState("dsupercooldude"); const [r, setR] = useState("AstroGrah"); const [t, setT] = useState(""); const [err, setErr] = useState("");
+  const [o, setO] = useState("dsupercooldude");
+  const [r, setR] = useState("AstroGrah");
+  const [t, setT] = useState("");
+  const [err, setErr] = useState("");
   
   return (
     <div className="min-h-screen flex items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10">
@@ -133,7 +136,7 @@ window.AdminConsoleModal = ({ onClose, onResetDb }) => {
 window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }) => {
   const { Icon, AppDB, CryptoUtils } = window;
   const [mfaSetup, setMfaSetup] = useState(null);
-  const [localSet, setLocalSet] = useState(settings || { aiModel: "offline", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {} });
+  const [localSet, setLocalSet] = useState(settings || { aiModel: "auto", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {} });
 
   const enableMFA = () => {
     if (!window.OTPAuth) return alert("Authenticator library failed to load.");
@@ -218,11 +221,12 @@ window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }
         </div>
 
         <div>
-          <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Primary AI Engine</label>
-          <select value={localSet.aiModel} onChange={(e) => handleSelectChange("aiModel", e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs outline-none text-white font-medium">
+          <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">AI Provider Engine</label>
+          <select value={localSet.aiModel || "auto"} onChange={(e) => handleSelectChange("aiModel", e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs outline-none text-white font-medium">
+            <option value="auto">Auto (Smart Load-Balancing & Automatic Fallback)</option>
             <option value="offline">Offline Vedic Rule Engine (100% Local / Zero API Required)</option>
-            <option value="gemini">Google Gemini 3.5 Flash (Fastest)</option>
-            <option value="openai">OpenAI GPT-4o Mini</option>
+            <option value="gemini">Google Gemini 3.5 Flash (Preferred)</option>
+            <option value="openai">OpenAI GPT-4o Mini (Preferred)</option>
             <option value="groq">Groq (Ultra-Fast Llama 3.1)</option>
             <option value="deepseek">DeepSeek V3</option>
             <option value="kimi">Moonshot / Kimi</option>
@@ -237,7 +241,7 @@ window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }
             <span className="text-[9px] text-amber-200/60 font-mono">Auto-Cascading</span>
           </div>
           <p className="text-[10px] t60 leading-relaxed">
-            If your selected provider hits token limits or rate limits (429), the engine automatically cascades through your other configured API keys before falling back to Offline.
+            In <strong>Auto Mode</strong>, queries are load-balanced across all configured keys. If any provider rate limits or exhausts tokens, it cascades to the remaining keys before falling back to Offline.
           </p>
 
           <div className="space-y-2.5 pt-1">
