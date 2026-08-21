@@ -1,5 +1,5 @@
 // src/jsx/modals.jsx
-const React = window.React;
+var React = window.React;
 const { useState } = window.React;
 
 // CRYPTOGRAPHIC SAFETY FALLBACK: Prevents undefined errors if crypto.js lags on load
