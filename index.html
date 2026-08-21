@@ -69,7 +69,7 @@
     <script src="src/js/crypto.js"></script>
     <script src="src/js/ai-rules.js"></script>
 
-    <!-- Sequential Dynamic Cache-Busting Script Loader -->
+    <!-- Fail-Safe Sequential Dynamic Script Loader -->
     <script type="text/javascript">
       (function() {
         const modules = [
@@ -93,12 +93,16 @@
           const script = document.createElement('script');
           script.type = 'text/babel';
           script.src = modules[index] + '?t=' + cacheBuster;
+          
           script.onload = function() {
-            loadScript(index + 1); // Load next module only after current one executes successfully
+            loadScript(index + 1); // Proceed to next module
           };
+          
           script.onerror = function() {
-            console.error("Failed to load module: " + modules[index]);
+            console.error("Module load error on: " + modules[index]);
+            loadScript(index + 1); // Force continue even if a non-critical module hiccups
           };
+
           document.body.appendChild(script);
         }
 
