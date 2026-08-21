@@ -1,5 +1,22 @@
 // src/jsx/modals.jsx
+const React = window.React;
 const { useState } = window.React;
+
+// CRYPTOGRAPHIC SAFETY FALLBACK: Prevents undefined errors if crypto.js lags on load
+if (!window.CryptoUtils) {
+  window.CryptoUtils = {
+    hashPassword: async (str) => {
+      const msgBuffer = new TextEncoder().encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    },
+    decrypt: (data) => data,
+    encrypt: (data) => data,
+    b64E: (str) => btoa(str),
+    b64D: (str) => atob(str)
+  };
+}
 
 window.SetupModal = ({ onConfig }) => {
   const { SageLogo, AppDB } = window;
@@ -209,7 +226,6 @@ window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }
           <div>
             <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Default Kundali Style</label>
             <select value={localSet.kundaliStyle} onChange={(e) => handleSelectChange("kundaliStyle", e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white">
-              {/* FIX: Solid backgrounds added to all options so text is always visible */}
               <option value="north" className="bg-[#121426] text-white">North Indian</option>
               <option value="south" className="bg-[#121426] text-white">South Indian</option>
               <option value="east" className="bg-[#121426] text-white">East Indian</option>
@@ -269,7 +285,7 @@ window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }
                 <span className="text-white font-semibold">Groq API Key (Ultra Fast)</span>
                 <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-amber-300 hover:underline flex items-center gap-1">Get Groq Key <Icon name="arrow-square-out" size={12} /></a>
               </div>
-              <input type="password" value={localSet.apiKeys?.groq || ""} onChange={(e) => handleKeyChange("groq", e.target.value)} placeholder="gsk_..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
+              <input type="password" value={localSet.apiKeys?.groq || ""} onChange={(e) => handleKeyCodeChange = (e) => handleKeyChange("groq", e.target.value)} placeholder="gsk_..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
             </div>
             <div>
               <div className="flex justify-between text-[9px] t60 mb-0.5 font-mono">
@@ -286,7 +302,7 @@ window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }
               <input type="password" value={localSet.apiKeys?.kimi || ""} onChange={(e) => handleKeyChange("kimi", e.target.value)} placeholder="sk-..." className="w-full bg-black/50 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none text-white focus:border-amber-400/50 font-mono" />
             </div>
             <div>
-              <div className="flex justify-between text-[9px] t60 mb-0.5 font-mono">
+              <div className="flex justify-name-between text-[9px] t60 mb-0.5 font-mono">
                 <span className="text-white font-semibold">OpenRouter Gateway Key</span>
                 <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-amber-300 hover:underline flex items-center gap-1">Get OpenRouter Key <Icon name="arrow-square-out" size={12} /></a>
               </div>
