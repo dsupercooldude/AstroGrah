@@ -1,6 +1,44 @@
 // src/jsx/components.jsx
 const React = window.React;
 
+// --- 0. ERROR BOUNDARY COMPONENT ---
+window.ErrorBoundary = class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4 bg-[#0b0d19] text-[#F2EFE6] font-sans">
+          <div className="w-full max-w-md bgcard2 p-6 rounded-3xl border border-red-500/40 text-center shadow-2xl gl-fadein">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-3 text-red-400">
+              <i className="ph ph-warning-octagon" style={{ fontSize: 24 }}></i>
+            </div>
+            <h2 className="font-serif text-xl text-red-400 mb-1">System Execution Fault</h2>
+            <p className="text-xs t60 mb-4 font-mono bg-black/40 p-3 rounded-xl border border-white/5 text-red-300 break-words">
+              {this.state.error?.message || "An unexpected rendering error occurred."}
+            </p>
+            <button 
+              onClick={() => { try { localStorage.clear(); } catch(e) {} window.location.reload(); }} 
+              className="w-full bg-amber-400 text-black font-bold rounded-full py-3 text-xs hover:bg-amber-300 transition shadow-lg shadow-amber-400/20"
+            >
+              Hard Reset Storage & Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+};
+
 // --- 1. SPIRITUAL LINEAGE DATA ---
 window.GOTRAS = [
   "Kashyapa", "Bharadwaja", "Vasistha", "Vishwamitra", "Atri", "Gotama", "Jamadagni",
