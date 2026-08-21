@@ -3,8 +3,43 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
   const { KundaliRenderer, PLANET_INFO, getPlanetaryDignity, getAntardashas, getPratyantarDashas, formatYM } = window;
   const currentDecYear = date.getFullYear() + date.getMonth() / 12 + date.getDate() / 365.25;
 
+  // SMART MARKDOWN PARSER: Converts raw AI text into beautifully styled PDF typography
+  const renderFormattedText = (text) => {
+    if (!text) return "Generating Forecast...";
+    return text.split('\n').map((line, i) => {
+      let cleanLine = line.trim();
+      if (cleanLine === '') return <div key={i} style={{ height: '8px' }}></div>;
+
+      // Handle Markdown Headings (e.g. "### Yearly Outlook")
+      let isHeading = false;
+      if (cleanLine.startsWith('### ')) { cleanLine = cleanLine.substring(4); isHeading = true; }
+      else if (cleanLine.startsWith('## ')) { cleanLine = cleanLine.substring(3); isHeading = true; }
+      else if (cleanLine.startsWith('# ')) { cleanLine = cleanLine.substring(2); isHeading = true; }
+
+      // Split line by Markdown Bold Tags (**Text**)
+      const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
+      
+      return (
+        <div key={i} style={{ 
+          marginBottom: '10px',
+          fontSize: isHeading ? '16px' : '13px',
+          color: isHeading ? '#D4A574' : 'rgba(255,255,255,0.9)',
+          fontWeight: isHeading ? 'bold' : 'normal',
+          lineHeight: '1.8'
+        }}>
+          {parts.map((part, j) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              // Highlight bolded months in bright Gold/Amber
+              return <strong key={j} style={{ color: '#FDE68A', fontWeight: 'bold' }}>{part.slice(2, -2)}</strong>;
+            }
+            return <span key={j}>{part}</span>;
+          })}
+        </div>
+      );
+    });
+  };
+
   return (
-    // FIX: Wrapping the report in a zero-height hidden container stops it from creating a massive blank space on the webpage!
     <div style={{ height: 0, overflow: 'hidden' }}>
       <div id="ghost-pdf-report" style={{ width: '900px', backgroundColor: '#121426', padding: '50px', color: '#F2EFE6', fontFamily: 'Sora, sans-serif' }}>
         
@@ -67,7 +102,7 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
             </table>
         </div>
 
-        {/* 3-TIER VIMSHOTTARI DASHA TABLE (Maha -> Antar -> Pratyantar) */}
+        {/* 3-TIER VIMSHOTTARI DASHA TABLE */}
         <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', marginBottom: '30px' }}>
             <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Vimshottari Dasha Drilldown (Active Timeline)</h3>
             <table style={{ width: '100%', fontSize: '12px', textAlign: 'left', borderCollapse: 'collapse' }}>
@@ -85,7 +120,6 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
                   const isActiveMaha = currentDecYear >= d.start && currentDecYear < d.end;
                   let rows = [];
                   
-                  // 1. Mahadasha Row
                   rows.push(
                     <tr key={`maha-${i}`} style={{ backgroundColor: isActiveMaha ? 'rgba(251,191,36,0.15)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <td style={{ padding: '8px 10px', color: isActiveMaha ? '#FDE68A' : PLANET_INFO[d.lord]?.color, fontWeight: isActiveMaha ? 'bold' : 'normal' }}>{d.lord}</td>
@@ -96,7 +130,6 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
                     </tr>
                   );
 
-                  // 2. Expand ONLY the Active Mahadasha to show Antardashas
                   if (isActiveMaha) {
                     const antars = getAntardashas(d.lord, d.start, d.end);
                     antars.forEach((ant, idx) => {
@@ -111,7 +144,6 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
                         </tr>
                       );
 
-                      // 3. Expand ONLY the Active Antardasha to show Pratyantar Dashas
                       if (isActiveAntar) {
                         const prats = getPratyantarDashas(ant.lord, ant.start, ant.end);
                         prats.forEach((prat, pIdx) => {
@@ -185,8 +217,9 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
         {/* AI FORECAST: 12-MONTH HOROSCOPE */}
         <div style={{ background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.4)', padding: '30px', borderRadius: '16px', marginBottom: '30px' }}>
             <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px', fontSize: '20px' }}>12-Month Astrological Horizon</h3>
-            <div style={{ fontSize: '13px', lineHeight: '1.8', whiteSpace: 'pre-wrap', color: 'rgba(255,255,255,0.9)' }}>
-                {pdfForecast || "Generating Forecast..."}
+            {/* INJECTED PARSER HERE */}
+            <div style={{ padding: '10px 0' }}>
+              {renderFormattedText(pdfForecast)}
             </div>
         </div>
 
