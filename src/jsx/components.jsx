@@ -247,38 +247,37 @@ window.computeKundli = (profile, targetDate) => {
 };
 
 // --- 7. PANCHANG & ADVANCED CALCULATION FALLBACKS ---
-window.panchang = (dateStr) => {
-  const d = new Date(dateStr || Date.now());
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  return {
-    day: days[d.getDay()],
-    tithi: "Shukla Paksha",
-    nakshatra: "Rohini",
-    yoga: "Siddhi",
-    karana: "Bava",
-    sunrise: "06:15 AM",
-    sunset: "18:45 PM",
-    rahu: "16:30 - 18:00 (Avoid new initiatives)",
-    yama: "12:00 - 13:30",
-    gulika: "15:00 - 16:30"
+// The "if (!window.func)" guards ensure your real backend math is NEVER overwritten!
+
+if (!window.panchang) {
+  window.panchang = (dateStr) => {
+    const d = new Date(dateStr || Date.now());
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return { day: days[d.getDay()], tithi: "Shukla Paksha", nakshatra: "Rohini", yoga: "Siddhi", karana: "Bava", sunrise: "06:15 AM", sunset: "18:45 PM", rahu: "16:30 - 18:00", yama: "12:00 - 13:30", gulika: "15:00 - 16:30" };
   };
-};
+}
 
-window.calculatePlanetaryDetails = (placements, degrees) => {
-  const details = {};
-  Object.keys(placements || {}).forEach(p => {
-    details[p] = { rashi: placements[p], longitudeStr: (degrees[p] || 0).toFixed(2) + "°", nakshatra: window.NAKSHATRAS[Math.floor(Math.random()*27)], pada: 2, status: "Direct" };
+if (!window.calculatePlanetaryDetails) {
+  window.calculatePlanetaryDetails = (placements, degrees) => {
+    const details = {};
+    Object.keys(placements || {}).forEach(p => {
+      details[p] = { rashi: placements[p], longitudeStr: (degrees[p] || 0).toFixed(2) + "°", nakshatra: window.NAKSHATRAS[Math.floor(Math.random()*27)], pada: 2, status: "Direct" };
+    });
+    return details;
+  };
+}
+
+if (!window.calculateJaiminiKarakas) {
+  window.calculateJaiminiKarakas = () => ({
+    "Atmakaraka (Soul)": "Sun", "Amatyakaraka (Career)": "Mercury", "Bhratrukaraka (Siblings)": "Mars", 
+    "Matrukaraka (Mother)": "Moon", "Putrakaraka (Children)": "Jupiter", "Gnatikaraka (Obstacles)": "Saturn", "Darakaraka (Spouse)": "Venus"
   });
-  return details;
-};
+}
 
-window.calculateJaiminiKarakas = () => ({
-  "Atmakaraka (Soul)": "Sun", "Amatyakaraka (Career)": "Mercury", "Bhratrukaraka (Siblings)": "Mars", 
-  "Matrukaraka (Mother)": "Moon", "Putrakaraka (Children)": "Jupiter", "Gnatikaraka (Obstacles)": "Saturn", "Darakaraka (Spouse)": "Venus"
-});
-
-window.calculateBaladiAvastha = (degrees) => {
-  const avasthas = {};
-  Object.keys(degrees || {}).forEach(p => { avasthas[p] = "Yuva (Active/Youth)"; });
-  return avasthas;
-};
+if (!window.calculateBaladiAvastha) {
+  window.calculateBaladiAvastha = (degrees) => {
+    const avasthas = {};
+    Object.keys(degrees || {}).forEach(p => { avasthas[p] = "Yuva (Youth)"; });
+    return avasthas;
+  };
+}
