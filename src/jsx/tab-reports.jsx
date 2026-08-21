@@ -68,6 +68,11 @@ window.ReportsTab = ({ pr, ch }) => {
               })}
             </tbody>
           </table>
+          // In src/jsx/tab-reports.jsx, insert this right below the table inside the "Detailed Planetary Ledger" section:
+          <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed shadow-inner font-mono mt-4">
+            <strong className="text-amber-400 block mb-2">What this means for your specific chart:</strong> 
+            {window.generateDeepSynthesis ? window.generateDeepSynthesis(pr, ch, {p:0,e:0,i:0}).advLedger : "Think of this as your cosmic DNA tracker."}
+          </div>
         </div>
         <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed shadow-inner">
           <strong className="text-amber-400">What this means for you:</strong> Think of this as your cosmic DNA tracker. While millions of people share your Sun or Moon sign, your specific <strong>Nakshatra (Constellation)</strong> and exact <strong>Longitude</strong> create a highly unique psychological blueprint. If a planet's motion is <em>Direct</em>, its energy flows outward easily. If it is <em>Retrograde</em>, it suggests a specific life lesson you will need to internalize and repeat until mastered.
