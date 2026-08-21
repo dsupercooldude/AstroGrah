@@ -3,7 +3,6 @@ let bootAttempts = 0;
 const bootInterval = setInterval(() => {
   bootAttempts++;
   
-  // Checking if all required components have successfully loaded from the other files
   const deps = {
     React: !!window.React,
     ErrorBoundary: !!window.ErrorBoundary,
@@ -16,6 +15,7 @@ const bootInterval = setInterval(() => {
     PanchangTab: !!window.PanchangTab,
     CompatTab: !!window.CompatTab,
     AskTab: !!window.AskTab,
+    ReportsTab: !!window.ReportsTab,
     TabOrchestrator: !!window.TabOrchestrator
   };
 
@@ -29,7 +29,6 @@ const bootInterval = setInterval(() => {
     const { useState, useEffect, useMemo, Fragment } = window.React;
 
     function AppContent() {
-      // SYNCHRONOUS BOOT: Prevents setup modal from incorrectly popping up on new tabs
       const [dbC, setDbC] = useState(() => AppDB.loadConfig());
       
       const [u, setU] = useState(null);
@@ -58,12 +57,43 @@ const bootInterval = setInterval(() => {
               if (sess) {
                 const parsedSess = JSON.parse(sess);
                 const vaultFile = await AppDB.getFile(`gl_vault_${parsedSess.emailHash}.json`);
-                const prof = typeof vaultFile.content.profiles === "string" ? CryptoUtils.decrypt(vaultFile.content.profiles) : vaultFile.content.profiles || [];
-                const sett = typeof vaultFile.content.settings === "string" ? CryptoUtils.decrypt(vaultFile.content.settings) : vaultFile.content.settings || {};
+                
+                // INTEGRITY SAFEGUARD: Safely parse and decrypt profiles array
+                let profRaw = vaultFile.content.profiles;
+                let prof = [];
+                if (typeof profRaw === "string") {
+                  try {
+                    const decrypted = CryptoUtils.decrypt(profRaw);
+                    prof = typeof decrypted === "string" ? JSON.parse(decrypted) : decrypted;
+                  } catch (err) {
+                    prof = [];
+                  }
+                } else {
+                  prof = profRaw || [];
+                }
+                if (!Array.isArray(prof)) prof = [];
+
+                // INTEGRITY SAFEGUARD: Safely parse and decrypt settings object
+                let settRaw = vaultFile.content.settings;
+                let sett = {};
+                if (typeof settRaw === "string") {
+                  try {
+                    const decryptedSet = CryptoUtils.decrypt(settRaw);
+                    sett = typeof decryptedSet === "string" ? JSON.parse(decryptedSet) : decryptedSet;
+                  } catch (err) {
+                    sett = {};
+                  }
+                } else {
+                  sett = settRaw || {};
+                }
+                if (!sett || typeof sett !== "object") sett = {};
+
                 setU({ email: parsedSess.email, emailHash: parsedSess.emailHash, profiles: prof, settings: sett, mfaEnabled: parsedSess.mfaEnabled });
                 if (prof.length) setActiveProfileId(prof[0].id);
               }
-            } catch (e) {}
+            } catch (e) {
+              console.error("Vault loading integrity error:", e);
+            }
           }
         };
         fetchVaultIfConfigured();
@@ -72,13 +102,22 @@ const bootInterval = setInterval(() => {
       const logoutUser = () => { try { localStorage.removeItem("gl_active_user"); } catch (e) {} setU(null); };
       const resetDbConfig = () => { try { localStorage.removeItem("gl_active_user"); } catch (e) {} AppDB.clearConfig(); setDbC(false); setU(null); setAdminConsoleOpen(false); };
 
-      const prs = u?.profiles || [];
+      // STRICT ARRAY GUARANTEE: Prevents any 'forEach is not a function' faults
+      const prs = Array.isArray(u?.profiles) ? u.profiles : [];
       const set = u?.settings || { aiModel: "auto", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {} };
+      
       const chs = useMemo(() => {
         const o = {};
-        if (prs) { prs.forEach((p) => (o[p.id] = window.computeKundli(p, dt))); }
+        if (Array.isArray(prs)) { 
+          prs.forEach((p) => {
+            if (p && p.id) {
+              o[p.id] = window.computeKundli(p, dt);
+            }
+          }); 
+        }
         return o;
       }, [prs, dt]);
+
       const aP = prs.find((p) => p.id === activeProfileId) || (prs.length > 0 ? prs[0] : null);
 
       if (!dbC) return <SetupModal onConfig={() => setDbC(true)} />;
@@ -197,18 +236,16 @@ const bootInterval = setInterval(() => {
           <datalist id="gotras">{window.GOTRAS?.map((g) => (<option key={g} value={g} />))}</datalist>
           <datalist id="jaatis">{window.JAATIS?.map((j) => (<option key={j} value={j} />))}</datalist>
 
-          {/* Modals & Dialogs */}
           {adminAuthOpen && <AdminAuthModal u={u} onClose={() => setAdminAuthOpen(false)} onAuthenticated={() => { setAdminAuthOpen(false); setAdminConsoleOpen(true); }} />}
           {adminConsoleOpen && <AdminConsoleModal onClose={() => setAdminConsoleOpen(false)} onResetDb={resetDbConfig} />}
           {ss && <SettingsModal u={u} settings={set} onClose={() => setSs(false)} onUpdateSettings={updateSettings} onMfaSuccess={() => setU({ ...u, mfaEnabled: true })} />}
 
-          {/* Header Bar */}
           <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
             <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center pr-36">
               <div className="flex items-center gap-3">
                 <SageLogo size={32} />
                 <div>
-                  <h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V2.8</h1>
+                  <h1 className="font-serif text-lg text-amber-300 leading-tight">Graha Ledger V3.0</h1>
                   <div className="text-[9px] font-mono t50 uppercase tracking-widest">{u.email}</div>
                 </div>
               </div>
@@ -234,7 +271,6 @@ const bootInterval = setInterval(() => {
             </div>
           </div>
 
-          {/* Main Body */}
           <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-6 relative z-10">
             {prs.length === 0 ? (
               <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10 bgfaint gl-fadein">
@@ -242,11 +278,9 @@ const bootInterval = setInterval(() => {
                 <button onClick={() => handleOpenEdit({})} className="px-8 py-3 rounded-full bg-amber-400 text-black text-sm font-semibold hover:bg-amber-300 mt-4">Create Natal Profile</button>
               </div>
             ) : (
-              // Cleanly delegates all Tab logic to the newly abstracted TabOrchestrator
               <TabOrchestrator pr={aP} ch={chs[aP?.id]} date={dt} setDate={setDt} settings={set} onEditProfile={handleOpenEdit} prs={prs} chs={chs} u={u} setU={setU} updateSettings={updateSettings} />
             )}
 
-            {/* Profile Form Modal */}
             {ed && (
               <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={() => setEd(null)}>
                 <form onClick={(e) => e.stopPropagation()} onSubmit={hSave} className="w-full max-w-md bgcard2 rounded-3xl border border-white/10 p-6 space-y-3.5 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl relative">
@@ -345,7 +379,6 @@ const bootInterval = setInterval(() => {
       root.render(<ErrorBoundary><AppContent /></ErrorBoundary>);
     }
   } else if (bootAttempts > 80) { 
-    // SMART DIAGNOSTIC MAINTENANCE BUSTER
     const missing = Object.keys(deps).filter(k => !deps[k]).join(', ');
     const bl = document.getElementById("bootloader");
     if(bl) bl.innerHTML = `
