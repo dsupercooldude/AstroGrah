@@ -1,5 +1,5 @@
 // src/jsx/pdf-report.jsx
-const React = window.React;
+var React = window.React;
 
 window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref) => {
   if (!profile || !ch) return <div ref={ref} className="hidden"></div>;
