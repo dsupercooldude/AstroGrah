@@ -8,7 +8,8 @@ window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs,
 
   return (
     <Fragment>
-      <div className="flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bgcard p-1 font-mono text-[11px] shadow-inner mb-2">
+      {/* FIX: Added scrollbar-hide to remove the ugly horizontal bar */}
+      <div className="flex gap-1 overflow-x-auto scrollbar-hide rounded-2xl border border-white/10 bgcard p-1 font-mono text-[11px] shadow-inner mb-2">
         {[
           { id: "person", l: "Astrology & Dasha" },
           { id: "reports", l: "Advanced Reports" },
