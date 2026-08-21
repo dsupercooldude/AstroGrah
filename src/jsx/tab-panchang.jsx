@@ -1,6 +1,6 @@
 // src/jsx/tab-panchang.jsx
 var React = window.React;
-const { useState } = window.React;
+var { useState } = window.React;
 
 window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
   const { Icon, panchang, PLANET_INFO } = window;
