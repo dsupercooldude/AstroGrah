@@ -95,27 +95,47 @@ window.executeMultiProviderAI = async (prompt, settings, systemInstruction = "")
     }
   ];
 
-  const primaryModel = settings.aiModel || "gemini";
+  const primaryModel = settings.aiModel || "auto";
   if (primaryModel === "offline") return null;
 
-  const priorityOrder = [primaryModel, ...providers.map((p) => p.id).filter((id) => id !== primaryModel)];
+  // Identify all active configured keys
+  const configuredProviders = providers.filter((p) => {
+    const key = settings.apiKeys?.[p.id];
+    return key && key.trim().length > 5;
+  });
 
-  for (const provId of priorityOrder) {
-    const key = settings.apiKeys?.[provId];
-    if (key && key.trim().length > 5) {
-      try {
-        const executor = providers.find((p) => p.id === provId);
-        if (executor) {
-          const answer = await executor.run(key.trim());
-          if (answer && answer.trim().length > 0) {
-            return { text: answer, provider: executor.name };
-          }
-        }
-      } catch (err) {
-        console.warn(`[AI Matrix Cascade] Provider '${provId}' failed or exhausted (${err.message}). Trying next fallback...`);
+  // Zero-Key Fast Path: No API keys configured -> immediate offline fallback
+  if (configuredProviders.length === 0) return null;
+
+  let executionQueue = [];
+
+  if (primaryModel === "auto") {
+    // Smart Load Balancing: Distribute queries across configured providers
+    executionQueue = [...configuredProviders].sort(() => Math.random() - 0.5);
+  } else {
+    // Explicit Preference: User-selected provider runs first, remainder act as fallbacks
+    const preferred = configuredProviders.find((p) => p.id === primaryModel);
+    const others = configuredProviders.filter((p) => p.id !== primaryModel);
+    executionQueue = preferred ? [preferred, ...others] : configuredProviders;
+  }
+
+  // Cascading execution across queue
+  for (const executor of executionQueue) {
+    const key = settings.apiKeys[executor.id].trim();
+    try {
+      const answer = await executor.run(key);
+      if (answer && answer.trim().length > 0) {
+        return {
+          text: answer,
+          provider: primaryModel === "auto" ? `${executor.name} (Auto Load-Balanced)` : executor.name
+        };
       }
+    } catch (err) {
+      console.warn(`[AI Engine Waterfall] '${executor.id}' failed (${err.message}). Cascading to next available provider...`);
     }
   }
+
+  // All remote providers exhausted or failed -> trigger Offline Engine
   return null;
 };
 
@@ -149,39 +169,37 @@ window.generateDeepGochara = (ch, lagnaSign, date, pK, bScores) => {
   return { health: { text: health, sc: hSc }, wealth: { text: wealth, sc: wSc }, career: { text: career, sc: cSc }, home: { text: home, sc: fSc } };
 };
 
-// --- NEW: OFFLINE 12-MONTH HOROSCOPE FALLBACK ENGINE ---
 window.generateOfflineYearlyHoroscope = (pr, ch, targetDate) => {
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  let startMonth = targetDate.getMonth();
-  let startYear = targetDate.getFullYear();
+  const startMonth = targetDate.getMonth();
+  const startYear = targetDate.getFullYear();
   
-  let report = "YEARLY FORECAST (Month-by-Month Offline AI Engine)\n";
+  let report = "YEARLY FORECAST (Month-by-Month Deterministic Engine)\n";
   report += "────────────────────────────────────────────────────────\n\n";
   
   const themes = {
-      "Aries": ["career acceleration and bold moves", "financial planning and asset restructuring", "domestic adjustments and renovations", "creative projects and social expansion"],
-      "Taurus": ["steady wealth accumulation", "diplomatic communication focus", "property matters and family grounding", "educational pursuits and deep learning"],
-      "Gemini": ["intellectual self-discovery", "financial restructuring and auditing", "travel opportunities and networking", "career pivots and skill adaptation"],
-      "Cancer": ["emotional grounding and healing", "financial gains through intuition", "relationship deepening and empathy", "health focus and vitality building"],
-      "Leo": ["leadership opportunities and visibility", "financial stability and legacy planning", "family expansion and creative joy", "spiritual retreats and introspection"],
-      "Virgo": ["meticulous project planning", "career recognition and detailed execution", "health regimens and dietary adjustments", "long-term investment strategies"],
-      "Libra": ["relationship harmony and partnerships", "professional networking and alliances", "financial balancing and ledger review", "creative arts and aesthetic pursuits"],
-      "Scorpio": ["deep psychological transformations", "career intensity and focused research", "financial windfalls and hidden assets", "emotional healing and rebirth"],
-      "Sagittarius": ["philosophical growth and publishing", "long-distance travel and expansion", "career scaling and bold visions", "relationship clarity and truth-seeking"],
-      "Capricorn": ["structural discipline and system building", "career milestones and authority gains", "financial conservatism and savings", "domestic duties and foundational stability"],
-      "Aquarius": ["innovative projects and technological leaps", "social networking and community leadership", "financial unpredictability and adaptation", "spiritual awakenings and cosmic alignment"],
-      "Pisces": ["intuitive development and artistic flow", "career fluidity and empathetic leadership", "financial intuition and charitable giving", "relationship depth and karmic clearing"]
+    Aries: ["career acceleration and bold moves", "financial planning and asset restructuring", "domestic adjustments and renovations", "creative projects and social expansion"],
+    Taurus: ["steady wealth accumulation", "diplomatic communication focus", "property matters and family grounding", "educational pursuits and deep learning"],
+    Gemini: ["intellectual self-discovery", "financial restructuring and auditing", "travel opportunities and networking", "career pivots and skill adaptation"],
+    Cancer: ["emotional grounding and healing", "financial gains through intuition", "relationship deepening and empathy", "health focus and vitality building"],
+    Leo: ["leadership opportunities and visibility", "financial stability and legacy planning", "family expansion and creative joy", "spiritual retreats and introspection"],
+    Virgo: ["meticulous project planning", "career recognition and detailed execution", "health regimens and dietary adjustments", "long-term investment strategies"],
+    Libra: ["relationship harmony and partnerships", "professional networking and alliances", "financial balancing and ledger review", "creative arts and aesthetic pursuits"],
+    Scorpio: ["deep psychological transformations", "career intensity and focused research", "financial windfalls and hidden assets", "emotional healing and rebirth"],
+    Sagittarius: ["philosophical growth and publishing", "long-distance travel and expansion", "career scaling and bold visions", "relationship clarity and truth-seeking"],
+    Capricorn: ["structural discipline and system building", "career milestones and authority gains", "financial conservatism and savings", "domestic duties and foundational stability"],
+    Aquarius: ["innovative projects and technological leaps", "social networking and community leadership", "financial unpredictability and adaptation", "spiritual awakenings and cosmic alignment"],
+    Pisces: ["intuitive development and artistic flow", "career fluidity and empathetic leadership", "financial intuition and charitable giving", "relationship depth and karmic clearing"]
   };
   
-  const signThemes = themes[ch.d1.lagna] || themes["Aries"];
+  const signThemes = themes[ch.d1.lagna] || themes.Aries;
   
   for (let i = 0; i < 12; i++) {
-      let mIdx = (startMonth + i) % 12;
-      let y = startYear + Math.floor((startMonth + i) / 12);
-      let activeTheme = signThemes[i % 4];
-      
-      report += `**${months[mIdx]} ${y}**: `;
-      report += `This month highlights ${activeTheme}. With your Lagna in ${ch.d1.lagna} and Moon in ${ch.moonSign}, planetary geometry indicates a period of systematic execution. Expect shifts in your energetic and emotional bandwidth as the lunar cycle progresses through your pivotal houses. Focus on disciplined routines.\n\n`;
+    const mIdx = (startMonth + i) % 12;
+    const y = startYear + Math.floor((startMonth + i) / 12);
+    const activeTheme = signThemes[i % 4];
+    
+    report += `• ${months[mIdx]} ${y}: Focus on ${activeTheme}. Transits across your ${ch.d1.lagna} Lagna and ${ch.moonSign} Moon indicate a productive phase for disciplined milestone execution.\n\n`;
   }
   
   return report;
@@ -190,9 +208,8 @@ window.generateOfflineYearlyHoroscope = (pr, ch, targetDate) => {
 window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
   const lQ = query.toLowerCase();
   
-  // If the query specifically asks for a yearly/monthly breakdown (from the PDF generator)
   if (lQ.includes("yearly horoscope") || lQ.includes("month-by-month")) {
-      return window.generateOfflineYearlyHoroscope(profile, kundli, targetDate);
+    return window.generateOfflineYearlyHoroscope(profile, kundli, targetDate);
   }
 
   const dateFormatted = targetDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
