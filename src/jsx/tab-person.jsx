@@ -16,10 +16,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
   const currentYear = date.getFullYear() + (date.getMonth() / 12);
   const formattedStyle = chartStyle.charAt(0).toUpperCase() + chartStyle.slice(1).toLowerCase();
 
-  // FIX: Custom CSS for Webkit Scrollbar to remove the ugly default gray box
   const customScrollStyle = { scrollbarWidth: "thin", scrollbarColor: "rgba(251, 191, 36, 0.2) transparent" };
-
-  // FIX: Sankalp generator based on profile details
   const sankalp = pr.gotra ? `Om Tat Sat. Native ${pr.name}, of ${pr.gotra} Gotra, seeking blessings of ${pr.kulDevta || 'Kul Devta'} at ${pr.place}.` : null;
 
   return (
@@ -30,12 +27,13 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         .beauty-scroll::-webkit-scrollbar-thumb { background-color: rgba(251, 191, 36, 0.2); border-radius: 10px; }
       `}</style>
 
+      {/* HEADER & SANKALP */}
       <div className="bgcard rounded-3xl border border-white/10 p-6 shadow-xl flex justify-between items-start">
         <div>
           <div className="text-[10px] text-amber-400 font-mono tracking-widest uppercase mb-1">Astrological Profile</div>
           <h2 className="font-serif text-3xl text-white font-bold">{pr.name}</h2>
           <div className="text-xs t50 font-mono mt-1">{pr.dob} • {pr.time} • {pr.place}</div>
-          {sankalp && <div className="text-[10px] text-emerald-300/80 font-mono italic mt-2 bg-emerald-900/10 inline-block px-2 py-1 rounded border border-emerald-500/20">{sankalp}</div>}
+          {sankalp && <div className="text-[10px] text-emerald-300/80 font-mono italic mt-3 bg-emerald-900/10 inline-block px-3 py-1.5 rounded border border-emerald-500/20">{sankalp}</div>}
         </div>
         <div className="flex gap-3">
           <button onClick={() => window.dispatchEvent(new CustomEvent('generate-pdf'))} className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/30 hover:bg-emerald-500/20 transition shadow-lg"><i className="ph ph-file-pdf text-lg"></i></button>
@@ -43,6 +41,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
+      {/* HORIZON CONTROLLER */}
       <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl flex flex-col xl:flex-row justify-between items-center gap-4 relative z-20">
         <div className="flex items-center gap-4 w-full xl:w-auto">
           <div className="w-12 h-12 rounded-full border border-amber-400/30 flex items-center justify-center text-amber-400 bg-amber-400/5 shadow-inner shrink-0"><i className="ph ph-clock-counter-clockwise text-xl"></i></div>
@@ -53,16 +52,17 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      {/* FIX: Enterprise Domain Info & Chalit Overview */}
+      {/* AI JYOTISH SYNTHESIS */}
       <div className="bg-[#121426] p-6 rounded-3xl border border-amber-500/20 shadow-xl">
-        <h3 className="font-serif text-amber-200 mb-3 text-lg flex items-center gap-2"><i className="ph ph-sparkle text-amber-400"></i> AI Jyotish Engine Synthesis</h3>
+        <h3 className="font-serif text-amber-200 mb-4 text-lg flex items-center gap-2"><i className="ph ph-sparkle text-amber-400"></i> AI Jyotish Engine Synthesis</h3>
         <p className="text-sm t85 leading-relaxed font-mono whitespace-pre-wrap">
           • <strong className="text-amber-100">Natal Strength:</strong> Your {ch.d1.lagna} Lagna sets a foundation of {ch.d1.lagna === "Leo" || ch.d1.lagna === "Aries" ? "dynamic leadership" : "strategic patience"}. Moon placed in {ch.moonSign} demands emotional clarity.<br/>
-          • <strong className="text-amber-100">Biorhythm Impact:</strong> With intellect operating at {Math.round(bioScores.i*100)}%, today is heavily favored for {bioScores.i > 0.5 ? "complex negotiations and contract analysis." : "rest, delegation, and avoiding impulsive career pivots."}<br/>
+          • <strong className="text-amber-100">Biorhythm Impact:</strong> With intellect operating at {Math.round((bioScores?.i || 0)*100)}%, today is heavily favored for {(bioScores?.i || 0) > 0 ? "complex negotiations and contract analysis." : "rest, delegation, and avoiding impulsive career pivots."}<br/>
           • <strong className="text-amber-100">Active Cycle:</strong> Governed by {ch.dasha[0]?.lord} Mahadasha, the universe is currently testing your ability to {ch.dasha[0]?.lord === "Saturn" ? "endure and build structures." : "expand and learn."}
         </p>
       </div>
 
+      {/* CHART KUNDALI ENGINE */}
       <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl relative overflow-visible">
         <div className="flex justify-between items-center mb-6 relative z-20">
           <div className="text-xs t50 font-mono tracking-widest uppercase">Divisional View: D-1</div>
@@ -75,14 +75,14 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
           </div>
         </div>
         <div className="flex justify-center items-center min-h-[300px] relative z-10">
-          {window.KundaliRenderer ? <window.KundaliRenderer ac={ch.d1} ch={ch} kpTable={ch.kpTable} style={formattedStyle} isExpert={isExpert} /> : null}
+          {window.KundaliRenderer && <window.KundaliRenderer ac={ch.d1} ch={ch} kpTable={ch.kpTable} style={formattedStyle} isExpert={isExpert} />}
         </div>
       </div>
 
+      {/* DASHAS AND SHADBALA */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
           <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2"><h3 className="font-serif text-sm text-amber-200">Vimshottari Dasha Drilldown</h3></div>
-          {/* FIX: Compressed Dasha View with Beautiful WebKit Scrollbar */}
           <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 beauty-scroll" style={customScrollStyle}>
             {ch.dasha?.map((d, i) => {
               const isActive = currentYear >= d.start && currentYear < d.end;
@@ -129,6 +129,32 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
               )
             })}
           </div>
+        </div>
+      </div>
+
+      {/* GOCHARA / TRANSITS */}
+      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
+        <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
+          <h3 className="font-serif text-sm text-amber-200">Gochara (Transit) Impact</h3><span className="text-[9px] t50 uppercase tracking-widest">{weekday}, {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+        </div>
+        <div className="space-y-4">
+          {Object.entries(gochara).map(([domain, data]) => (
+            <div key={domain}>
+              <div className="flex justify-between text-[10px] font-mono mb-1"><span className="font-bold text-amber-100 capitalize">{domain.replace(/([A-Z])/g, ' $1').trim()}</span><span className="t85 font-bold">{Math.round(data.sc)}/100</span></div>
+              <div className="h-1 bg-black/50 rounded-full overflow-hidden border border-white/5 mb-1.5"><div className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-400" style={{ width: `${data.sc}%` }}></div></div>
+              <div className="text-[10px] t60 font-mono leading-snug">{data.text}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* PRESCRIPTIONS */}
+      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl mb-6">
+        <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2"><h3 className="font-serif text-sm text-amber-200 flex items-center gap-2"><i className="ph ph-sparkle"></i> Prescriptions for {weekday}</h3><span className="text-[9px] text-amber-400/80 uppercase tracking-widest font-bold">● Active Hora Ruler: {activePlanet.symbol} {weekday === "Sun" ? "Sun" : weekday === "Mon" ? "Moon" : weekday === "Tue" ? "Mars" : weekday === "Wed" ? "Mercury" : weekday === "Thu" ? "Jupiter" : weekday === "Fri" ? "Venus" : "Saturn"}</span></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+          <div className="bg-black/30 p-4 rounded-xl border border-white/5 col-span-1 md:col-span-2 shadow-inner"><div className="t50 text-[9px] uppercase mb-1 tracking-widest">Presiding Deity & Mantras</div><div className="font-bold text-amber-200 text-sm">Adhidevata: {activePlanet.adhidevata}</div><div className="t85 mt-2 bg-black/20 p-2 rounded border border-white/5"><span className="t50 text-[9px] uppercase block mb-1">Recite:</span>{activePlanet.beej}</div></div>
+          <div className="bg-black/30 p-4 rounded-xl border border-white/5 shadow-inner"><div className="t50 text-[9px] uppercase mb-1 tracking-widest">Gemstone</div><div className="font-bold t100">{activePlanet.gem}</div></div>
+          <div className="bg-black/30 p-4 rounded-xl border border-white/5 shadow-inner"><div className="t50 text-[9px] uppercase mb-1 tracking-widest">Charity (Dana)</div><div className="font-bold t100">{activePlanet.charity}</div></div>
         </div>
       </div>
 
