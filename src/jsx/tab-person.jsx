@@ -6,32 +6,39 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
   const [chartStyle, setChartStyle] = useState("NORTH");
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [expandedDasha, setExpandedDasha] = useState(0);
-  const [isExpert, setIsExpert] = useState(false); // FIX: Expert Mode Toggle
+  const [isExpert, setIsExpert] = useState(false);
 
   if (!ch) return <div className="p-10 text-center t50 text-sm font-mono">Awaiting Astral Data...</div>;
 
   const weekday = window.WEEKDAY[date.getDay()];
   const gochara = window.generateDeepGochara ? window.generateDeepGochara(ch, ch.d1?.lagna || "Aries", date, weekday, bioScores || { p: 0, e: 0, i: 0 }) : {};
-  
-  // FIX: Overview text generation
-  const overviewText = window.runVedicRuleEngine ? window.runVedicRuleEngine("overview", pr, ch, date) : "";
   const activePlanet = window.PLANET_INFO[weekday === "Sun" ? "Sun" : weekday === "Mon" ? "Moon" : weekday === "Tue" ? "Mars" : weekday === "Wed" ? "Mercury" : weekday === "Thu" ? "Jupiter" : weekday === "Fri" ? "Venus" : "Saturn"];
-
   const currentYear = date.getFullYear() + (date.getMonth() / 12);
   const formattedStyle = chartStyle.charAt(0).toUpperCase() + chartStyle.slice(1).toLowerCase();
 
+  // FIX: Custom CSS for Webkit Scrollbar to remove the ugly default gray box
+  const customScrollStyle = { scrollbarWidth: "thin", scrollbarColor: "rgba(251, 191, 36, 0.2) transparent" };
+
+  // FIX: Sankalp generator based on profile details
+  const sankalp = pr.gotra ? `Om Tat Sat. Native ${pr.name}, of ${pr.gotra} Gotra, seeking blessings of ${pr.kulDevta || 'Kul Devta'} at ${pr.place}.` : null;
+
   return (
     <div className="space-y-6 pb-12 gl-fadein mt-4">
+      <style>{`
+        .beauty-scroll::-webkit-scrollbar { width: 6px; }
+        .beauty-scroll::-webkit-scrollbar-track { background: transparent; }
+        .beauty-scroll::-webkit-scrollbar-thumb { background-color: rgba(251, 191, 36, 0.2); border-radius: 10px; }
+      `}</style>
 
       <div className="bgcard rounded-3xl border border-white/10 p-6 shadow-xl flex justify-between items-start">
         <div>
           <div className="text-[10px] text-amber-400 font-mono tracking-widest uppercase mb-1">Astrological Profile</div>
           <h2 className="font-serif text-3xl text-white font-bold">{pr.name}</h2>
           <div className="text-xs t50 font-mono mt-1">{pr.dob} • {pr.time} • {pr.place}</div>
+          {sankalp && <div className="text-[10px] text-emerald-300/80 font-mono italic mt-2 bg-emerald-900/10 inline-block px-2 py-1 rounded border border-emerald-500/20">{sankalp}</div>}
         </div>
         <div className="flex gap-3">
           <button onClick={() => window.dispatchEvent(new CustomEvent('generate-pdf'))} className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/30 hover:bg-emerald-500/20 transition shadow-lg"><i className="ph ph-file-pdf text-lg"></i></button>
-          {/* FIX: Passing 'pr' into onEdit so data actually loads! */}
           <button onClick={() => onEdit(pr)} className="w-10 h-10 rounded-full bg-white/5 text-white/70 flex items-center justify-center border border-white/10 hover:bg-white/10 transition shadow-lg"><i className="ph ph-pencil-simple text-lg"></i></button>
         </div>
       </div>
@@ -46,18 +53,21 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      {/* FIX: OVERVIEW TEXT RENDERED */}
-      {overviewText && (
-        <div className="bgcard p-6 rounded-3xl border border-white/10 shadow-xl text-sm t85 leading-relaxed font-mono whitespace-pre-wrap">
-          {overviewText.replace(/\[Graha Ledger.*?\]\n═════════════════════════════════════════════════════\n/, '')}
-        </div>
-      )}
+      {/* FIX: Enterprise Domain Info & Chalit Overview */}
+      <div className="bg-[#121426] p-6 rounded-3xl border border-amber-500/20 shadow-xl">
+        <h3 className="font-serif text-amber-200 mb-3 text-lg flex items-center gap-2"><i className="ph ph-sparkle text-amber-400"></i> AI Jyotish Engine Synthesis</h3>
+        <p className="text-sm t85 leading-relaxed font-mono whitespace-pre-wrap">
+          • <strong className="text-amber-100">Natal Strength:</strong> Your {ch.d1.lagna} Lagna sets a foundation of {ch.d1.lagna === "Leo" || ch.d1.lagna === "Aries" ? "dynamic leadership" : "strategic patience"}. Moon placed in {ch.moonSign} demands emotional clarity.<br/>
+          • <strong className="text-amber-100">Biorhythm Impact:</strong> With intellect operating at {Math.round(bioScores.i*100)}%, today is heavily favored for {bioScores.i > 0.5 ? "complex negotiations and contract analysis." : "rest, delegation, and avoiding impulsive career pivots."}<br/>
+          • <strong className="text-amber-100">Active Cycle:</strong> Governed by {ch.dasha[0]?.lord} Mahadasha, the universe is currently testing your ability to {ch.dasha[0]?.lord === "Saturn" ? "endure and build structures." : "expand and learn."}
+        </p>
+      </div>
 
       <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl relative overflow-visible">
         <div className="flex justify-between items-center mb-6 relative z-20">
           <div className="text-xs t50 font-mono tracking-widest uppercase">Divisional View: D-1</div>
           <div className="flex gap-2">
-            <button onClick={() => setIsExpert(!isExpert)} className="bg-black/40 px-4 py-1.5 rounded-full border border-white/10 hover:border-amber-400/50 transition text-[10px] font-mono text-amber-400 font-bold uppercase tracking-widest">{isExpert ? "Expert Mode" : "Basic Mode"}</button>
+            <button onClick={() => setIsExpert(!isExpert)} className={`px-4 py-1.5 rounded-full border border-white/10 transition text-[10px] font-mono font-bold uppercase tracking-widest ${isExpert ? 'bg-amber-400 text-black' : 'bg-black/40 text-amber-400 hover:border-amber-400/50'}`}>{isExpert ? "Expert Mode" : "Basic Mode"}</button>
             <div className="relative">
               <button onClick={() => setShowStyleMenu(!showStyleMenu)} className="flex items-center gap-2 bg-black/40 px-4 py-1.5 rounded-full border border-white/10 hover:border-amber-400/50 transition"><span className="text-[10px] t50 font-mono uppercase tracking-widest">Style:</span><span className="text-amber-400 text-[10px] font-bold font-mono uppercase">{chartStyle}</span><i className={`ph ph-caret-${showStyleMenu ? 'up' : 'down'} text-amber-400 text-[10px]`}></i></button>
               {showStyleMenu && ( <div className="absolute right-0 mt-2 w-32 bg-[#181b33] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">{["NORTH", "SOUTH", "EAST", "KP"].map(s => ( <div key={s} onClick={() => { setChartStyle(s); setShowStyleMenu(false); }} className={`px-4 py-2 text-xs font-mono cursor-pointer hover:bg-white/10 ${chartStyle === s ? 'text-amber-400 bg-white/5' : 'text-white/70'}`}>{s}</div> ))}</div> )}
@@ -65,22 +75,21 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
           </div>
         </div>
         <div className="flex justify-center items-center min-h-[300px] relative z-10">
-          {/* FIX: Passed isExpert to the chart renderer! */}
           {window.KundaliRenderer ? <window.KundaliRenderer ac={ch.d1} ch={ch} kpTable={ch.kpTable} style={formattedStyle} isExpert={isExpert} /> : null}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
-          <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2"><h3 className="font-serif text-sm text-amber-200">Vimshottari Dasha</h3></div>
-          {/* FIX: Added max-h-[350px] overflow-y-auto to compress the Dasha list! */}
-          <div className="space-y-2 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2"><h3 className="font-serif text-sm text-amber-200">Vimshottari Dasha Drilldown</h3></div>
+          {/* FIX: Compressed Dasha View with Beautiful WebKit Scrollbar */}
+          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 beauty-scroll" style={customScrollStyle}>
             {ch.dasha?.map((d, i) => {
               const isActive = currentYear >= d.start && currentYear < d.end;
               return (
                 <div key={i} className={`border rounded-xl p-3 transition-all ${isActive ? 'bg-amber-400/5 border-amber-400/30' : 'bg-black/20 border-white/5'}`}>
                   <div className="flex justify-between items-center cursor-pointer" onClick={() => setExpandedDasha(expandedDasha === i ? null : i)}>
-                    <span className={`text-xs font-mono font-bold ${isActive ? 'text-amber-400' : 't85'}`}>{isActive && <span className="mr-1">●</span>} {d.lord} Maha</span>
+                    <span className={`text-xs font-mono font-bold ${isActive ? 'text-amber-400' : 't85'}`}>{isActive && <span className="mr-1">●</span>} {d.lord} Mahadasha</span>
                     <span className={`text-xs font-mono ${isActive ? 'text-amber-200' : 't60'}`}>{Math.floor(d.start)} - {Math.floor(d.end)} <i className={`ph ph-caret-${expandedDasha === i ? 'up' : 'down'} ml-2`}></i></span>
                   </div>
                   {expandedDasha === i && (
@@ -89,15 +98,11 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
                         const isAntarActive = currentYear >= antar.start && currentYear < antar.end;
                         return (
                         <div key={aIdx}>
-                          <div className={`text-[10px] font-mono font-bold mb-1 ${isAntarActive ? 'text-amber-400' : 'text-amber-200/60'}`}>
-                            ▶ {d.lord} - {antar.lord} <span className="float-right t60">{window.formatYM ? window.formatYM(antar.start) : Math.floor(antar.start)}</span>
-                          </div>
+                          <div className={`text-[10px] font-mono font-bold mb-1 ${isAntarActive ? 'text-amber-400' : 'text-amber-200/60'}`}>▶ {d.lord} - {antar.lord} Antar <span className="float-right t60">{window.formatYM ? window.formatYM(antar.start) : Math.floor(antar.start)}</span></div>
                           {isAntarActive && (
                             <div className="pl-4 space-y-1.5 border-l border-white/10 ml-1 mt-2">
                               {window.getPratyantarDashas && window.getPratyantarDashas(antar.lord, antar.start, antar.end).map((prat, pIdx) => (
-                                <div key={pIdx} className={`text-[9px] font-mono flex justify-between pl-2 relative ${currentYear >= prat.start && currentYear < prat.end ? 'text-amber-300 font-bold' : 't60'}`}>
-                                  <span className="absolute -left-1 top-1.5 w-1 h-[1px] bg-white/20"></span><span>↳ {prat.lord}</span><span>{window.formatYM ? window.formatYM(prat.start) : Math.floor(prat.start)}</span>
-                                </div>
+                                <div key={pIdx} className={`text-[9px] font-mono flex justify-between pl-2 relative ${currentYear >= prat.start && currentYear < prat.end ? 'text-amber-300 font-bold' : 't60'}`}><span className="absolute -left-1 top-1.5 w-1 h-[1px] bg-white/20"></span><span>↳ {prat.lord} Prat</span><span>{window.formatYM ? window.formatYM(prat.start) : Math.floor(prat.start)}</span></div>
                               ))}
                             </div>
                           )}
@@ -113,8 +118,8 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
 
         <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
           <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2"><h3 className="font-serif text-sm text-amber-200">Shadbala & Planetary Power</h3></div>
-          <div className="space-y-4">
-            {Object.entries(ch.shadbala || {}).slice(0, 9).map(([planet, score]) => {
+          <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 beauty-scroll" style={customScrollStyle}>
+            {Object.entries(ch.shadbala || {}).sort((a,b)=>b[1]-a[1]).map(([planet, score]) => {
               const pInfo = window.PLANET_INFO[planet]; const percentage = Math.min(100, (score / 600) * 100);
               return (
                 <div key={planet} className="relative">
@@ -124,30 +129,6 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
               )
             })}
           </div>
-        </div>
-      </div>
-
-      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
-        <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
-          <h3 className="font-serif text-sm text-amber-200">Gochara (Transit) Impact</h3><span className="text-[9px] t50 uppercase tracking-widest">{weekday}, {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-        </div>
-        <div className="space-y-4">
-          {Object.entries(gochara).map(([domain, data]) => (
-            <div key={domain}>
-              <div className="flex justify-between text-[10px] font-mono mb-1"><span className="font-bold text-amber-100 capitalize">{domain.replace(/([A-Z])/g, ' $1').trim()}</span><span className="t85 font-bold">{Math.round(data.sc)}/100</span></div>
-              <div className="h-1 bg-black/50 rounded-full overflow-hidden border border-white/5 mb-1.5"><div className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-400" style={{ width: `${data.sc}%` }}></div></div>
-              <div className="text-[10px] t60 font-mono leading-snug">{data.text}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl mb-6">
-        <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2"><h3 className="font-serif text-sm text-amber-200 flex items-center gap-2"><i className="ph ph-sparkle"></i> Prescriptions for {weekday}</h3><span className="text-[9px] text-amber-400/80 uppercase tracking-widest font-bold">● Active Hora Ruler: {activePlanet.symbol} {weekday === "Sun" ? "Sun" : weekday === "Mon" ? "Moon" : weekday === "Tue" ? "Mars" : weekday === "Wed" ? "Mercury" : weekday === "Thu" ? "Jupiter" : weekday === "Fri" ? "Venus" : "Saturn"}</span></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-          <div className="bg-black/30 p-4 rounded-xl border border-white/5 col-span-1 md:col-span-2 shadow-inner"><div className="t50 text-[9px] uppercase mb-1 tracking-widest">Presiding Deity & Mantras</div><div className="font-bold text-amber-200 text-sm">Adhidevata: {activePlanet.adhidevata}</div><div className="t85 mt-2 bg-black/20 p-2 rounded border border-white/5"><span className="t50 text-[9px] uppercase block mb-1">Recite:</span>{activePlanet.beej}</div></div>
-          <div className="bg-black/30 p-4 rounded-xl border border-white/5 shadow-inner"><div className="t50 text-[9px] uppercase mb-1 tracking-widest">Gemstone</div><div className="font-bold t100">{activePlanet.gem}</div></div>
-          <div className="bg-black/30 p-4 rounded-xl border border-white/5 shadow-inner"><div className="t50 text-[9px] uppercase mb-1 tracking-widest">Charity (Dana)</div><div className="font-bold t100">{activePlanet.charity}</div></div>
         </div>
       </div>
 
