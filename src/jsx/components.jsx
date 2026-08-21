@@ -1,7 +1,7 @@
 // src/jsx/components.jsx
 const React = window.React;
 
-// --- 0. ERROR BOUNDARY COMPONENT ---
+// --- 0. ERROR BOUNDARY & IDLE TIMEOUT HOOK ---
 window.ErrorBoundary = class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -37,6 +37,24 @@ window.ErrorBoundary = class ErrorBoundary extends React.Component {
     }
     return this.props.children;
   }
+};
+
+window.useIdleTimeout = (onIdle, timeoutMs = 300000) => {
+  const { useEffect } = window.React;
+  useEffect(() => {
+    let timer;
+    const resetTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(onIdle, timeoutMs);
+    };
+    const events = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+    resetTimer();
+    return () => {
+      clearTimeout(timer);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [onIdle, timeoutMs]);
 };
 
 // --- 1. SPIRITUAL LINEAGE DATA ---
