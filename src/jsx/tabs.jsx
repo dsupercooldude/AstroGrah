@@ -1,9 +1,8 @@
 // src/jsx/tabs.jsx
 var React = window.React;
-const { useState, Fragment } = window.React;
+var { useState, Fragment } = window.React;
 
 window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs, chs, u, setU, updateSettings }) => {
-  // Add WeekTab and MonthTab to the destructured imports
   const { PersonTab, ReportsTab, PanchangTab, CompatTab, AskTab, WeekTab, MonthTab } = window;
   const [tb, setTb] = useState("person");
 
@@ -15,8 +14,8 @@ window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs,
           { id: "reports", l: "Advanced Reports" },
           { id: "panchang", l: "Panchang & Muhurta" },
           { id: "union", l: "Union Milan" },
-          { id: "week", l: "7-Day AI" },        // NEW
-          { id: "month", l: "30-Day Macro" },   // NEW
+          { id: "week", l: "7-Day AI" },
+          { id: "month", l: "30-Day Macro" },
           { id: "ask", l: "Vedic AI Sage" }
         ].map((t) => (
           <button key={t.id} onClick={() => setTb(t.id)} className={`flex-1 whitespace-nowrap rounded-xl px-3 py-2.5 transition ${tb === t.id ? "bg-amber-400/20 text-amber-300 font-bold shadow" : "t50 hover:t100"}`}>
@@ -25,12 +24,12 @@ window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs,
         ))}
       </div>
       
-      {tb === "person" && <PersonTab pr={pr} ch={ch} date={date} setDate={setDate} bioScores={window.bio ? window.bio(pr?.dob, date, pr?.utcOffset) : null} onEdit={onEditProfile} />}
+      {tb === "person" && <PersonTab pr={pr} ch={ch} date={date} setDate={setDate} settings={settings} onEdit={onEditProfile} bioScores={window.bio ? window.bio(pr?.dob, date, pr?.utcOffset) : {p:0,e:0,i:0}} />}
       {tb === "reports" && <ReportsTab pr={pr} ch={ch} />}
       {tb === "panchang" && <PanchangTab d={date} setDate={setDate} p={pr} utc={pr?.utcOffset || 5.5} settings={settings} />}
       {tb === "union" && <CompatTab prs={prs} chs={chs} settings={settings} date={date} />}
-      {tb === "week" && <WeekTab pr={pr} ch={ch} />}    {/* NEW */}
-      {tb === "month" && <MonthTab pr={pr} ch={ch} />}  {/* NEW */}
+      {tb === "week" && <WeekTab pr={pr} ch={ch} />}
+      {tb === "month" && <MonthTab pr={pr} ch={ch} />}
       {tb === "ask" && <AskTab em={u.email} emHash={u.emailHash} set={settings} pr={pr} ch={ch} date={date} />}
     </Fragment>
   );
