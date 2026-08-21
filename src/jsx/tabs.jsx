@@ -2,13 +2,27 @@
 const { useState, useEffect, Fragment } = window.React;
 
 window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
-  const { Icon, BiorhythmChart, KundaliRenderer, PLANET_INFO, bio, generateDeepGochara, WEEKDAY, formatYM, getAntardashas, getPratyantarDashas, getPlanetaryDignity } = window;
+  const { Icon, BiorhythmChart, KundaliRenderer, PLANET_INFO, bio, generateDeepGochara, WEEKDAY, formatYM, getAntardashas, getPratyantarDashas, getPlanetaryDignity, executeMultiProviderAI, runVedicRuleEngine } = window;
 
   const [div, setDiv] = useState(1);
   const [chartStyle, setChartStyle] = useState(settings.kundaliStyle || "north");
   const [expert, setExpert] = useState(false);
+  
   const [expandedDasha, setExpandedDasha] = useState(null);
   const [expandedAntar, setExpandedAntar] = useState(null);
+  
+  const [isExporting, setIsExporting] = useState(false);
+  const [pdfForecast, setPdfForecast] = useState("");
+
+  const currentDecYear = date.getFullYear() + date.getMonth() / 12 + date.getDate() / 365.25;
+
+  // Auto-expand the currently active Mahadasha on load
+  useEffect(() => {
+    if (ch?.dasha && expandedDasha === null) {
+      const activeIdx = ch.dasha.findIndex(d => currentDecYear >= d.start && currentDecYear < d.end);
+      if (activeIdx !== -1) setExpandedDasha(activeIdx);
+    }
+  }, [ch, date, currentDecYear, expandedDasha]);
 
   if (!ch) return <div className="p-4 border border-white/10 rounded-xl text-center text-sm t60 bgfaint mt-4">Compute Error. Please verify coordinates.</div>;
 
@@ -24,85 +38,105 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
   }
   const bT = bio(pr.dob, date, pr.utcOffset);
   const scores = { p: Math.floor(bT.p * 100), e: Math.floor(bT.e * 100), i: Math.floor(bT.i * 100) };
-
   const gochara = generateDeepGochara(ch, ch.d1.lagna, date, pK, scores);
-  const currentDecYear = date.getFullYear() + date.getMonth() / 12 + date.getDate() / 365;
 
-  // --- PDF EXPORT ENGINE ---
+  // Identify active periods for the report
+  const activeMahaObj = ch.dasha.find(d => currentDecYear >= d.start && currentDecYear < d.end);
+  const activeMaha = activeMahaObj?.lord || "Jupiter";
+  let activeAntar = activeMaha;
+  if (activeMahaObj) {
+    const antars = getAntardashas(activeMahaObj.lord, activeMahaObj.start, activeMahaObj.end);
+    activeAntar = antars.find(a => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha;
+  }
+
+  // --- COMPREHENSIVE CONTINUOUS PDF ENGINE ---
   const handleExportPDF = async () => {
     if (!window.html2canvas || !window.jspdf) return alert("PDF Engine loading, please wait a second...");
-    
-    const zone = document.getElementById("pdf-export-zone");
-    if (!zone) return;
-    
-    const btnIcon = document.getElementById("export-btn-icon");
-    if (btnIcon) btnIcon.className = "ph ph-spinner animate-spin";
-    
+    setIsExporting(true);
+
     try {
-      // Create high-res 2x snapshot, ignoring interactive UI controls (class: no-export)
-      const canvas = await window.html2canvas(zone, {
+      // 1. Generate AI Weekly & Monthly Forecast
+      let forecastText = "";
+      const prompt = `Generate a highly professional, concise astrological forecast report for ${pr.name}. Current date: ${date.toDateString()}. 
+      Provide two short paragraphs: "Weekly Outlook" and "Monthly Outlook". 
+      Base this on their Lagna (${ch.d1.lagna}), Moon Sign (${ch.moonSign}), active Dasha (${activeMaha}-${activeAntar}), and current transits (Jupiter in ${ch.transits.Jupiter}, Saturn in ${ch.transits.Saturn}). Do not use conversational filler.`;
+      
+      const systemCtx = "You are an expert Vedic astrologer generating a formal PDF report.";
+      
+      if (settings.aiModel !== "offline") {
+        const apiRes = await executeMultiProviderAI(prompt, settings, systemCtx);
+        if (apiRes && apiRes.text) forecastText = apiRes.text;
+      }
+      if (!forecastText) {
+        forecastText = runVedicRuleEngine("Provide my future prediction and monthly outlook.", pr, ch, date);
+      }
+      
+      setPdfForecast(forecastText);
+
+      // Give React 1 second to flush the state and render the ghost DOM
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const reportZone = document.getElementById("ghost-pdf-report");
+      if (!reportZone) throw new Error("Report DOM missing");
+
+      // 2. High-Res Canvas Snapshot
+      const canvas = await window.html2canvas(reportZone, {
         scale: 2,
         backgroundColor: "#121426",
-        ignoreElements: (el) => el.classList.contains("no-export")
+        useCORS: true
       });
       
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new window.jspdf.jsPDF("p", "mm", "a4");
       
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      // 3. Continuous Height PDF (No Page Breaks)
+      const pdfWidth = canvas.width * 0.75;
+      const pdfHeight = canvas.height * 0.75;
       
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      // Map canvas to A4 dimensions and calculate pagination
-      pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
+      const pdf = new window.jspdf.jsPDF({
+        orientation: pdfWidth > pdfHeight ? "l" : "p",
+        unit: "pt",
+        format: [pdfWidth, pdfHeight]
+      });
+      
+      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+      
       const safeName = pr.name.replace(/\s+/g, "_");
-      pdf.save(`${safeName}_Graha_Ledger_Report.pdf`);
+      pdf.save(`${safeName}_Astrology_Report.pdf`);
+
     } catch (e) {
       console.error(e);
       alert("PDF Export failed: " + e.message);
     } finally {
-      if (btnIcon) btnIcon.className = "ph ph-download-simple";
+      setIsExporting(false);
     }
   };
 
   return (
-    <div className="space-y-4 pb-12 gl-fadein" id="pdf-export-zone">
+    <div className="space-y-4 pb-12 gl-fadein relative">
+      
       {/* 1. ACTIVE PROFILE HEADER */}
       <div className="rounded-3xl border border-white/10 p-5 mt-4 bgcard2 shadow-xl">
         <div className="flex justify-between items-start">
           <div>
-            <div className="font-mono text-[9px] uppercase text-amber-300 tracking-[0.25em]">Astrological Report</div>
+            <div className="font-mono text-[9px] uppercase text-amber-300 tracking-[0.25em]">Astrological Profile</div>
             <h2 className="font-serif text-2xl mt-0.5 text-white font-bold">{pr.name}</h2>
             <div className="text-[11px] font-mono t60 mt-1">
               {pr.dob} · {pr.time} · {pr.place} (UTC{pr.utcOffset >= 0 ? `+${pr.utcOffset}` : pr.utcOffset})
             </div>
           </div>
-          {/* PDF Export Button and Edit Button (Hidden during PDF generation) */}
-          <div className="flex gap-2 no-export">
-            <button onClick={handleExportPDF} title="Download PDF Report" className="p-2 border border-emerald-500/30 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 transition text-emerald-400">
-              <i id="export-btn-icon" className="ph ph-download-simple" style={{ fontSize: 18 }} />
+          <div className="flex gap-2">
+            <button onClick={handleExportPDF} disabled={isExporting} title="Export Comprehensive PDF" className="p-2 border border-emerald-500/30 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 transition text-emerald-400 disabled:opacity-50">
+              <i className={isExporting ? "ph ph-spinner animate-spin" : "ph ph-download-simple"} style={{ fontSize: 18 }} />
             </button>
-            <button onClick={() => onEditProfile(pr)} title="Edit Profile" className="p-2 border border-white/10 rounded-full bg-black/30 hover:bg-white/10 transition text-amber-300">
+            <button onClick={() => onEditProfile(pr)} title="Edit Profile" className="p-2 border border-white/10 rounded-full bg-black/30 hover:bg-white/10 transition text-amber-300 disabled:opacity-50">
               <Icon name="pencil-simple" size={18} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* 2. PROMINENT TIME-TRAVEL CONTROL BAR (Hidden from PDF) */}
-      <div className="bgcard rounded-2xl border border-amber-400/20 p-4 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-3 no-export">
+      {/* 2. PROMINENT TIME-TRAVEL CONTROL BAR */}
+      <div className="bgcard rounded-2xl border border-amber-400/20 p-4 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300">
             <Icon name="clock-countdown" size={22} />
@@ -122,19 +156,13 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
           <button onClick={() => setDate(new Date(date.getTime() + 24 * 60 * 60 * 1000))} className="px-2.5 py-1 rounded-lg bg-black/40 border border-white/10 hover:text-white transition">+1D</button>
           <button onClick={() => setDate(new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000))} className="px-2.5 py-1 rounded-lg bg-black/40 border border-white/10 hover:text-white transition">+1W</button>
           <button onClick={() => setDate(new Date(date.getTime() + 30 * 24 * 60 * 60 * 1000))} className="px-2.5 py-1 rounded-lg bg-black/40 border border-white/10 hover:text-white transition">+1M</button>
-          <input
-            type="date"
-            value={date.toISOString().slice(0, 10)}
-            onChange={(e) => { if (e.target.value) setDate(new Date(e.target.value + "T12:00:00")); }}
-            className="bg-black/50 border border-amber-400/30 rounded-lg px-2 py-0.5 text-xs text-amber-200 outline-none ml-1 cursor-pointer"
-          />
+          <input type="date" value={date.toISOString().slice(0, 10)} onChange={(e) => { if (e.target.value) setDate(new Date(e.target.value + "T12:00:00")); }} className="bg-black/50 border border-amber-400/30 rounded-lg px-2 py-0.5 text-xs text-amber-200 outline-none ml-1 cursor-pointer"/>
         </div>
       </div>
 
       {/* 3. KUNDALI CHART SECTION */}
       <div className="rounded-3xl border border-white/10 bgcard p-4">
-        {/* Render Controls hidden from PDF */}
-        <div className="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-white/5 pb-3 no-export">
+        <div className="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-white/5 pb-3">
           <div className="flex gap-1 flex-wrap bg-black/40 border border-white/10 rounded-xl p-1 font-mono text-[10px]">
             {expert && <Fragment>
               {[1, 7, 9, 10, 60].map((divNum) => (
@@ -177,12 +205,12 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
                   <div key={i}>
                     <div
                       onClick={() => setExpandedDasha(isExp ? null : i)}
-                      className={`flex justify-between items-center p-2.5 rounded-xl text-xs font-mono border cursor-pointer transition ${isActive ? "bg-amber-400/10 border-amber-400/40 font-bold text-amber-100 shadow-sm" : "bg-black/30 border-white/5 hover:border-white/20"}`}
+                      className={`flex justify-between items-center p-2.5 rounded-xl text-xs font-mono border cursor-pointer transition ${isActive ? "bg-amber-400/20 border-amber-400/50 font-bold text-amber-300 shadow-md ring-1 ring-amber-400/30" : "bg-black/30 border-white/5 hover:border-white/20"}`}
                     >
-                      <span style={{ color: PLANET_INFO[d.lord]?.color }}>{d.lord} Mahadasha</span>
+                      <span style={{ color: isActive ? '#FDE68A' : PLANET_INFO[d.lord]?.color }}>{d.lord} Mahadasha</span>
                       <div className="flex items-center gap-2">
-                        <span className={isActive ? "text-amber-200" : "t70"}>{Math.floor(d.start)} - {Math.floor(d.end)}</span>
-                        <Icon name={isExp ? "caret-up" : "caret-down"} className="t50 no-export" />
+                        <span className={isActive ? "text-amber-100" : "t70"}>{Math.floor(d.start)} - {Math.floor(d.end)}</span>
+                        <Icon name={isExp ? "caret-up" : "caret-down"} className={isActive ? "text-amber-200" : "t50"} />
                       </div>
                     </div>
                     {isExp && (
@@ -194,12 +222,12 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
                             <div key={idx}>
                               <div
                                 onClick={() => setExpandedAntar(isAntarExp ? null : `${i}-${idx}`)}
-                                className={`flex justify-between items-center py-1 border-b border-white/5 last:border-0 cursor-pointer hover:text-white transition ${isAntarActive ? "text-amber-300 font-bold bg-amber-400/5 px-2 rounded" : ""}`}
+                                className={`flex justify-between items-center py-1 border-b border-white/5 last:border-0 cursor-pointer hover:text-white transition ${isAntarActive ? "text-amber-300 font-bold bg-amber-400/10 px-2 rounded border border-amber-400/20" : ""}`}
                               >
                                 <span>{d.lord} - <span style={{ color: PLANET_INFO[ant.lord]?.color }}>{ant.lord}</span></span>
                                 <div className="flex items-center gap-2">
                                   <span>{formatYM(ant.start)} to {formatYM(ant.end)}</span>
-                                  <Icon name={isAntarExp ? "caret-up" : "caret-down"} className="t50 no-export" />
+                                  <Icon name={isAntarExp ? "caret-up" : "caret-down"} className="t50" />
                                 </div>
                               </div>
                               {isAntarExp && (
@@ -207,7 +235,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
                                   {getPratyantarDashas(ant.lord, ant.start, ant.end).map((prat, pIdx) => {
                                     const isPratActive = currentDecYear >= prat.start && currentDecYear < prat.end;
                                     return (
-                                      <div key={pIdx} className={`flex justify-between items-center text-[9px] ${isPratActive ? "text-amber-200 font-bold" : "t60"}`}>
+                                      <div key={pIdx} className={`flex justify-between items-center text-[9px] ${isPratActive ? "text-amber-300 font-bold bg-amber-400/10 px-1 rounded" : "t60"}`}>
                                         <span>➔ <span style={{ color: PLANET_INFO[prat.lord]?.color }}>{prat.lord}</span></span>
                                         <span>{formatYM(prat.start)} to {formatYM(prat.end)}</span>
                                       </div>
@@ -320,6 +348,88 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
       </div>
 
       <BiorhythmChart data={bsGraph} scores={scores} />
+
+      {/* ========================================== */}
+      {/* HIDDEN GHOST DOM FOR PERFECT PDF EXPORT    */}
+      {/* ========================================== */}
+      <div id="ghost-pdf-report" style={{ position: 'absolute', left: '-9999px', top: 0, width: '850px', backgroundColor: '#121426', padding: '40px', color: '#F2EFE6', fontFamily: 'Sora, sans-serif' }}>
+        
+        {/* REPORT HEADER */}
+        <div style={{ borderBottom: '2px solid rgba(212,165,116,0.3)', paddingBottom: '20px', marginBottom: '20px', textAlign: 'center' }}>
+          <h1 style={{ fontFamily: 'Fraunces, serif', fontSize: '32px', color: '#D4A574', margin: '0 0 10px 0' }}>Comprehensive Astrological Report</h1>
+          <h2 style={{ fontSize: '24px', margin: '0 0 5px 0' }}>{pr.name}</h2>
+          <p style={{ fontSize: '12px', color: 'rgba(242,239,230,0.7)', fontFamily: 'monospace' }}>
+            DOB: {pr.dob} | Time: {pr.time} | Place: {pr.place} | Target Date: {date.toDateString()}
+          </p>
+        </div>
+
+        {/* FOUNDATION INFO */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+          <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px' }}>
+            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Natal Foundation</h3>
+            <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
+              <div><strong>Ascendant (Lagna):</strong> {ch.d1.lagna}</div>
+              <div><strong>Moon Sign (Rashi):</strong> {ch.moonSign}</div>
+              <div><strong>Sun Sign:</strong> {ch.sunSign}</div>
+              <div><strong>Nakshatra:</strong> {ch.nak} (Pada {ch.pada})</div>
+            </div>
+          </div>
+          <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px' }}>
+            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Active Timeframe</h3>
+            <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
+              <div><strong>Mahadasha:</strong> {activeMaha}</div>
+              <div><strong>Antardasha:</strong> {activeAntar}</div>
+              <div><strong>Current Biorhythms:</strong> Physical {scores.p}%, Emotional {scores.e}%, Intellectual {scores.i}%</div>
+            </div>
+          </div>
+        </div>
+
+        {/* CHARTS GRID D1 & D9 */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '15px', borderRadius: '16px', textAlign: 'center' }}>
+                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '10px' }}>D-1 Rashi Chart</h4>
+                <div style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
+                    <KundaliRenderer ac={ch.d1} ch={ch} style="north" isExpert={true} />
+                </div>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '15px', borderRadius: '16px', textAlign: 'center' }}>
+                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '10px' }}>D-9 Navamsha Chart</h4>
+                <div style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
+                    <KundaliRenderer ac={ch.d9} ch={ch} style="north" isExpert={true} />
+                </div>
+            </div>
+        </div>
+
+        {/* CHARTS GRID D7 & D10 */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '15px', borderRadius: '16px', textAlign: 'center' }}>
+                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '10px' }}>D-7 Saptamsha Chart</h4>
+                <div style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
+                    <KundaliRenderer ac={ch.d7} ch={ch} style="north" isExpert={true} />
+                </div>
+            </div>
+            <div className="page-break-avoid" style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '15px', borderRadius: '16px', textAlign: 'center' }}>
+                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '10px' }}>D-10 Dashamsha Chart</h4>
+                <div style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
+                    <KundaliRenderer ac={ch.d10} ch={ch} style="north" isExpert={true} />
+                </div>
+            </div>
+        </div>
+
+        {/* AI FORECAST */}
+        <div style={{ background: 'rgba(212,165,116,0.05)', border: '1px solid rgba(212,165,116,0.3)', padding: '25px', borderRadius: '16px', marginBottom: '30px' }}>
+            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>AI Sage Forecast (Weekly & Monthly Outlook)</h3>
+            <div style={{ fontSize: '13px', lineHeight: '1.8', whiteSpace: 'pre-wrap', color: 'rgba(255,255,255,0.9)' }}>
+                {pdfForecast || "Generating..."}
+            </div>
+        </div>
+
+        {/* FOOTER */}
+        <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
+            Generated securely by Graha Ledger Enterprise • Cryptographic Vault System
+        </div>
+      </div>
+
     </div>
   );
 };
