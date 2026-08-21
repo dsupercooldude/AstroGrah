@@ -12,7 +12,6 @@ const bootInterval = setInterval(() => {
 
     function AppContent() {
       const [dbC, setDbC] = useState(() => AppDB.loadConfig()); const [u, setU] = useState(null); const [dt, setDt] = useState(new Date()); const [ss, setSs] = useState(false); const [ed, setEd] = useState(null); const [activeProfileId, setActiveProfileId] = useState(null); const [adminAuthOpen, setAdminAuthOpen] = useState(false); const [adminConsoleOpen, setAdminConsoleOpen] = useState(false);
-      // FIX: Ensure Devta parameters are in state
       const [formData, setFormData] = useState({ name: "", dob: "2000-01-01", time: "12:00", place: "", lat: "", lon: "", utcOffset: "5.5", gotra: "", jaati: "", kulDevta: "", gramDevta: "", sthanDevta: "" });
 
       window.useIdleTimeout(() => { if (u) { try { localStorage.removeItem("gl_active_user"); } catch (e) {} setU(null); alert("Session timed out."); } }, 300000);
@@ -62,6 +61,36 @@ const bootInterval = setInterval(() => {
       if (!u) return <AuthModal onLogin={(d) => { setU(d); if (d?.profiles?.length) setActiveProfileId(d.profiles[0].id); }} />;
       if (u?.requiresPasswordChange) return <ForcePasswordChange email={u.email} emailHash={u.emailHash} onComplete={() => setU({ ...u, requiresPasswordChange: false })} />;
 
+      const calculateTimezone = (lat, lon) => { if (lat >= 22.5 && lat <= 26.5 && lon >= 51.0 && lon <= 56.5) return "4.0"; if (lat >= 6.0 && lat <= 37.5 && lon >= 68.0 && lon <= 97.5) return "5.5"; if (lat >= 49.5 && lat <= 61.0 && lon >= -8.0 && lon <= 2.0) return "0.0"; return (Math.round((lon / 15) * 2) / 2).toFixed(1); };
+      
+      // FIX: Robust Auto-Fetch utilizing dual APIs (Nominatim + TimeApi)
+      const fetchCityCoordinates = async () => { 
+        const query = formData.place; 
+        if (!query) return alert("Please type a city name first."); 
+        const preset = window.CITY_PRESETS?.find((c) => c.name.toLowerCase().includes(query.toLowerCase())); 
+        if (preset) { setFormData((prev) => ({ ...prev, place: preset.name, lat: preset.lat.toString(), lon: preset.lon.toString(), utcOffset: preset.utc.toString() })); return; } 
+        try { 
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`); 
+            const data = await res.json(); 
+            if (data && data.length > 0) { 
+                const lat = parseFloat(data[0].lat); const lon = parseFloat(data[0].lon); 
+                let tz = calculateTimezone(lat, lon);
+                try {
+                    const timeRes = await fetch(`https://timeapi.io/api/TimeZone/coordinate?latitude=${lat}&longitude=${lon}`);
+                    if(timeRes.ok) {
+                        const tData = await timeRes.json();
+                        if(tData.currentUtcOffset && tData.currentUtcOffset.seconds !== undefined) {
+                            tz = (tData.currentUtcOffset.seconds / 3600).toFixed(1);
+                        }
+                    }
+                } catch(err) {}
+                setFormData((prev) => ({ ...prev, place: data[0].display_name.split(",")[0], lat: lat.toFixed(4), lon: lon.toFixed(4), utcOffset: tz })); 
+            } else { alert("City coordinates not found. Enter latitude and longitude manually."); } 
+        } catch (e) { alert("Network search failed. Enter coordinates manually."); } 
+      };
+
+      const handleGPS = () => { if (!navigator.geolocation) return alert("Geolocation not supported on this browser."); navigator.geolocation.getCurrentPosition( async (pos) => { const lat = pos.coords.latitude; const lon = pos.coords.longitude; const tz = calculateTimezone(lat, lon); let placeName = "GPS Location"; try { const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`); const d = await r.json(); placeName = d.address?.city || d.address?.town || d.address?.county || "Current Location"; } catch (e) {} setFormData((prev) => ({ ...prev, place: placeName, lat: lat.toFixed(4), lon: lon.toFixed(4), utcOffset: tz })); }, () => alert("GPS access denied.") ); };
+
       return (
         <div className="min-h-screen w-full font-sans pb-10 relative">
           <datalist id="gotras">{window.GOTRAS?.map((g) => (<option key={g} value={g} />))}</datalist>
@@ -86,7 +115,6 @@ const bootInterval = setInterval(() => {
               <div className="text-center p-8 border border-dashed border-white/20 rounded-3xl mt-10 bgfaint gl-fadein"><h2 className="font-serif text-2xl mb-2 text-amber-300">Welcome to Graha Ledger</h2><button onClick={() => handleOpenEdit({})} className="px-8 py-3 rounded-full bg-amber-400 text-black text-sm font-semibold hover:bg-amber-300 mt-4">Create Natal Profile</button></div>
             ) : ( <TabOrchestrator pr={aP} ch={chs[aP?.id]} date={dt} setDate={setDt} settings={set} onEditProfile={handleOpenEdit} prs={prs} chs={chs} u={u} setU={setU} updateSettings={updateSettings} /> )}
 
-            {/* EDIT MODAL WITH SPIRITUAL LINEAGE FORCED VISIBLE */}
             {ed && (
               <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={() => setEd(null)}>
                 <form onClick={(e) => e.stopPropagation()} onSubmit={hSave} className="w-full max-w-md bgcard2 rounded-3xl border border-white/10 p-6 space-y-3.5 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl relative custom-scrollbar">
@@ -96,7 +124,10 @@ const bootInterval = setInterval(() => {
                     <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Date of Birth</label><input required type="date" value={formData.dob} onChange={(e) => setFormData({ ...formData, dob: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" /></div>
                     <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Time (24h)</label><input required type="time" value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" /></div>
                   </div>
-                  <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Birth Place Name</label><input required value={formData.place} onChange={(e) => setFormData({ ...formData, place: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" placeholder="Type city..." /></div>
+                  <div>
+                    <label className="text-[9px] t50 uppercase font-mono mb-1 flex justify-between items-center"><span>Birth Place Name</span><button type="button" onClick={handleGPS} className="text-amber-300 hover:text-amber-200 border border-amber-300/30 px-2 py-0.5 rounded text-[10px]">Use GPS <Icon name="crosshair" /></button></label>
+                    <div className="flex gap-2"><input required value={formData.place} onChange={(e) => setFormData({ ...formData, place: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); fetchCityCoordinates(); } }} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" placeholder="Type city..." /><button type="button" onClick={fetchCityCoordinates} className="px-3 py-2 bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-xl text-xs">Auto-Fetch</button></div>
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Latitude</label><input required type="number" step="any" value={formData.lat} onChange={(e) => setFormData({ ...formData, lat: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-xs outline-none text-white" /></div>
                     <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Longitude</label><input required type="number" step="any" value={formData.lon} onChange={(e) => setFormData({ ...formData, lon: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-2 text-xs outline-none text-white" /></div>
