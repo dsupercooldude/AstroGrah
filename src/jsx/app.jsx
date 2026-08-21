@@ -161,6 +161,5 @@ const bootInterval = setInterval(() => {
     if (root) { root.render(<ErrorBoundary><AppContent /></ErrorBoundary>); }
   } else if (bootAttempts > 80) { 
     clearInterval(bootInterval);
-    document.getElementById("bootloader").innerHTML = `<div style="background:#1C1F3D; padding:30px; border-radius:16px; border:1px solid #F87171; text-align:center; max-width: 450px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5);"><h2 style="color:#F87171; font-family:serif; margin-bottom: 10px; font-size: 24px;">System Under Maintenance</h2><p style="color:rgba(255,255,255,0.8); font-size:13px; margin-bottom:20px;">The astrological engine is syncing. Please try refreshing.</p><button onclick="try{localStorage.clear();}catch(e){} window.location.reload(true);" style="background:#F87171; color:black; padding:10px 20px; border-radius:8px; font-weight:bold; border:none; cursor:pointer; font-size: 14px; width: 100%;">Force Reload Engine</button></div>`;
-  }
+  document.getElementById("bootloader").innerHTML = `<div style="background:#1C1F3D...><h2 style="color:#F87171...>System Under Maintenance</h2><p...>The astrological engine is syncing. Please try refreshing.</p><button...>Force Reload Engine</button></div>`;  }
 }, 50);
