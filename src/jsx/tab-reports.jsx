@@ -13,6 +13,27 @@ window.ReportsTab = ({ pr, ch }) => {
   const amkPlanet = jaimini["Amatyakaraka (Career)"] || "Moon";
   const dkPlanet = jaimini["Darakaraka (Spouse)"] || "Venus";
 
+  // Deep Personalization Dictionaries for normal user understanding
+  const soulLessons = {
+    Sun: "mastering true leadership, overcoming ego, and discovering your inner authority.",
+    Moon: "mastering your emotions, nurturing others, and maintaining healthy personal boundaries.",
+    Mars: "channeling raw energy, displaying immense courage, and protecting others through disciplined action.",
+    Mercury: "mastering communication, intellectual pursuits, and resolving life's dualities through logic.",
+    Jupiter: "seeking ultimate wisdom, higher learning, and guiding others through philosophical expansion.",
+    Venus: "focusing on profound relationships, universal harmony, and balancing material beauty with devotion.",
+    Saturn: "learning extreme perseverance, accepting limitations, and finding immense peace in duty."
+  };
+
+  const careerPaths = {
+    Sun: "placing yourself in visible positions of authority and command.",
+    Moon: "utilizing empathy, public relations, or caring for the needs of the masses.",
+    Mars: "taking bold initiatives, engineering solutions, and thriving in high-pressure conflict resolution.",
+    Mercury: "leveraging writing, speaking, commerce, and rapid analytical thinking.",
+    Jupiter: "teaching, advising, financial planning, or guiding corporate/spiritual ethics.",
+    Venus: "working in design, luxury, diplomacy, or roles requiring deep relationship management.",
+    Saturn: "embracing long-term, structured, and heavy administrative or organizational roles."
+  };
+
   return (
     <div className="space-y-6 pb-12 gl-fadein mt-4">
       
@@ -48,8 +69,8 @@ window.ReportsTab = ({ pr, ch }) => {
             </tbody>
           </table>
         </div>
-        <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed overflow-y-auto max-h-32 custom-scrollbar shadow-inner">
-          <strong className="text-amber-400">The Cosmic GPS:</strong> This ledger tracks the precise mathematical location of each planet at the exact moment of birth. While millions of people share your Sun or Moon sign, your specific <strong>Nakshatra (Constellation)</strong> and <strong>Longitude</strong> create your highly unique personality blueprint. <em>Direct</em> motion means the planet's energy flows outward easily, while <em>Retrograde</em> suggests specific karmic lessons you must reflect upon.
+        <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed shadow-inner">
+          <strong className="text-amber-400">What this means for you:</strong> Think of this as your cosmic DNA tracker. While millions of people share your Sun or Moon sign, your specific <strong>Nakshatra (Constellation)</strong> and exact <strong>Longitude</strong> create a highly unique psychological blueprint. If a planet's motion is <em>Direct</em>, its energy flows outward easily. If it is <em>Retrograde</em>, it suggests a specific life lesson you will need to internalize and repeat until mastered.
         </div>
       </div>
 
@@ -70,11 +91,11 @@ window.ReportsTab = ({ pr, ch }) => {
               );
             })}
           </div>
-          <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed overflow-y-auto max-h-40 custom-scrollbar shadow-inner">
+          <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed shadow-inner">
             <strong className="text-amber-400 block mb-2">Your Personal Management Team:</strong>
-            ● Your <strong>Atma Karaka (CEO)</strong> is <strong style={{ color: window.PLANET_INFO[akPlanet].color }}>{akPlanet}</strong>. This dictates your deepest soul purpose and primary karmic challenges this lifetime.<br/><br/>
-            ● Your <strong>Amatya Karaka (Career)</strong> is <strong style={{ color: window.PLANET_INFO[amkPlanet].color }}>{amkPlanet}</strong>, which guides how you achieve success and wealth.<br/><br/>
-            ● Your <strong>Dara Karaka (Partnership)</strong> is <strong style={{ color: window.PLANET_INFO[dkPlanet].color }}>{dkPlanet}</strong>, revealing the type of energy you attract in long-term relationships and marriage.
+            ● <strong>Your CEO (Atma Karaka):</strong> Because your highest degree planet is <strong style={{ color: window.PLANET_INFO[akPlanet].color }}>{akPlanet}</strong>, your ultimate soul purpose in this lifetime revolves around {soulLessons[akPlanet] || "discovering your unique path."}<br/><br/>
+            ● <strong>Your Career Guide (Amatya Karaka):</strong> With <strong style={{ color: window.PLANET_INFO[amkPlanet].color }}>{amkPlanet}</strong> as your career minister, you will achieve your greatest worldly success by {careerPaths[amkPlanet] || "focusing on your innate talents."}<br/><br/>
+            ● <strong>Your Partner (Dara Karaka):</strong> <strong style={{ color: window.PLANET_INFO[dkPlanet].color }}>{dkPlanet}</strong> dictates that you will attract (and need) long-term partners who embody the traits of this specific planet.
           </div>
         </div>
 
@@ -92,11 +113,11 @@ window.ReportsTab = ({ pr, ch }) => {
               );
             })}
           </div>
-          <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed overflow-y-auto max-h-40 custom-scrollbar shadow-inner">
+          <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed shadow-inner">
             <strong className="text-amber-400 block mb-2">Planetary Battery Life:</strong> 
-            Avasthas reveal the maturity and operational capacity of your planets.<br/><br/>
-            ● <strong>Yuva (Youth):</strong> The planet is operating at 100% peak vibrancy, delivering active and powerful results in your life.<br/><br/>
-            ● <strong>Mrita (Dead) or Vriddha (Old):</strong> The planet's energy is currently dormant or fatigued. It requires patience, conscious effort, or spiritual remedies to successfully unlock its benefits.
+            Avasthas act like a battery indicator, revealing the maturity and active strength of your planets.<br/><br/>
+            ● <strong>Yuva (Youth):</strong> The planet is operating at 100% peak vibrancy, delivering active, powerful, and undeniable results in your life.<br/><br/>
+            ● <strong>Mrita (Dead) or Vriddha (Old):</strong> The planet's energy is currently dormant or fatigued. It requires patience, conscious effort, or specific spiritual remedies to successfully unlock its benefits.
           </div>
         </div>
 
