@@ -18,6 +18,25 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
   return (
     <div className="space-y-6 pb-12 gl-fadein mt-4">
 
+      {/* 1. RESTORED PROFILE HEADER & PDF BUTTONS */}
+      <div className="bgcard rounded-3xl border border-white/10 p-6 shadow-xl flex justify-between items-start">
+        <div>
+          <div className="text-[10px] text-amber-400 font-mono tracking-widest uppercase mb-1">Astrological Profile</div>
+          <h2 className="font-serif text-3xl text-white font-bold">{pr.name}</h2>
+          <div className="text-xs t50 font-mono mt-1">
+            {pr.dob} • {pr.time} • {pr.place} (UTC{pr.utcOffset})
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onPdf} className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/30 hover:bg-emerald-500/20 transition shadow-lg" title="Download PDF">
+            <i className="ph ph-file-pdf text-lg"></i>
+          </button>
+          <button onClick={onEdit} className="w-10 h-10 rounded-full bg-white/5 text-white/70 flex items-center justify-center border border-white/10 hover:bg-white/10 transition shadow-lg" title="Edit Profile">
+            <i className="ph ph-pencil-simple text-lg"></i>
+          </button>
+        </div>
+      </div>
+
       {overviewText && (
         <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
           <h3 className="font-serif text-amber-200 text-sm mb-3 border-b border-white/10 pb-2 flex items-center gap-2">
@@ -165,7 +184,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl mb-6">
+      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
         <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
           <h3 className="font-serif text-sm text-amber-200 flex items-center gap-2">
             <i className="ph ph-sparkle"></i> Prescriptions for {weekday}
@@ -191,6 +210,30 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
             <div className="font-bold t100">{pData.charity}</div>
           </div>
         </div>
+      </div>
+
+      {/* 2. RESTORED BIOCYCLE SYNCHRONIZATION WIDGET */}
+      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl mb-6">
+        <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
+          <h3 className="font-serif text-sm text-amber-200 uppercase tracking-widest">Biocycle Synchronization</h3>
+          <span className="text-[9px] t50 uppercase tracking-widest">15-Day Local Time Wave</span>
+        </div>
+        {window.BiocycleWidget ? <window.BiocycleWidget bioScores={bioScores} /> : (
+          <div className="grid grid-cols-3 gap-4 text-center font-mono">
+            <div className="bg-black/30 p-4 rounded-xl border border-red-500/20">
+              <div className="text-[10px] text-red-400 mb-1">PHYSICAL</div>
+              <div className="text-lg text-white">{(bioScores?.p * 100 || 0).toFixed(0)}%</div>
+            </div>
+            <div className="bg-black/30 p-4 rounded-xl border border-blue-500/20">
+              <div className="text-[10px] text-blue-400 mb-1">EMOTIONAL</div>
+              <div className="text-lg text-white">{(bioScores?.e * 100 || 0).toFixed(0)}%</div>
+            </div>
+            <div className="bg-black/30 p-4 rounded-xl border border-amber-500/20">
+              <div className="text-[10px] text-amber-400 mb-1">INTELLECTUAL</div>
+              <div className="text-lg text-white">{(bioScores?.i * 100 || 0).toFixed(0)}%</div>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>
