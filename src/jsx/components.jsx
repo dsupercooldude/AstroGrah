@@ -253,7 +253,15 @@ if (!window.panchang) {
   window.panchang = (dateStr) => {
     const d = new Date(dateStr || Date.now());
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    return { day: days[d.getDay()], tithi: "Shukla Paksha", nakshatra: "Rohini", yoga: "Siddhi", karana: "Bava", sunrise: "06:15 AM", sunset: "18:45 PM", rahu: "16:30 - 18:00", yama: "12:00 - 13:30", gulika: "15:00 - 16:30" };
+    
+    // Create valid Date objects for sunrise/sunset to prevent toLocaleTimeString crashes
+    const sunriseDate = new Date(d); sunriseDate.setHours(6, 15, 0);
+    const sunsetDate = new Date(d); sunsetDate.setHours(18, 45, 0);
+
+    return {
+      day: days[d.getDay()], tithi: "Shukla Paksha", nakshatra: "Rohini", yoga: "Siddhi", karana: "Bava",
+      sunrise: sunriseDate, sunset: sunsetDate, rahu: "16:30 - 18:00", yama: "12:00 - 13:30", gulika: "15:00 - 16:30"
+    };
   };
 }
 
