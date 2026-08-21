@@ -11,7 +11,7 @@
     <meta http-equiv="Expires" content="0">
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Google Fonts: Fraunces & Sora -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -66,13 +66,14 @@
 
     <!-- Core JavaScript Support Files -->
     <script src="src/js/database.js"></script>
-    <script src="src/js/cryptography.js"></script> <!-- Changed from crypto.js to cryptography.js -->
+    <script src="src/js/cryptography.js"></script>
     <script src="src/js/ai-rules.js"></script>
 
-    <!-- Fail-Safe Sequential Dynamic Script Loader -->
+    <!-- Synchronous Cache-Busting Script Loader for Babel -->
     <script type="text/javascript">
       (function() {
-        const modules = [
+        var cb = Date.now();
+        var modules = [
           "src/jsx/components.jsx",
           "src/jsx/modals.jsx",
           "src/jsx/charts.jsx",
@@ -85,28 +86,10 @@
           "src/jsx/tabs.jsx",
           "src/jsx/app.jsx"
         ];
-
-        const cacheBuster = Date.now();
-
-        function loadScript(index) {
-          if (index >= modules.length) return;
-          const script = document.createElement('script');
-          script.type = 'text/babel';
-          script.src = modules[index] + '?t=' + cacheBuster;
-          
-          script.onload = function() {
-            loadScript(index + 1); // Proceed to next module
-          };
-          
-          script.onerror = function() {
-            console.error("Module load error on: " + modules[index]);
-            loadScript(index + 1); // Force continue even if a non-critical module hiccups
-          };
-
-          document.body.appendChild(script);
+        
+        for (var i = 0; i < modules.length; i++) {
+          document.write('<script type="text/babel" src="' + modules[i] + '?t=' + cb + '"><\/script>');
         }
-
-        loadScript(0);
       })();
     </script>
 </body>
