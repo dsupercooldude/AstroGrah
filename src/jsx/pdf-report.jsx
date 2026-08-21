@@ -5,7 +5,6 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
 
   return (
     <div id="ghost-pdf-report" style={{ position: 'absolute', left: '-9999px', top: 0, width: '900px', backgroundColor: '#121426', padding: '50px', color: '#F2EFE6', fontFamily: 'Sora, sans-serif', zIndex: -100 }}>
-      {/* REPORT HEADER */}
       <div style={{ borderBottom: '2px solid rgba(212,165,116,0.3)', paddingBottom: '25px', marginBottom: '30px', textAlign: 'center' }}>
         <h1 style={{ fontFamily: 'Fraunces, serif', fontSize: '36px', color: '#D4A574', margin: '0 0 10px 0' }}>Comprehensive Astrological Report</h1>
         <h2 style={{ fontSize: '26px', margin: '0 0 5px 0' }}>{pr.name}</h2>
@@ -14,7 +13,6 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
         </p>
       </div>
 
-      {/* FOUNDATION & ACTIVE DASHAS */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
         <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px' }}>
           <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Natal Foundation</h3>
@@ -35,7 +33,6 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
         </div>
       </div>
 
-      {/* SHADBALA (TABLE FORMAT FOR CLEAN PDF) */}
       <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', marginBottom: '30px' }}>
           <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Planetary Strengths (Shadbala & Dignity)</h3>
           <table style={{ width: '100%', fontSize: '12px', textAlign: 'left', borderCollapse: 'collapse' }}>
@@ -64,7 +61,6 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
           </table>
       </div>
 
-      {/* VIMSHOTTARI DASHA (TABULAR HIGHLIGHTED) */}
       <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', marginBottom: '30px' }}>
           <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Vimshottari Dasha Sequence</h3>
           <table style={{ width: '100%', fontSize: '12px', textAlign: 'left', borderCollapse: 'collapse' }}>
@@ -97,31 +93,29 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
           </table>
       </div>
 
-      {/* CHARTS GRID D1 & D9 */}
+      {/* SVG Canvas Fix: Explicit width/height containers to force HTML2Canvas rendering */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
           <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
               <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>D-1 Rashi Chart (Foundation)</h4>
-              <div style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}><KundaliRenderer ac={ch.d1} ch={ch} style="north" isExpert={true} /></div>
+              <div style={{ width: '350px', height: '350px', margin: '0 auto' }}><KundaliRenderer ac={ch.d1} ch={ch} kpTable={ch.kpTable} style="north" isExpert={true} /></div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
               <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>D-9 Navamsha Chart (Destiny & Union)</h4>
-              <div style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}><KundaliRenderer ac={ch.d9} ch={ch} style="north" isExpert={true} /></div>
+              <div style={{ width: '350px', height: '350px', margin: '0 auto' }}><KundaliRenderer ac={ch.d9} ch={ch} kpTable={ch.kpTable} style="north" isExpert={true} /></div>
           </div>
       </div>
 
-      {/* CHARTS GRID D7 & D10 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
           <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
               <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>D-7 Saptamsha (Legacy & Children)</h4>
-              <div style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}><KundaliRenderer ac={ch.d7} ch={ch} style="north" isExpert={true} /></div>
+              <div style={{ width: '350px', height: '350px', margin: '0 auto' }}><KundaliRenderer ac={ch.d7} ch={ch} kpTable={ch.kpTable} style="north" isExpert={true} /></div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
               <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>D-10 Dashamsha (Career & Milestones)</h4>
-              <div style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}><KundaliRenderer ac={ch.d10} ch={ch} style="north" isExpert={true} /></div>
+              <div style={{ width: '350px', height: '350px', margin: '0 auto' }}><KundaliRenderer ac={ch.d10} ch={ch} kpTable={ch.kpTable} style="north" isExpert={true} /></div>
           </div>
       </div>
 
-      {/* GOCHARA & PRESCRIPTIONS */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
         <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px' }}>
           <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Deep Gochara Forecast</h3>
@@ -144,12 +138,15 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
         </div>
       </div>
 
-      {/* AI FORECAST: 12-MONTH HOROSCOPE */}
       <div style={{ background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.4)', padding: '30px', borderRadius: '16px', marginBottom: '30px' }}>
           <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px', fontSize: '20px' }}>12-Month Astrological Horizon</h3>
           <div style={{ fontSize: '13px', lineHeight: '1.8', whiteSpace: 'pre-wrap', color: 'rgba(255,255,255,0.9)' }}>
               {pdfForecast || "Generating Forecast..."}
           </div>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
+          Generated securely by Graha Ledger Enterprise • Cryptographic Vault System
       </div>
     </div>
   );
