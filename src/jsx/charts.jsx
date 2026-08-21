@@ -42,17 +42,21 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
             </div>
           </div>
         )}
+// Inside KundaliRenderer in src/jsx/charts.jsx, change the South Indian block condition from:
+// {st === "south" && ( ... )} 
+// TO THIS:
 
-        {/* SOUTH INDIAN CHART (GRID) */}
-        {st === "south" && (
+        {/* SOUTH INDIAN & KP CHART (GRID) */}
+        {(st === "south" || st === "kp") && (
           <div className="grid grid-cols-4 grid-rows-4 w-full max-w-[320px] aspect-square border-2 border-amber-400/50 bg-black/60 rounded">
             {[12,1,2,3, 11,null,null,4, 10,null,null,5, 9,8,7,6].map((h, i) => (
               <div key={i} className={`border border-amber-400/30 p-1 flex flex-col ${h ? '' : 'bg-transparent border-none'}`}>
                 {h && (
                   <>
-                    <div className="text-[8px] font-mono t50">{ac.houses[h].slice(0,3)} {h===1 ? '(As)' : ''}</div>
+                    <div className="text-[8px] font-mono t50 text-center">{ac.houses[h].slice(0,3)} {h===1 ? '(As)' : ''}</div>
                     <div className="flex-1 flex flex-wrap content-center justify-center gap-1 font-mono text-[9px] font-bold mt-1">
-                      {getHousePlanets(h).map(p => <span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol} {p.slice(0,2)}</span>)}
+                      {/* For KP, display actual planets in the sub/nakshatra. Since KP uses Placidus, we map the core planets down */}
+                      {getHousePlanets(h).map(p => <span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}
                     </div>
                   </>
                 )}
@@ -60,7 +64,7 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
             ))}
           </div>
         )}
-
+        
         {/* DEFAULT/EAST/KP GRID FALLBACK */}
         {(st === "east" || st === "kp") && (
           <div className="grid grid-cols-4 gap-2 z-10 text-[9px] font-mono text-center w-full">
