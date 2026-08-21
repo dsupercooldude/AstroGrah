@@ -261,7 +261,11 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
   if (lQ.includes("yearly horoscope") || lQ.includes("month-by-month")) { return window.generateOfflineYearlyHoroscope(profile, kundli, targetDate); }
   const dateFormatted = targetDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
   const b = window.bio(profile?.dob, targetDate, profile?.utcOffset);
+  
+  // FIX: Maps the 3-letter abbreviation to the full dictionary name so actions load properly!
   const pK = window.WEEKDAY[targetDate.getDay()];
+  const rulingPlanet = { "Sun": "Sun", "Mon": "Moon", "Tue": "Mars", "Wed": "Mercury", "Thu": "Jupiter", "Fri": "Venus", "Sat": "Saturn" }[pK];
+  
   const lagna = kundli.d1.lagna; const moonSign = kundli.moonSign; const nak = kundli.nak; const pada = kundli.pada;
   const jupDeg = kundli.planetaryDegrees.Jupiter.toFixed(2); const satDeg = kundli.planetaryDegrees.Saturn.toFixed(2); const moonDeg = kundli.planetaryDegrees.Moon.toFixed(2);
   const currentDecYear = targetDate.getFullYear() + (targetDate.getMonth() / 12) + (targetDate.getDate() / 365);
@@ -279,10 +283,10 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
     muhurtaRemedy = `Chant "${window.PLANET_INFO[activeMaha]?.beej}" and align with ${window.PLANET_INFO[activeMaha]?.gem} for sustained career momentum.`;
   } else {
     domain = "Comprehensive Vedic Life Guidance";
-    analysis = `• Native: ${profile?.name || "Native"} | Target Date: ${dateFormatted}\n• Core Matrix: ${lagna} Lagna, Moon at ${moonDeg}° in ${nak} (Pada ${pada}).\n• Current Cosmic Rulers: ${activeMaha} Mahadasha is guiding your overarching karmic trajectory, with day energy governed by ${pK}.`;
-    roadmap = `1. Decisions: Align high-value tasks with favorable Choghadiya windows (Amrit, Shubh, Labh) visible in your Panchang tab.\n2. Energy: Maintain balanced output tailored to your biorhythms (P: ${(b.p * 100).toFixed(0)}%, E: ${(b.e * 100).toFixed(0)}%, I: ${(b.i * 100).toFixed(0)}%).`;
-    muhurtaRemedy = `Recite the Beej Mantra for the active Hora ruler (${pK}): "${window.PLANET_INFO[pK]?.beej}".`;
+    analysis = `• Native: ${profile?.name || "Native"} | Target Date: ${dateFormatted}\n• Core Matrix: ${lagna} Lagna, Moon at ${moonDeg}° in ${nak} (Pada ${pada}).\n• Current Cosmic Rulers: ${activeMaha} Mahadasha is guiding your overarching karmic trajectory, with day energy governed by ${rulingPlanet}.`;
+    roadmap = `1. Decisions: Align high-value tasks with favorable Choghadiya windows (Amrit, Shubh, Labh) visible in your Panchang tab.\n2. Energy: Maintain balanced output tailored to your biorhythms (P: ${Math.round(((b.p + 1) / 2) * 100)}%, E: ${Math.round(((b.e + 1) / 2) * 100)}%, I: ${Math.round(((b.i + 1) / 2) * 100)}%).`;
+    muhurtaRemedy = `Recite the Beej Mantra for the active Hora ruler (${rulingPlanet}): "${window.PLANET_INFO[rulingPlanet]?.beej}".`;
   }
 
-  return `[Graha Ledger Vedic Expert Engine — Deterministic Mode]\n═════════════════════════════════════════════════════\n📍 DOMAIN: ${domain}\n\n1. DATA-DRIVEN VEDIC SYNTHESIS:\n${analysis}\n\n2. PRESCRIBED ACTION ROADMAP:\n${roadmap}\n\n3. DIVINE REMEDY & MANTRAS:\n• ${muhurtaRemedy}\n• Daily Action: ${window.PLANET_INFO[pK]?.action}`;
+  return `[Graha Ledger Vedic Expert Engine — Deterministic Mode]\n═════════════════════════════════════════════════════\n📍 DOMAIN: ${domain}\n\n1. DATA-DRIVEN VEDIC SYNTHESIS:\n${analysis}\n\n2. PRESCRIBED ACTION ROADMAP:\n${roadmap}\n\n3. DIVINE REMEDY & MANTRAS:\n• ${muhurtaRemedy}\n• Daily Action: ${window.PLANET_INFO[rulingPlanet]?.action}`;
 };
