@@ -5,11 +5,19 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
   if (!profile || !ch) return <div ref={ref} className="hidden"></div>;
 
   const details = window.calculatePlanetaryDetails ? window.calculatePlanetaryDetails(ch.d1?.placements || {}, ch.planetaryDegrees) : {};
+  const jaimini = window.calculateJaiminiKarakas ? window.calculateJaiminiKarakas(ch.planetaryDegrees) : {};
+  const avasthas = window.calculateBaladiAvastha ? window.calculateBaladiAvastha(ch.planetaryDegrees, ch.d1?.placements || {}) : {};
+  
+  const weekday = window.WEEKDAY[date.getDay()];
+  const gochara = window.generateDeepGochara ? window.generateDeepGochara(ch, ch.d1?.lagna || "Aries", date, weekday, bioScores || { p: 0, e: 0, i: 0 }) : {};
+  const overviewText = window.runVedicRuleEngine ? window.runVedicRuleEngine("overview", profile, ch, date) : "";
+  
   const currentYear = date.getFullYear() + (date.getMonth() / 12);
 
   return (
     <div id="pdf-render-target" ref={ref} className="bg-[#0b0d19] text-[#F2EFE6] p-12 w-[900px] font-sans absolute -left-[9999px] top-0 hidden" style={{ minHeight: '1200px' }}>
       
+      {/* HEADER */}
       <div className="border-b border-amber-400/30 pb-6 mb-8 text-center">
         <h1 className="font-serif text-4xl text-amber-400 mb-2">Vedic Astrological Dossier</h1>
         <h2 className="text-2xl font-bold tracking-widest uppercase">{profile.name}</h2>
@@ -18,6 +26,14 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
         </p>
       </div>
 
+      {/* ENTERPRISE AI SYNTHESIS */}
+      {overviewText && (
+        <div className="mb-8 p-6 bg-[#121426] border border-white/10 rounded-2xl font-mono text-sm leading-relaxed text-amber-100 whitespace-pre-wrap">
+          {overviewText.replace(/\[Graha Ledger.*?\]\n═════════════════════════════════════════════════════\n/, '')}
+        </div>
+      )}
+
+      {/* NATAL & BIO */}
       <div className="grid grid-cols-2 gap-6 mb-8">
         <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
           <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Natal Matrix</h3>
@@ -49,8 +65,9 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
         </div>
       </div>
 
+      {/* PLANET LEDGER */}
       <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8">
-        <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Planetary Ledger</h3>
+        <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Detailed Planetary Ledger</h3>
         <table className="w-full text-sm font-mono text-left">
           <thead>
             <tr className="t50 uppercase border-b border-white/10">
@@ -72,8 +89,53 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           </tbody>
         </table>
       </div>
-      
-      <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8 page-break-before">
+
+      {/* JAIMINI & AVASTHAS */}
+      <div className="grid grid-cols-2 gap-6 mb-8 page-break-before">
+        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
+          <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Jaimini Chara Karakas</h3>
+          <div className="space-y-3 font-mono text-xs">
+            {Object.entries(jaimini).map(([karaka, planet]) => {
+              const pInfo = window.PLANET_INFO[planet] || { color: '#fff' };
+              return (
+                <div key={karaka} className="flex justify-between p-3 bg-black/20 rounded-lg border border-white/5">
+                  <span className="t60">{karaka}</span><span className="font-bold text-sm" style={{ color: pInfo.color }}>{planet}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
+          <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Baladi Avasthas (Maturity)</h3>
+          <div className="space-y-3 font-mono text-xs">
+            {Object.entries(avasthas).map(([planet, avastha]) => {
+              const pInfo = window.PLANET_INFO[planet] || { color: '#fff' };
+              return (
+                <div key={planet} className="flex justify-between p-3 bg-black/20 rounded-lg border border-white/5">
+                  <span className="font-bold text-sm" style={{ color: pInfo.color }}>{planet}</span><span className="t85">{avastha}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* GOCHARA TRANSITS */}
+      <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8">
+        <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Gochara (Transit) Impact</h3>
+        <div className="grid grid-cols-2 gap-4">
+          {Object.entries(gochara).map(([domain, data]) => (
+            <div key={domain} className="p-4 bg-black/20 rounded-xl border border-white/5">
+              <div className="flex justify-between text-xs font-mono mb-2"><span className="font-bold text-amber-100 capitalize">{domain.replace(/([A-Z])/g, ' $1').trim()}</span><span className="t85 font-bold">{Math.round(data.sc)}/100</span></div>
+              <div className="h-1 bg-black/50 rounded-full mb-3"><div className="h-full rounded-full bg-amber-500" style={{ width: `${data.sc}%` }}></div></div>
+              <div className="text-[10px] t60 font-mono leading-relaxed">{data.text}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* DASHA DRILLDOWN */}
+      <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8">
         <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Vimshottari Dasha Drilldown</h3>
         <div className="grid grid-cols-2 gap-4 font-mono text-xs">
           {ch.dasha?.slice(0, 4).map((d, i) => {
@@ -91,7 +153,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           })}
         </div>
       </div>
-
+      
     </div>
   );
 });
