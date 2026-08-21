@@ -209,29 +209,34 @@ window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }
           <div>
             <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Default Kundali Style</label>
             <select value={localSet.kundaliStyle} onChange={(e) => handleSelectChange("kundaliStyle", e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white">
-              <option value="north">North Indian</option><option value="south">South Indian</option><option value="east">East Indian</option><option value="kp">KP System</option>
+              {/* FIX: Solid backgrounds added to all options so text is always visible */}
+              <option value="north" className="bg-[#121426] text-white">North Indian</option>
+              <option value="south" className="bg-[#121426] text-white">South Indian</option>
+              <option value="east" className="bg-[#121426] text-white">East Indian</option>
+              <option value="kp" className="bg-[#121426] text-white">KP System</option>
             </select>
           </div>
           <div>
             <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Month System</label>
             <select value={localSet.monthSystem} onChange={(e) => handleSelectChange("monthSystem", e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white">
-              <option value="amanta">Amanta (New Moon / Amavasya)</option><option value="purnimanta">Purnimanta (Full Moon / Purnima)</option>
+              <option value="amanta" className="bg-[#121426] text-white">Amanta (Amavasya)</option>
+              <option value="purnimanta" className="bg-[#121426] text-white">Purnimanta (Purnima)</option>
             </select>
           </div>
         </div>
 
         <div>
-          <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">AI Provider Engine</label>
+          <label className="text-[9px] font-mono uppercase t50 mb-1.5 block">Primary AI Engine</label>
           <select value={localSet.aiModel || "auto"} onChange={(e) => handleSelectChange("aiModel", e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs outline-none text-white font-medium">
-            <option value="auto">Auto (Smart Load-Balancing & Automatic Fallback)</option>
-            <option value="offline">Offline Vedic Rule Engine (100% Local / Zero API Required)</option>
-            <option value="gemini">Google Gemini 3.5 Flash (Preferred)</option>
-            <option value="openai">OpenAI GPT-4o Mini (Preferred)</option>
-            <option value="groq">Groq (Ultra-Fast Llama 3.1)</option>
-            <option value="deepseek">DeepSeek V3</option>
-            <option value="kimi">Moonshot / Kimi</option>
-            <option value="openrouter">OpenRouter Gateway</option>
-            <option value="huggingface">Hugging Face (Mistral 7B)</option>
+            <option value="auto" className="bg-[#121426] text-white">Auto (Smart Load-Balancing & Automatic Fallback)</option>
+            <option value="offline" className="bg-[#121426] text-white">Offline Vedic Rule Engine (100% Local / Zero API Required)</option>
+            <option value="gemini" className="bg-[#121426] text-white">Google Gemini 3.5 Flash (Preferred)</option>
+            <option value="openai" className="bg-[#121426] text-white">OpenAI GPT-4o Mini (Preferred)</option>
+            <option value="groq" className="bg-[#121426] text-white">Groq (Ultra-Fast Llama 3.1)</option>
+            <option value="deepseek" className="bg-[#121426] text-white">DeepSeek V3</option>
+            <option value="kimi" className="bg-[#121426] text-white">Moonshot / Kimi</option>
+            <option value="openrouter" className="bg-[#121426] text-white">OpenRouter Gateway</option>
+            <option value="huggingface" className="bg-[#121426] text-white">Hugging Face (Mistral 7B)</option>
           </select>
         </div>
 
