@@ -8,21 +8,24 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
   const [chartStyle, setChartStyle] = useState(settings.kundaliStyle || "north");
   const [expert, setExpert] = useState(false);
   
+  // Dasha UI State Fix
   const [expandedDasha, setExpandedDasha] = useState(null);
   const [expandedAntar, setExpandedAntar] = useState(null);
+  const [initialDashaSet, setInitialDashaSet] = useState(false);
   
   const [isExporting, setIsExporting] = useState(false);
   const [pdfForecast, setPdfForecast] = useState("");
 
   const currentDecYear = date.getFullYear() + date.getMonth() / 12 + date.getDate() / 365.25;
 
-  // Auto-expand the currently active Mahadasha on load
+  // Auto-expand the currently active Mahadasha ONCE on load to fix the UI bug
   useEffect(() => {
-    if (ch?.dasha && expandedDasha === null) {
+    if (ch?.dasha && !initialDashaSet) {
       const activeIdx = ch.dasha.findIndex(d => currentDecYear >= d.start && currentDecYear < d.end);
       if (activeIdx !== -1) setExpandedDasha(activeIdx);
+      setInitialDashaSet(true);
     }
-  }, [ch, date, currentDecYear, expandedDasha]);
+  }, [ch, currentDecYear, initialDashaSet]);
 
   if (!ch) return <div className="p-4 border border-white/10 rounded-xl text-center text-sm t60 bgfaint mt-4">Compute Error. Please verify coordinates.</div>;
 
@@ -40,7 +43,6 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
   const scores = { p: Math.floor(bT.p * 100), e: Math.floor(bT.e * 100), i: Math.floor(bT.i * 100) };
   const gochara = generateDeepGochara(ch, ch.d1.lagna, date, pK, scores);
 
-  // Identify active periods for the report
   const activeMahaObj = ch.dasha.find(d => currentDecYear >= d.start && currentDecYear < d.end);
   const activeMaha = activeMahaObj?.lord || "Jupiter";
   let activeAntar = activeMaha;
@@ -49,18 +51,15 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
     activeAntar = antars.find(a => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha;
   }
 
-  // --- COMPREHENSIVE CONTINUOUS PDF ENGINE ---
+  // --- COMPREHENSIVE CONTINUOUS PDF ENGINE (No Page Breaks) ---
   const handleExportPDF = async () => {
-    if (!window.html2canvas || !window.jspdf) return alert("PDF Engine loading, please wait a second...");
+    if (!window.html2canvas || !window.jspdf) return alert("PDF Engine is loading. Please wait a second and click again.");
     setIsExporting(true);
 
     try {
-      // 1. Generate AI Weekly & Monthly Forecast
+      // 1. Generate 12-Month AI Forecast for the PDF
       let forecastText = "";
-      const prompt = `Generate a highly professional, concise astrological forecast report for ${pr.name}. Current date: ${date.toDateString()}. 
-      Provide two short paragraphs: "Weekly Outlook" and "Monthly Outlook". 
-      Base this on their Lagna (${ch.d1.lagna}), Moon Sign (${ch.moonSign}), active Dasha (${activeMaha}-${activeAntar}), and current transits (Jupiter in ${ch.transits.Jupiter}, Saturn in ${ch.transits.Saturn}). Do not use conversational filler.`;
-      
+      const prompt = `Generate a comprehensive Yearly Horoscope with a month-by-month breakdown for the next 12 months for ${pr.name}. Current date: ${date.toDateString()}. Base this specifically on their Lagna (${ch.d1.lagna}), Moon Sign (${ch.moonSign}), active Vimshottari Dasha (${activeMaha}-${activeAntar}), and current transits. Use professional astrological formatting without markdown hashes.`;
       const systemCtx = "You are an expert Vedic astrologer generating a formal PDF report.";
       
       if (settings.aiModel !== "offline") {
@@ -68,40 +67,42 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         if (apiRes && apiRes.text) forecastText = apiRes.text;
       }
       if (!forecastText) {
-        forecastText = runVedicRuleEngine("Provide my future prediction and monthly outlook.", pr, ch, date);
+        // Fallback to the Offline 12-Month engine
+        forecastText = runVedicRuleEngine("generate a yearly horoscope month-by-month breakdown", pr, ch, date);
       }
       
       setPdfForecast(forecastText);
 
-      // Give React 1 second to flush the state and render the ghost DOM
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait exactly 1.5 seconds for React to flush the forecast state into the Ghost DOM
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       const reportZone = document.getElementById("ghost-pdf-report");
-      if (!reportZone) throw new Error("Report DOM missing");
+      if (!reportZone) throw new Error("Ghost Report DOM is missing.");
 
       // 2. High-Res Canvas Snapshot
       const canvas = await window.html2canvas(reportZone, {
         scale: 2,
         backgroundColor: "#121426",
-        useCORS: true
+        useCORS: true,
+        windowWidth: 900 // Lock width for perfect CSS rendering
       });
       
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
       
-      // 3. Continuous Height PDF (No Page Breaks)
-      const pdfWidth = canvas.width * 0.75;
-      const pdfHeight = canvas.height * 0.75;
+      // 3. Create Continuous Variable-Height PDF
+      const pdfWidth = 850; 
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
       const pdf = new window.jspdf.jsPDF({
-        orientation: pdfWidth > pdfHeight ? "l" : "p",
+        orientation: "p",
         unit: "pt",
-        format: [pdfWidth, pdfHeight]
+        format: [pdfWidth, pdfHeight] // Custom dimension completely eliminates page breaks
       });
       
       pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
       
       const safeName = pr.name.replace(/\s+/g, "_");
-      pdf.save(`${safeName}_Astrology_Report.pdf`);
+      pdf.save(`${safeName}_Graha_Ledger_Report.pdf`);
 
     } catch (e) {
       console.error(e);
@@ -125,8 +126,8 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={handleExportPDF} disabled={isExporting} title="Export Comprehensive PDF" className="p-2 border border-emerald-500/30 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 transition text-emerald-400 disabled:opacity-50">
-              <i className={isExporting ? "ph ph-spinner animate-spin" : "ph ph-download-simple"} style={{ fontSize: 18 }} />
+            <button onClick={handleExportPDF} disabled={isExporting} title="Export Comprehensive PDF" className="p-2 border border-emerald-500/30 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 transition text-emerald-400 disabled:opacity-50 flex items-center justify-center">
+              <i className={isExporting ? "ph ph-spinner animate-spin" : "ph ph-file-pdf"} style={{ fontSize: 18 }} />
             </button>
             <button onClick={() => onEditProfile(pr)} title="Edit Profile" className="p-2 border border-white/10 rounded-full bg-black/30 hover:bg-white/10 transition text-amber-300 disabled:opacity-50">
               <Icon name="pencil-simple" size={18} />
@@ -135,7 +136,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         </div>
       </div>
 
-      {/* 2. PROMINENT TIME-TRAVEL CONTROL BAR */}
+      {/* 2. TIME-TRAVEL CONTROL BAR */}
       <div className="bgcard rounded-2xl border border-amber-400/20 p-4 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300">
@@ -166,9 +167,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
           <div className="flex gap-1 flex-wrap bg-black/40 border border-white/10 rounded-xl p-1 font-mono text-[10px]">
             {expert && <Fragment>
               {[1, 7, 9, 10, 60].map((divNum) => (
-                <button key={divNum} onClick={() => setDiv(divNum)} className={`px-2 py-1 rounded-lg transition ${div === divNum ? "bg-amber-400/20 text-amber-300 font-bold" : "t40"}`}>
-                  D-{divNum}
-                </button>
+                <button key={divNum} onClick={() => setDiv(divNum)} className={`px-2 py-1 rounded-lg transition ${div === divNum ? "bg-amber-400/20 text-amber-300 font-bold" : "t40"}`}>D-{divNum}</button>
               ))}
             </Fragment>}
           </div>
@@ -178,9 +177,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
             </button>
             {expert && <Fragment>
               {["north", "south", "east", "kp"].map((st) => (
-                <button key={st} onClick={() => setChartStyle(st)} className={`px-2 py-1 rounded-lg capitalize transition ${chartStyle === st ? "bg-white/15 text-white font-bold" : "t40"}`}>
-                  {st}
-                </button>
+                <button key={st} onClick={() => setChartStyle(st)} className={`px-2 py-1 rounded-lg capitalize transition ${chartStyle === st ? "bg-white/15 text-white font-bold" : "t40"}`}>{st}</button>
               ))}
             </Fragment>}
           </div>
@@ -195,7 +192,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
           <div className="rounded-3xl border border-white/10 bgcard p-5">
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-serif text-sm text-amber-200">Vimshottari Dasha Drilldown</h3>
-              <span className="font-mono text-[9px] t50 uppercase">Maha / Antar / Pratyantar</span>
+              <span className="font-mono text-[9px] t50 uppercase">Maha / Antar</span>
             </div>
             <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
               {ch.dasha.map((d, i) => {
@@ -349,25 +346,25 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
 
       <BiorhythmChart data={bsGraph} scores={scores} />
 
-      {/* ========================================== */}
-      {/* HIDDEN GHOST DOM FOR PERFECT PDF EXPORT    */}
-      {/* ========================================== */}
-      <div id="ghost-pdf-report" style={{ position: 'absolute', left: '-9999px', top: 0, width: '850px', backgroundColor: '#121426', padding: '40px', color: '#F2EFE6', fontFamily: 'Sora, sans-serif' }}>
+      {/* ========================================================================= */}
+      {/* 🔮 GHOST PDF REPORT DOM (Hidden off-screen, purely for canvas extraction) */}
+      {/* ========================================================================= */}
+      <div id="ghost-pdf-report" style={{ position: 'absolute', left: '-9999px', top: 0, width: '900px', backgroundColor: '#121426', padding: '50px', color: '#F2EFE6', fontFamily: 'Sora, sans-serif', zIndex: -100 }}>
         
         {/* REPORT HEADER */}
-        <div style={{ borderBottom: '2px solid rgba(212,165,116,0.3)', paddingBottom: '20px', marginBottom: '20px', textAlign: 'center' }}>
-          <h1 style={{ fontFamily: 'Fraunces, serif', fontSize: '32px', color: '#D4A574', margin: '0 0 10px 0' }}>Comprehensive Astrological Report</h1>
-          <h2 style={{ fontSize: '24px', margin: '0 0 5px 0' }}>{pr.name}</h2>
-          <p style={{ fontSize: '12px', color: 'rgba(242,239,230,0.7)', fontFamily: 'monospace' }}>
-            DOB: {pr.dob} | Time: {pr.time} | Place: {pr.place} | Target Date: {date.toDateString()}
+        <div style={{ borderBottom: '2px solid rgba(212,165,116,0.3)', paddingBottom: '25px', marginBottom: '30px', textAlign: 'center' }}>
+          <h1 style={{ fontFamily: 'Fraunces, serif', fontSize: '36px', color: '#D4A574', margin: '0 0 10px 0' }}>Comprehensive Astrological Report</h1>
+          <h2 style={{ fontSize: '26px', margin: '0 0 5px 0' }}>{pr.name}</h2>
+          <p style={{ fontSize: '13px', color: 'rgba(242,239,230,0.7)', fontFamily: 'monospace' }}>
+            DOB: {pr.dob} | Time: {pr.time} | Place: {pr.place} | Target Prediction Date: {date.toDateString()}
           </p>
         </div>
 
-        {/* FOUNDATION INFO */}
+        {/* FOUNDATION & ACTIVE DASHAS */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
           <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px' }}>
             <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Natal Foundation</h3>
-            <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
+            <div style={{ fontSize: '13px', lineHeight: '2' }}>
               <div><strong>Ascendant (Lagna):</strong> {ch.d1.lagna}</div>
               <div><strong>Moon Sign (Rashi):</strong> {ch.moonSign}</div>
               <div><strong>Sun Sign:</strong> {ch.sunSign}</div>
@@ -375,52 +372,129 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
             </div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px' }}>
-            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Active Timeframe</h3>
-            <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
-              <div><strong>Mahadasha:</strong> {activeMaha}</div>
-              <div><strong>Antardasha:</strong> {activeAntar}</div>
-              <div><strong>Current Biorhythms:</strong> Physical {scores.p}%, Emotional {scores.e}%, Intellectual {scores.i}%</div>
+            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Active Chronology</h3>
+            <div style={{ fontSize: '13px', lineHeight: '2' }}>
+              <div><strong>Active Mahadasha:</strong> <span style={{color: '#FDE68A', fontWeight: 'bold'}}>{activeMaha}</span></div>
+              <div><strong>Active Antardasha:</strong> <span style={{color: '#FDE68A', fontWeight: 'bold'}}>{activeAntar}</span></div>
+              <div><strong>Current Biorhythms:</strong> P {scores.p}% / E {scores.e}% / I {scores.i}%</div>
             </div>
           </div>
         </div>
 
+        {/* SHADBALA (TABLE FORMAT FOR CLEAN PDF) */}
+        <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', marginBottom: '30px' }}>
+            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Planetary Strengths (Shadbala & Dignity)</h3>
+            <table style={{ width: '100%', fontSize: '12px', textAlign: 'left', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                  <th style={{ paddingBottom: '10px' }}>Planet</th>
+                  <th style={{ paddingBottom: '10px' }}>Placement</th>
+                  <th style={{ paddingBottom: '10px' }}>Dignity Status</th>
+                  <th style={{ paddingBottom: '10px' }}>Score (Rupas)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(ch.shadbala).map(([planet, score]) => {
+                  const signPlaced = ch.d1.houses[ch.d1.placements[planet]] || "Aries";
+                  const dignity = getPlanetaryDignity(planet, signPlaced);
+                  return (
+                    <tr key={planet} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: '10px 0', color: PLANET_INFO[planet]?.color, fontWeight: 'bold' }}>{planet}</td>
+                      <td style={{ padding: '10px 0' }}>{signPlaced}</td>
+                      <td style={{ padding: '10px 0', color: dignity.color }}>{dignity.status}</td>
+                      <td style={{ padding: '10px 0', fontWeight: 'bold' }}>{(score/60).toFixed(1)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+        </div>
+
+        {/* VIMSHOTTARI DASHA (TABULAR HIGHLIGHTED) */}
+        <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', marginBottom: '30px' }}>
+            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Vimshottari Dasha Sequence</h3>
+            <table style={{ width: '100%', fontSize: '12px', textAlign: 'left', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                  <th style={{ paddingBottom: '10px' }}>Mahadasha</th>
+                  <th style={{ paddingBottom: '10px' }}>Antardasha</th>
+                  <th style={{ paddingBottom: '10px' }}>Start Timeline</th>
+                  <th style={{ paddingBottom: '10px' }}>End Timeline</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ch.dasha.map((d, i) => {
+                  const isActiveMaha = currentDecYear >= d.start && currentDecYear < d.end;
+                  const antars = getAntardashas(d.lord, d.start, d.end);
+                  return antars.map((ant, idx) => {
+                    const isActiveAntar = currentDecYear >= ant.start && currentDecYear < ant.end;
+                    const isHighlighted = isActiveMaha && isActiveAntar;
+                    return (
+                      <tr key={`${i}-${idx}`} style={{ backgroundColor: isHighlighted ? 'rgba(251,191,36,0.15)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ padding: '8px 10px', color: isHighlighted ? '#FDE68A' : PLANET_INFO[d.lord]?.color, fontWeight: isHighlighted?'bold':'normal' }}>{d.lord}</td>
+                        <td style={{ padding: '8px 10px', color: isHighlighted ? '#FDE68A' : PLANET_INFO[ant.lord]?.color, fontWeight: isHighlighted?'bold':'normal' }}>{ant.lord}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: isHighlighted?'bold':'normal' }}>{formatYM(ant.start)}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: isHighlighted?'bold':'normal' }}>{formatYM(ant.end)}</td>
+                      </tr>
+                    );
+                  })
+                })}
+              </tbody>
+            </table>
+        </div>
+
         {/* CHARTS GRID D1 & D9 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
-            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '15px', borderRadius: '16px', textAlign: 'center' }}>
-                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '10px' }}>D-1 Rashi Chart</h4>
-                <div style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
-                    <KundaliRenderer ac={ch.d1} ch={ch} style="north" isExpert={true} />
-                </div>
+            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
+                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>D-1 Rashi Chart (Foundation)</h4>
+                <div style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}><KundaliRenderer ac={ch.d1} ch={ch} style="north" isExpert={true} /></div>
             </div>
-            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '15px', borderRadius: '16px', textAlign: 'center' }}>
-                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '10px' }}>D-9 Navamsha Chart</h4>
-                <div style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
-                    <KundaliRenderer ac={ch.d9} ch={ch} style="north" isExpert={true} />
-                </div>
+            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
+                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>D-9 Navamsha Chart (Destiny & Union)</h4>
+                <div style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}><KundaliRenderer ac={ch.d9} ch={ch} style="north" isExpert={true} /></div>
             </div>
         </div>
 
         {/* CHARTS GRID D7 & D10 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
-            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '15px', borderRadius: '16px', textAlign: 'center' }}>
-                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '10px' }}>D-7 Saptamsha Chart</h4>
-                <div style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
-                    <KundaliRenderer ac={ch.d7} ch={ch} style="north" isExpert={true} />
-                </div>
+            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
+                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>D-7 Saptamsha (Legacy & Children)</h4>
+                <div style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}><KundaliRenderer ac={ch.d7} ch={ch} style="north" isExpert={true} /></div>
             </div>
-            <div className="page-break-avoid" style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '15px', borderRadius: '16px', textAlign: 'center' }}>
-                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '10px' }}>D-10 Dashamsha Chart</h4>
-                <div style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
-                    <KundaliRenderer ac={ch.d10} ch={ch} style="north" isExpert={true} />
-                </div>
+            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
+                <h4 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>D-10 Dashamsha (Career & Milestones)</h4>
+                <div style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}><KundaliRenderer ac={ch.d10} ch={ch} style="north" isExpert={true} /></div>
             </div>
         </div>
 
-        {/* AI FORECAST */}
-        <div style={{ background: 'rgba(212,165,116,0.05)', border: '1px solid rgba(212,165,116,0.3)', padding: '25px', borderRadius: '16px', marginBottom: '30px' }}>
-            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>AI Sage Forecast (Weekly & Monthly Outlook)</h3>
+        {/* GOCHARA & PRESCRIPTIONS */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+          <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px' }}>
+            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Deep Gochara Forecast</h3>
+            <div style={{ fontSize: '11px', lineHeight: '1.8' }}>
+              <p><strong>Health & Vitality ({gochara.health.sc}%):</strong> {gochara.health.text}</p>
+              <p><strong>Wealth & Finance ({gochara.wealth.sc}%):</strong> {gochara.wealth.text}</p>
+              <p><strong>Career & Ambition ({gochara.career.sc}%):</strong> {gochara.career.text}</p>
+              <p><strong>Home & Harmony ({gochara.home.sc}%):</strong> {gochara.home.text}</p>
+            </div>
+          </div>
+          <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px' }}>
+            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px' }}>Daily Prescriptions ({pK})</h3>
+            <div style={{ fontSize: '12px', lineHeight: '2' }}>
+              <div><strong>Presiding Deity:</strong> {pI.adhidevata}</div>
+              <div><strong>Active Beej Mantra:</strong> <em>"{pI.beej}"</em></div>
+              <div><strong>Associated Gemstone:</strong> {pI.gem}</div>
+              <div><strong>Prescribed Charity:</strong> {pI.charity}</div>
+              <div><strong>Daily Action:</strong> {pI.action}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI FORECAST: 12-MONTH HOROSCOPE */}
+        <div style={{ background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.4)', padding: '30px', borderRadius: '16px', marginBottom: '30px' }}>
+            <h3 style={{ fontFamily: 'Fraunces, serif', color: '#D4A574', marginBottom: '15px', fontSize: '20px' }}>12-Month Astrological Horizon</h3>
             <div style={{ fontSize: '13px', lineHeight: '1.8', whiteSpace: 'pre-wrap', color: 'rgba(255,255,255,0.9)' }}>
-                {pdfForecast || "Generating..."}
+                {pdfForecast || "Generating Forecast..."}
             </div>
         </div>
 
