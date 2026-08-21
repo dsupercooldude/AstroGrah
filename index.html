@@ -69,7 +69,7 @@
     <script src="src/js/crypto.js"></script>
     <script src="src/js/ai-rules.js"></script>
 
-    <!-- Dynamic Cache-Busting Script Loader -->
+    <!-- Sequential Dynamic Cache-Busting Script Loader -->
     <script type="text/javascript">
       (function() {
         const modules = [
@@ -86,15 +86,23 @@
           "src/jsx/app.jsx"
         ];
 
-        // Generates a unique live timestamp on every page refresh to bypass browser disk cache
         const cacheBuster = Date.now();
 
-        modules.forEach(function(src) {
+        function loadScript(index) {
+          if (index >= modules.length) return;
           const script = document.createElement('script');
           script.type = 'text/babel';
-          script.src = src + '?t=' + cacheBuster;
+          script.src = modules[index] + '?t=' + cacheBuster;
+          script.onload = function() {
+            loadScript(index + 1); // Load next module only after current one executes successfully
+          };
+          script.onerror = function() {
+            console.error("Failed to load module: " + modules[index]);
+          };
           document.body.appendChild(script);
-        });
+        }
+
+        loadScript(0);
       })();
     </script>
 </body>
