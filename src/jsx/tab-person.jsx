@@ -1,4 +1,5 @@
 // src/jsx/tab-person.jsx
+const React = window.React; // CRITICAL FIX: Allows Babel to compile the JSX tags
 const { useState, useEffect, Fragment } = window.React;
 
 window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
@@ -60,7 +61,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
 
     try {
       let forecastText = "";
-      // STRICT AI PROMPT: Forbids ASCII tables and code blocks
+      // STRICT AI PROMPT: Forbids ASCII tables and code blocks to prevent PDF formatting errors
       const prompt = `Generate a comprehensive Yearly Horoscope with a month-by-month breakdown for the next 12 months for ${pr.name}. Current date: ${date.toDateString()}. Base this on their Lagna (${ch.d1.lagna}), Moon (${ch.moonSign}), active Dasha (${activeMaha}-${activeAntar}), and current transits. STRICT RULES: 1) Format each month strictly as "**Month Year**: [Prediction]". 2) DO NOT use any markdown tables, ASCII tables, or code blocks. 3) Write in continuous paragraphs.`;
       
       if (settings.aiModel !== "offline") {
@@ -99,7 +100,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
               <i className={isExporting ? "ph ph-spinner animate-spin" : "ph ph-file-pdf"} style={{ fontSize: 18 }} />
             </button>
             <button onClick={() => onEditProfile(pr)} title="Edit Profile" className="p-2 border border-white/10 rounded-full bg-black/30 hover:bg-white/10 transition text-amber-300 disabled:opacity-50">
-              <Icon name="pencil-simple" size="{18}"/>
+              <Icon name="pencil-simple" size={18} />
             </button>
           </div>
         </div>
@@ -107,7 +108,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
 
       <div className="bgcard rounded-2xl border border-amber-400/20 p-4 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300"><Icon name="clock-countdown" size="{22}"/></div>
+          <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300"><Icon name="clock-countdown" size={22} /></div>
           <div>
             <span className="text-[10px] font-mono uppercase text-amber-300 tracking-wider block font-semibold">Active Prediction Horizon</span>
             <span className="font-serif text-sm sm:text-base text-white font-bold">{date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })}</span>
@@ -135,7 +136,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
             {expert && <Fragment>{["north", "south", "east", "kp"].map((st) => (<button key={st} onClick={() => setChartStyle(st)} className={`px-2 py-1 rounded-lg capitalize transition ${chartStyle === st ? "bg-white/15 text-white font-bold" : "t40"}`}>{st}</button>))}</Fragment>}
           </div>
         </div>
-        <KundaliRenderer D-${div}`} View: ac="{ac}" ch="{ch}" isExpert="{expert}" kpTable="{ch.kpTable}" style="{chartStyle}" titleDesc="{`Divisional"/>
+        <KundaliRenderer ac={ac} ch={ch} kpTable={ch.kpTable} style={chartStyle} titleDesc={`Divisional View: D-${div}`} isExpert={expert} />
       </div>
 
       {expert && (
@@ -159,7 +160,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={isActiveMaha ? "text-amber-100" : "t70"}>{Math.floor(d.start)} - {Math.floor(d.end)}</span>
-                        <Icon "caret-down"} "caret-up" "t50"} "text-amber-200" : ? className="{isActiveMaha" name="{isExp"/>
+                        <Icon name={isExp ? "caret-up" : "caret-down"} className={isActiveMaha ? "text-amber-200" : "t50"} />
                       </div>
                     </div>
                     
@@ -178,7 +179,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span>{formatYM(ant.start)} to {formatYM(ant.end)}</span>
-                                  <Icon "caret-down"} "caret-up" : ? className="t50" name="{isAntarExp"/>
+                                  <Icon name={isAntarExp ? "caret-up" : "caret-down"} className="t50" />
                                 </div>
                               </div>
                               
@@ -242,7 +243,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
       </div>
 
       <div className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/10 via-transparent to-transparent p-5 space-y-3">
-        <div className="flex justify-between items-center"><h3 className="font-serif text-base text-amber-300 flex items-center gap-2"><Icon name="sparkle"/> Prescriptions for {pK}</h3><span className="text-[10px] font-mono t50 uppercase">{pI.symbol} Active Hora Ruler</span></div>
+        <div className="flex justify-between items-center"><h3 className="font-serif text-base text-amber-300 flex items-center gap-2"><Icon name="sparkle" /> Prescriptions for {pK}</h3><span className="text-[10px] font-mono t50 uppercase">{pI.symbol} Active Hora Ruler</span></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="p-3.5 bg-black/30 rounded-2xl border border-white/5 sm:col-span-2"><span className="font-mono text-[9px] text-amber-400 block uppercase mb-1">Presiding Deity & Mantras</span><div className="t100 font-bold mb-1">Adhidevata: {pI.adhidevata}</div><div className="t90 tracking-wide font-medium italic">"{pI.beej}"</div><div className="t60 mt-1">Recite: {pI.mantras.join(", ")}</div></div>
           <div className="p-3.5 bg-black/30 rounded-2xl border border-white/5"><span className="font-mono text-[9px] text-amber-400 block uppercase mb-1">Gemstone</span><span className="t85 leading-relaxed block">{pI.gem}</span></div>
@@ -250,10 +251,10 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         </div>
       </div>
 
-      <BiorhythmChart data="{bsGraph}" scores="{scores}"/>
+      <BiorhythmChart data={bsGraph} scores={scores} />
 
       {/* Render the hidden Ghost Report for PDF without affecting Layout */}
-      <GhostPDFReport activeAntar="{activeAntar}" activeMaha="{activeMaha}" ch="{ch}" date="{date}" gochara="{gochara}" pI="{pI}" pdfForecast="{pdfForecast}" pr="{pr}" scores="{scores}"/>
+      <GhostPDFReport pr={pr} ch={ch} date={date} activeMaha={activeMaha} activeAntar={activeAntar} scores={scores} gochara={gochara} pI={pI} pdfForecast={pdfForecast} />
     </div>
   );
 };
