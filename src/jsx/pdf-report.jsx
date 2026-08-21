@@ -5,8 +5,6 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
   if (!profile || !ch) return <div ref={ref} className="hidden"></div>;
 
   const details = window.calculatePlanetaryDetails ? window.calculatePlanetaryDetails(ch.d1?.placements || {}, ch.planetaryDegrees) : {};
-  const jaimini = window.calculateJaiminiKarakas ? window.calculateJaiminiKarakas(ch.planetaryDegrees) : {};
-  const overviewText = window.runVedicRuleEngine ? window.runVedicRuleEngine("overview", profile, ch, date) : "";
   const currentYear = date.getFullYear() + (date.getMonth() / 12);
 
   return (
@@ -19,12 +17,6 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           DOB: {profile.dob} | Time: {profile.time} | Location: {profile.place} <br/> Generated: {date.toDateString()}
         </p>
       </div>
-
-      {overviewText && (
-        <div className="mb-8 p-6 bg-[#121426] border border-white/10 rounded-2xl font-mono text-sm leading-relaxed text-amber-100 whitespace-pre-wrap">
-          {overviewText.replace(/\[Graha Ledger.*?\]\n═════════════════════════════════════════════════════\n/, '')}
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-6 mb-8">
         <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
@@ -80,7 +72,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           </tbody>
         </table>
       </div>
-
+      
       <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8 page-break-before">
         <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Vimshottari Dasha Drilldown</h3>
         <div className="grid grid-cols-2 gap-4 font-mono text-xs">
@@ -99,6 +91,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           })}
         </div>
       </div>
+
     </div>
   );
 });
