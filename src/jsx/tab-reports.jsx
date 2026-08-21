@@ -1,5 +1,5 @@
 // src/jsx/tab-reports.jsx
-const React = window.React;
+var React = window.React;
 
 window.ReportsTab = ({ pr, ch }) => {
   if (!ch || !ch.planetaryDegrees) return <div className="p-4 text-center text-sm t60">Calculating Astral Data...</div>;
@@ -7,6 +7,11 @@ window.ReportsTab = ({ pr, ch }) => {
   const details = window.calculatePlanetaryDetails ? window.calculatePlanetaryDetails(ch.d1?.placements || {}, ch.planetaryDegrees) : {};
   const jaimini = window.calculateJaiminiKarakas ? window.calculateJaiminiKarakas(ch.planetaryDegrees) : {};
   const avasthas = window.calculateBaladiAvastha ? window.calculateBaladiAvastha(ch.planetaryDegrees, ch.d1?.placements || {}) : {};
+
+  // Extract personalized planets for dynamic text
+  const akPlanet = jaimini["Atmakaraka (Soul)"] || "Sun";
+  const amkPlanet = jaimini["Amatyakaraka (Career)"] || "Moon";
+  const dkPlanet = jaimini["Darakaraka (Spouse)"] || "Venus";
 
   return (
     <div className="space-y-6 pb-12 gl-fadein mt-4">
@@ -43,9 +48,8 @@ window.ReportsTab = ({ pr, ch }) => {
             </tbody>
           </table>
         </div>
-        {/* Explanation Box */}
-        <div className="bg-black/40 border border-white/5 rounded-xl p-3 text-[11px] t60 leading-relaxed overflow-y-auto max-h-24 custom-scrollbar">
-          <strong className="text-amber-400/80">The Cosmic GPS:</strong> This ledger tracks the precise mathematical location of each planet at the exact moment of birth. While many people share your Sun or Moon sign, your specific <strong>Nakshatra (Constellation)</strong> and <strong>Longitude</strong> create your highly unique personality blueprint. <em>Direct</em> motion means the planet's energy flows outward, while <em>Retrograde</em> suggests karmic lessons that are internalized and reflected upon.
+        <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed overflow-y-auto max-h-32 custom-scrollbar shadow-inner">
+          <strong className="text-amber-400">The Cosmic GPS:</strong> This ledger tracks the precise mathematical location of each planet at the exact moment of birth. While millions of people share your Sun or Moon sign, your specific <strong>Nakshatra (Constellation)</strong> and <strong>Longitude</strong> create your highly unique personality blueprint. <em>Direct</em> motion means the planet's energy flows outward easily, while <em>Retrograde</em> suggests specific karmic lessons you must reflect upon.
         </div>
       </div>
 
@@ -66,8 +70,11 @@ window.ReportsTab = ({ pr, ch }) => {
               );
             })}
           </div>
-          <div className="bg-black/40 border border-white/5 rounded-xl p-3 text-[11px] t60 leading-relaxed overflow-y-auto max-h-24 custom-scrollbar">
-            <strong className="text-amber-400/80">Life's Management Team:</strong> In Jaimini astrology, planets take on specific roles based on their exact degrees. The <strong>Atma Karaka (Highest Degree)</strong> is the "CEO" of your chart, representing your soul's main purpose. The <strong>Amatya Karaka</strong> guides your career and ambitions, while the <strong>Dara Karaka</strong> signifies your approach to partnerships and marriage.
+          <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed overflow-y-auto max-h-40 custom-scrollbar shadow-inner">
+            <strong className="text-amber-400 block mb-2">Your Personal Management Team:</strong>
+            ● Your <strong>Atma Karaka (CEO)</strong> is <strong style={{ color: window.PLANET_INFO[akPlanet].color }}>{akPlanet}</strong>. This dictates your deepest soul purpose and primary karmic challenges this lifetime.<br/><br/>
+            ● Your <strong>Amatya Karaka (Career)</strong> is <strong style={{ color: window.PLANET_INFO[amkPlanet].color }}>{amkPlanet}</strong>, which guides how you achieve success and wealth.<br/><br/>
+            ● Your <strong>Dara Karaka (Partnership)</strong> is <strong style={{ color: window.PLANET_INFO[dkPlanet].color }}>{dkPlanet}</strong>, revealing the type of energy you attract in long-term relationships and marriage.
           </div>
         </div>
 
@@ -85,8 +92,11 @@ window.ReportsTab = ({ pr, ch }) => {
               );
             })}
           </div>
-          <div className="bg-black/40 border border-white/5 rounded-xl p-3 text-[11px] t60 leading-relaxed overflow-y-auto max-h-24 custom-scrollbar">
-            <strong className="text-amber-400/80">Planetary Battery Life:</strong> Avasthas reveal the maturity and operational energy of your planets. <strong>Yuva (Youth)</strong> indicates a planet operating at peak vibrancy and delivering maximum results. <strong>Mrita (Dead)</strong> or <strong>Vriddha (Old)</strong> means the planet's energy is dormant or fatigued, requiring conscious effort, patience, or spiritual remedies to unlock its benefits.
+          <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed overflow-y-auto max-h-40 custom-scrollbar shadow-inner">
+            <strong className="text-amber-400 block mb-2">Planetary Battery Life:</strong> 
+            Avasthas reveal the maturity and operational capacity of your planets.<br/><br/>
+            ● <strong>Yuva (Youth):</strong> The planet is operating at 100% peak vibrancy, delivering active and powerful results in your life.<br/><br/>
+            ● <strong>Mrita (Dead) or Vriddha (Old):</strong> The planet's energy is currently dormant or fatigued. It requires patience, conscious effort, or spiritual remedies to successfully unlock its benefits.
           </div>
         </div>
 
