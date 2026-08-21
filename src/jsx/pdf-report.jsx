@@ -5,37 +5,53 @@ window.GhostPDFReport = ({ pr, ch, date, activeMaha, activeAntar, scores, gochar
   const { KundaliRenderer, PLANET_INFO, getPlanetaryDignity, getAntardashas, getPratyantarDashas, formatYM } = window;
   const currentDecYear = date.getFullYear() + date.getMonth() / 12 + date.getDate() / 365.25;
 
-  // SMART MARKDOWN PARSER: Converts raw AI text into beautifully styled PDF typography
+  // SMART MARKDOWN PARSER: Strips out code blocks and perfectly aligns text
   const renderFormattedText = (text) => {
     if (!text) return "Generating Forecast...";
-    return text.split('\n').map((line, i) => {
+    
+    // Completely remove markdown code block ticks to prevent ascii blocks
+    const cleanedText = text.replace(/```/g, ''); 
+
+    return cleanedText.split('\n').map((line, i) => {
       let cleanLine = line.trim();
       if (cleanLine === '') return <div key={i} style={{ height: '8px' }}></div>;
 
-      // Handle Markdown Headings
+      // Detect and format Headings
       let isHeading = false;
       if (cleanLine.startsWith('### ')) { cleanLine = cleanLine.substring(4); isHeading = true; }
       else if (cleanLine.startsWith('## ')) { cleanLine = cleanLine.substring(3); isHeading = true; }
       else if (cleanLine.startsWith('# ')) { cleanLine = cleanLine.substring(2); isHeading = true; }
 
-      // Split line by Markdown Bold Tags (**Text**)
+      // Detect and format Lists
+      let isListItem = false;
+      if (cleanLine.startsWith('- ') || cleanLine.startsWith('* ')) {
+        cleanLine = cleanLine.substring(2);
+        isListItem = true;
+      }
+
+      // Split the line by Markdown Bold Tags (**Text**)
       const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
       
       return (
         <div key={i} style={{ 
-          marginBottom: '10px',
+          marginBottom: isHeading ? '12px' : '8px',
           fontSize: isHeading ? '16px' : '13px',
           color: isHeading ? '#D4A574' : 'rgba(255,255,255,0.9)',
           fontWeight: isHeading ? 'bold' : 'normal',
-          lineHeight: '1.8'
+          lineHeight: '1.8',
+          marginLeft: isListItem ? '15px' : '0',
+          display: isListItem ? 'flex' : 'block'
         }}>
-          {parts.map((part, j) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-              // Highlight bolded months in bright Gold/Amber
-              return <strong key={j} style={{ color: '#FDE68A', fontWeight: 'bold' }}>{part.slice(2, -2)}</strong>;
-            }
-            return <span key={j}>{part}</span>;
-          })}
+          {isListItem && <span style={{ marginRight: '8px', color: '#D4A574' }}>•</span>}
+          <div>
+            {parts.map((part, j) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                // Highlight bolded months in bright Gold/Amber
+                return <strong key={j} style={{ color: '#FDE68A', fontWeight: 'bold' }}>{part.slice(2, -2)}</strong>;
+              }
+              return <span key={j}>{part}</span>;
+            })}
+          </div>
         </div>
       );
     });
