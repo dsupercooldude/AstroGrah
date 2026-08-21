@@ -1,5 +1,5 @@
 // src/jsx/components.jsx
-const React = window.React;
+var React = window.React;
 
 // --- 0. ERROR BOUNDARY & IDLE TIMEOUT HOOK ---
 window.ErrorBoundary = class ErrorBoundary extends React.Component {
@@ -81,32 +81,13 @@ const basePlanetInfo = {
   Venus: { symbol: "♀", color: "#F472B6", adhidevata: "Goddess Lakshmi", beej: "Om Dram Drim Droum Sah Shukraya Namah", mantras: ["Om Shukraya Namah"], gem: "Diamond / White Sapphire", charity: "Donate white clothes or rice on Friday", action: "Appreciate fine arts, music, or aesthetic design." },
   Saturn: { symbol: "♄", color: "#A78BFA", adhidevata: "Lord Yama / Shani", beej: "Om Pram Prim Proum Sah Shanaishcharaaya Namah", mantras: ["Om Shani Namah", "Mahamrityunjaya Mantra"], gem: "Blue Sapphire (Neelam)", charity: "Donate black sesame seeds or mustard oil on Saturday", action: "Practice strict discipline, patience, and duty." },
   Rahu: { symbol: "☊", color: "#9CA3AF", adhidevata: "Goddess Durga", beej: "Om Bhram Bhrim Bhroum Sah Rahave Namah", mantras: ["Om Rahave Namah"], gem: "Hessonite (Gomed)", charity: "Feed stray dogs or donate coconut", action: "Embrace innovative thinking and technological exploration." },
-  Ketu: { symbol: "☋", color: "#D97706", adhidevata: "Lord Ganesha", beej: "Om Sram Srim Sroum Sah Ketave Namah", mantras: ["Om Ketave Namah", "Ganapati Atharvashirsha"], gem: "Cat's Eye (Lehsunia)", charity: "Donate multi-colored blankets or feed stray animals", action: "Engage in deep spiritual introspection and letting go." },
-  Ascendant: { symbol: "A", color: "#FDE047", adhidevata: "Self", beej: "", mantras: [], gem: "None", charity: "None", action: "None" },
-  Uranus: { symbol: "♅", color: "#38BDF8", adhidevata: "Awakener", beej: "", mantras: [], gem: "None", charity: "None", action: "None" },
-  Neptune: { symbol: "♆", color: "#818CF8", adhidevata: "Mystic", beej: "", mantras: [], gem: "None", charity: "None", action: "None" },
-  Pluto: { symbol: "♇", color: "#94A3B8", adhidevata: "Transformer", beej: "", mantras: [], gem: "None", charity: "None", action: "None" }
-};
-
-// Replace the old window.PLANET_INFO with this block in src/jsx/components.jsx
-const basePlanetInfo = {
-  Sun: { symbol: "☉", color: "#F87171", adhidevata: "Lord Shiva / Agni", beej: "Om Hram Hrim Hroum Sah Suryaya Namah", mantras: ["Om Suryaya Namah", "Gayatri Mantra"], gem: "Ruby (Manikya)", charity: "Donate wheat or jaggery on Sunday", action: "Wake up before sunrise and offer water to the Sun." },
-  Moon: { symbol: "☽", color: "#60A5FA", adhidevata: "Goddess Gauri / Jal", beej: "Om Shram Shrim Shroum Sah Chandramase Namah", mantras: ["Om Chandraya Namah"], gem: "Natural Pearl / Moonstone", charity: "Donate milk or white rice on Monday", action: "Maintain emotional equilibrium and practice meditation." },
-  Mars: { symbol: "♂", color: "#EF4444", adhidevata: "Lord Kartikeya / Hanuman", beej: "Om Kram Krim Kroum Sah Bhaumaya Namah", mantras: ["Om Angarakaya Namah", "Hanuman Chalisa"], gem: "Red Coral (Moonga)", charity: "Donate red lentils or blood donation", action: "Channel physical energy into constructive physical workouts." },
-  Mercury: { symbol: "☿", color: "#34D399", adhidevata: "Lord Vishnu", beej: "Om Bram Brim Broum Sah Budhaya Namah", mantras: ["Om Budhaya Namah"], gem: "Emerald (Panna)", charity: "Donate green moong dal or feed cows", action: "Engage in intellectual reading, writing, or journaling." },
-  Jupiter: { symbol: "♃", color: "#FBBF24", adhidevata: "Lord Brahma / Indra", beej: "Om Gram Grim Groum Sah Gurave Namah", mantras: ["Om Brihaspataye Namah"], gem: "Yellow Sapphire (Pukhraj)", charity: "Donate turmeric, chana dal, or yellow sweets", action: "Seek mentorship or study sacred philosophy." },
-  Venus: { symbol: "♀", color: "#F472B6", adhidevata: "Goddess Lakshmi", beej: "Om Dram Drim Droum Sah Shukraya Namah", mantras: ["Om Shukraya Namah"], gem: "Diamond / White Sapphire", charity: "Donate white clothes or rice on Friday", action: "Appreciate fine arts, music, or aesthetic design." },
-  Saturn: { symbol: "♄", color: "#A78BFA", adhidevata: "Lord Yama / Shani", beej: "Om Pram Prim Proum Sah Shanaishcharaaya Namah", mantras: ["Om Shani Namah", "Mahamrityunjaya Mantra"], gem: "Blue Sapphire (Neelam)", charity: "Donate black sesame seeds or mustard oil on Saturday", action: "Practice strict discipline, patience, and duty." },
-  Rahu: { symbol: "☊", color: "#9CA3AF", adhidevata: "Goddess Durga", beej: "Om Bhram Bhrim Bhroum Sah Rahave Namah", mantras: ["Om Rahave Namah"], gem: "Hessonite (Gomed)", charity: "Feed stray dogs or donate coconut", action: "Embrace innovative thinking and technological exploration." },
   Ketu: { symbol: "☋", color: "#D97706", adhidevata: "Lord Ganesha", beej: "Om Sram Srim Sroum Sah Ketave Namah", mantras: ["Om Ketave Namah", "Ganapati Atharvashirsha"], gem: "Cat's Eye (Lehsunia)", charity: "Donate multi-colored blankets or feed stray animals", action: "Engage in deep spiritual introspection and letting go." }
 };
 
 window.PLANET_INFO = new Proxy(basePlanetInfo, {
   get(target, prop) {
     if (typeof prop === 'symbol') return target[prop];
-    // Auto-capitalize to fix the "venus" vs "Venus" bug
     const key = typeof prop === 'string' ? prop.charAt(0).toUpperCase() + prop.slice(1).toLowerCase() : prop;
-    
     if (key in target) return target[key];
     return { symbol: "●", color: "#a1a1aa", adhidevata: "Cosmic Point", beej: "", mantras: [], gem: "None", charity: "None", action: "None" };
   }
@@ -265,50 +246,39 @@ window.computeKundli = (profile, targetDate) => {
   };
 };
 
-
-// Append this to the very bottom of src/jsx/components.jsx
-
 // --- 7. PANCHANG & ADVANCED CALCULATION FALLBACKS ---
-if (!window.panchang) {
-  window.panchang = (dateStr) => {
-    const d = new Date(dateStr || Date.now());
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    return {
-      day: days[d.getDay()],
-      tithi: "Shukla Paksha",
-      nakshatra: "Rohini",
-      yoga: "Siddhi",
-      karana: "Bava",
-      sunrise: "06:15 AM",
-      sunset: "18:45 PM",
-      rahu: "16:30 - 18:00 (Avoid new initiatives)",
-      yama: "12:00 - 13:30",
-      gulika: "15:00 - 16:30"
-    };
+window.panchang = (dateStr) => {
+  const d = new Date(dateStr || Date.now());
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  return {
+    day: days[d.getDay()],
+    tithi: "Shukla Paksha",
+    nakshatra: "Rohini",
+    yoga: "Siddhi",
+    karana: "Bava",
+    sunrise: "06:15 AM",
+    sunset: "18:45 PM",
+    rahu: "16:30 - 18:00 (Avoid new initiatives)",
+    yama: "12:00 - 13:30",
+    gulika: "15:00 - 16:30"
   };
-}
+};
 
-if (!window.calculatePlanetaryDetails) {
-  window.calculatePlanetaryDetails = (placements, degrees) => {
-    const details = {};
-    Object.keys(placements || {}).forEach(p => {
-      details[p] = { rashi: placements[p], longitudeStr: (degrees[p] || 0).toFixed(2) + "°", nakshatra: window.NAKSHATRAS[Math.floor(Math.random()*27)], pada: 2, status: "Direct" };
-    });
-    return details;
-  };
-}
-
-if (!window.calculateJaiminiKarakas) {
-  window.calculateJaiminiKarakas = () => ({
-    "Atmakaraka (Soul)": "Sun", "Amatyakaraka (Career)": "Mercury", "Bhratrukaraka (Siblings)": "Mars", 
-    "Matrukaraka (Mother)": "Moon", "Putrakaraka (Children)": "Jupiter", "Gnatikaraka (Obstacles)": "Saturn", "Darakaraka (Spouse)": "Venus"
+window.calculatePlanetaryDetails = (placements, degrees) => {
+  const details = {};
+  Object.keys(placements || {}).forEach(p => {
+    details[p] = { rashi: placements[p], longitudeStr: (degrees[p] || 0).toFixed(2) + "°", nakshatra: window.NAKSHATRAS[Math.floor(Math.random()*27)], pada: 2, status: "Direct" };
   });
-}
+  return details;
+};
 
-if (!window.calculateBaladiAvastha) {
-  window.calculateBaladiAvastha = (degrees) => {
-    const avasthas = {};
-    Object.keys(degrees || {}).forEach(p => { avasthas[p] = "Yuva (Active/Youth)"; });
-    return avasthas;
-  };
-}
+window.calculateJaiminiKarakas = () => ({
+  "Atmakaraka (Soul)": "Sun", "Amatyakaraka (Career)": "Mercury", "Bhratrukaraka (Siblings)": "Mars", 
+  "Matrukaraka (Mother)": "Moon", "Putrakaraka (Children)": "Jupiter", "Gnatikaraka (Obstacles)": "Saturn", "Darakaraka (Spouse)": "Venus"
+});
+
+window.calculateBaladiAvastha = (degrees) => {
+  const avasthas = {};
+  Object.keys(degrees || {}).forEach(p => { avasthas[p] = "Yuva (Active/Youth)"; });
+  return avasthas;
+};
