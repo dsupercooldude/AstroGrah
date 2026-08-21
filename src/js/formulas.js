@@ -290,3 +290,38 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
 
   return `[Graha Ledger Vedic Expert Engine — Deterministic Mode]\n═════════════════════════════════════════════════════\n📍 DOMAIN: ${domain}\n\n1. DATA-DRIVEN VEDIC SYNTHESIS:\n${analysis}\n\n2. PRESCRIBED ACTION ROADMAP:\n${roadmap}\n\n3. DIVINE REMEDY & MANTRAS:\n• ${muhurtaRemedy}\n• Daily Action: ${window.PLANET_INFO[rulingPlanet]?.action}`;
 };
+// Add this to the bottom of src/js/formulas.js
+
+window.generateDeepSynthesis = (pr, ch, bio) => {
+  if (!ch || !ch.d1) return {};
+  const lagna = ch.d1.lagna;
+  const lagnaLord = window.SIGN_LORDS[lagna];
+  const moon = ch.moonSign;
+  const dasha = ch.dasha?.[0]?.lord || "Sun";
+  
+  const sortedPower = Object.entries(ch.shadbala || {}).sort((a,b)=>b[1]-a[1]);
+  const topPlanet = sortedPower[0]?.[0] || lagnaLord;
+  const weakPlanet = sortedPower[sortedPower.length - 1]?.[0] || "Saturn";
+
+  const tP = ch.transits || {};
+  const dashaTransit = tP[dasha];
+
+  const bioP = Math.round(((bio.p + 1) / 2) * 100);
+  const bioE = Math.round(((bio.e + 1) / 2) * 100);
+  const bioI = Math.round(((bio.i + 1) / 2) * 100);
+
+  return {
+    basicKundali: `Your cosmic blueprint is anchored by the ${lagna} Ascendant, ruled by ${lagnaLord}. This core geometry makes you naturally ${window.SIGN_TRAITS?.[lagna] || 'driven and distinct'}. With your Moon residing in ${moon}, your internal emotional landscape seeks security through ${window.SIGN_TRAITS?.[moon] || 'structured stability'}.`,
+    basicDasha: `You are currently experiencing the Mahadasha of ${dasha}. This overarching time-cycle actively pulls your focus toward the themes of ${dasha}'s placement in your chart. Because ${dasha} is currently transiting ${dashaTransit || 'the heavens'}, expect its natal promises to manifest actively in your daily routine.`,
+    basicPower: `Shadbala (Six-fold strength) reveals that ${topPlanet} is your ultimate power center, granting you immense natural leverage in areas of ${window.PLANET_INFO[topPlanet]?.action.toLowerCase()}. Conversely, ${weakPlanet} is starved for energy and represents your primary karmic bottleneck requiring conscious remediation.`,
+    basicBio: `Your 15-day Biorhythm matrix (Physical: ${bioP}%, Emotional: ${bioE}%, Intellectual: ${bioI}%) maps your immediate pranic bandwidth. Validate this today: if Intellectual is high, you will notice effortless focus; if Physical is low, you will feel the need to preserve stamina rather than push limits.`,
+    dynamicPrescription: {
+      gem: window.PLANET_INFO[lagnaLord]?.gem, // Gem for overall life force
+      charity: window.PLANET_INFO[weakPlanet]?.charity, // Charity to appease the weakest link
+      mantra: window.PLANET_INFO[dasha]?.beej, // Mantra to align with current time-lord
+      deity: window.PLANET_INFO[lagnaLord]?.adhidevata,
+      action: `Fortify your weakest link (${weakPlanet}) by observing its specific discipline, while ruthlessly leveraging your dominant ${topPlanet} for major career and life decisions.`
+    },
+    advLedger: `As a ${lagna} rising, the dignity of ${lagnaLord} dictates your overall life trajectory. However, your current operating system is governed by the Dasha of ${dasha}. By cross-referencing your strongest planet (${topPlanet}) with ${dasha}'s current transit in ${dashaTransit}, your immediate focus must shift toward ${window.PLANET_INFO[dasha]?.action.toLowerCase()} to unlock material and spiritual yield.`
+  };
+};
