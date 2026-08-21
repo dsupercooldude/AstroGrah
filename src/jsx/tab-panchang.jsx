@@ -1,5 +1,5 @@
 // src/jsx/tab-panchang.jsx
-const React = window.React;
+var React = window.React;
 const { useState } = window.React;
 
 window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
