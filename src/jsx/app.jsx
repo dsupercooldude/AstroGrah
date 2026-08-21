@@ -69,7 +69,6 @@ const bootInterval = setInterval(() => {
 
       const aP = prs.find((p) => p.id === activeProfileId) || (prs.length > 0 ? prs[0] : null);
 
-      // PDF GENERATOR LISTENER
       useEffect(() => {
         const handlePdf = async () => {
           const el = document.getElementById('pdf-render-target');
@@ -161,5 +160,7 @@ const bootInterval = setInterval(() => {
     if (root) { root.render(<ErrorBoundary><AppContent /></ErrorBoundary>); }
   } else if (bootAttempts > 80) { 
     clearInterval(bootInterval);
-  document.getElementById("bootloader").innerHTML = `<div style="background:#1C1F3D...><h2 style="color:#F87171...>System Under Maintenance</h2><p...>The astrological engine is syncing. Please try refreshing.</p><button...>Force Reload Engine</button></div>`;  }
+    const missing = Object.keys(deps).filter(k => !deps[k]).join(', ');
+    document.getElementById("bootloader").innerHTML = `<div style="background:#1C1F3D; padding:30px; border-radius:16px; border:1px solid #F87171; text-align:center; max-width: 450px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5);"><h2 style="color:#F87171; font-family:serif; margin-bottom: 10px; font-size: 24px;">System Under Maintenance</h2><p style="color:rgba(255,255,255,0.8); font-size:13px; margin-bottom:20px;">The astrological engine is syncing. Please try refreshing.</p><div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: left;"><span style="color:#D4A574; font-family: monospace; font-size: 10px; display: block; margin-bottom: 4px;">TECHNICAL DIAGNOSTIC:</span><span style="color:#F87171; font-family: monospace; font-size: 11px;">Missing Target: ${missing}</span></div><button onclick="try{localStorage.clear();}catch(e){} window.location.reload(true);" style="background:#F87171; color:black; padding:10px 20px; border-radius:8px; font-weight:bold; border:none; cursor:pointer; font-size: 14px; width: 100%;">Force Reload Engine</button></div>`;
+  }
 }, 50);
