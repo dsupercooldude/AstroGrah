@@ -39,7 +39,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
     if (btnIcon) btnIcon.className = "ph ph-spinner animate-spin";
     
     try {
-      // Create high-res 2x snapshot, ignoring interactive UI controls
+      // Create high-res 2x snapshot, ignoring interactive UI controls (class: no-export)
       const canvas = await window.html2canvas(zone, {
         scale: 2,
         backgroundColor: "#121426",
@@ -89,6 +89,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
               {pr.dob} · {pr.time} · {pr.place} (UTC{pr.utcOffset >= 0 ? `+${pr.utcOffset}` : pr.utcOffset})
             </div>
           </div>
+          {/* PDF Export Button and Edit Button (Hidden during PDF generation) */}
           <div className="flex gap-2 no-export">
             <button onClick={handleExportPDF} title="Download PDF Report" className="p-2 border border-emerald-500/30 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 transition text-emerald-400">
               <i id="export-btn-icon" className="ph ph-download-simple" style={{ fontSize: 18 }} />
