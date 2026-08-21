@@ -40,25 +40,54 @@ const bootInterval = setInterval(() => {
       const aP = prs.find((p) => p.id === activeProfileId) || (prs.length > 0 ? prs[0] : null);
 
       // FIX: Added 300ms rendering delay so the DOM can build the tables correctly
+// In src/jsx/app.jsx, locate the useEffect containing handlePdf and replace it with this:
+
       useEffect(() => {
         const handlePdf = async () => {
-          const el = document.getElementById('pdf-render-target'); if (!el) return; 
+          const el = document.getElementById('pdf-render-target'); 
+          if (!el) return; 
           el.classList.remove('hidden'); 
-          el.style.left = '0';
-          el.style.zIndex = '-50'; // Keep it behind the UI while capturing
+          el.style.left = '0'; 
+          el.style.zIndex = '-50';
           
-          await new Promise(resolve => setTimeout(resolve, 300)); // CRITICAL WAIT TIME
+          await new Promise(resolve => setTimeout(resolve, 500)); // Ensure DOM is fully painted
 
           try {
             const canvas = await window.html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#0b0d19' });
-            const imgData = canvas.toDataURL('image/jpeg', 0.9); const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight); pdf.save(`${aP?.name?.replace(/\s+/g, '_') || 'Graha_Ledger'}_Astrology_Report.pdf`);
-          } catch(e) { alert("PDF Failed."); } finally { el.style.left = '-9999px'; el.classList.add('hidden'); }
+            const imgData = canvas.toDataURL('image/jpeg', 1.0); 
+            const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
+            
+            const pdfWidth = pdf.internal.pageSize.getWidth(); 
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasHeightInPt = (canvas.height * pdfWidth) / canvas.width;
+            
+            let heightLeft = canvasHeightInPt;
+            let position = 0;
+            
+            // Render first page
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, canvasHeightInPt);
+            heightLeft -= pdfHeight;
+            
+            // Loop and add new pages for overflow
+            while (heightLeft >= 0) {
+              position = heightLeft - canvasHeightInPt;
+              pdf.addPage();
+              pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, canvasHeightInPt);
+              heightLeft -= pdfHeight;
+            }
+            
+            pdf.save(`${aP?.name?.replace(/\s+/g, '_') || 'Graha_Ledger'}_Astrology_Report.pdf`);
+          } catch(e) { 
+            alert("PDF Generation Failed."); 
+          } finally { 
+            el.style.left = '-9999px'; 
+            el.classList.add('hidden'); 
+          }
         };
-        window.addEventListener('generate-pdf', handlePdf); return () => window.removeEventListener('generate-pdf', handlePdf);
+        window.addEventListener('generate-pdf', handlePdf); 
+        return () => window.removeEventListener('generate-pdf', handlePdf);
       }, [aP]);
-
+      
       const logoutUser = () => { try { localStorage.removeItem("gl_active_user"); } catch (e) {} setU(null); };
       const handleOpenEdit = (profileObj = {}) => { setFormData({ id: profileObj.id || null, name: profileObj.name || "", dob: profileObj.dob || "2000-01-01", time: profileObj.time || "12:00", place: profileObj.place || "", lat: profileObj.lat || "", lon: profileObj.lon || "", utcOffset: profileObj.utcOffset || "5.5", gotra: profileObj.gotra || "", jaati: profileObj.jaati || "", kulDevta: profileObj.kulDevta || "", gramDevta: profileObj.gramDevta || "", sthanDevta: profileObj.sthanDevta || "" }); setEd(profileObj); };
       const hSave = async (e) => { e.preventDefault(); const pD = { ...formData, lat: parseFloat(formData.lat) || 0, lon: parseFloat(formData.lon) || 0, utcOffset: parseFloat(formData.utcOffset) || 5.5, id: formData.id || Date.now().toString() }; const nP = formData.id ? prs.map((p) => (p.id === pD.id ? pD : p)) : [...prs, pD]; const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`); vaultFile.content.profiles = CryptoUtils.encrypt(nP); vaultFile.content.settings = vaultFile.content.settings || CryptoUtils.encrypt(set); await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha); setU({ ...u, profiles: nP }); setActiveProfileId(pD.id); setEd(null); };
