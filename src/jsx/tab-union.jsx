@@ -1,6 +1,6 @@
 // src/jsx/tab-union.jsx
 var React = window.React;
-const { useState } = window.React;
+var { useState } = window.React;
 
 window.CompatTab = ({ prs, chs }) => {
   const { NAKSHATRAS } = window;
