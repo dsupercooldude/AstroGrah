@@ -242,3 +242,58 @@ window.panchang = (dateStr) => {
   const ss = new Date(d); ss.setHours(18, 45, 0);
   return { day: window.WEEKDAY[d.getDay()], tithi: "Shukla Paksha", nakshatra: "Rohini", yoga: "Siddhi", karana: "Bava", sunrise: sr, sunset: ss, rahu: "16:30 - 18:00", yama: "12:00 - 13:30", gulika: "15:00 - 16:30" };
 };
+window.computeKundli = (profile, targetDate) => {
+  const nameHash = (profile?.name || "User").split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const signIdx = nameHash % 12;
+  const lagnaSign = window.SIGNS[signIdx];
+  const moonSign = window.SIGNS[(signIdx + 3) % 12];
+  const sunSign = window.SIGNS[(signIdx + 1) % 12];
+  
+  const houses = {};
+  for (let i = 1; i <= 12; i++) {
+    houses[i] = window.SIGNS[(signIdx + i - 1) % 12];
+  }
+
+  const planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"];
+  const placements = {};
+  const degrees = {};
+  const kpTable = {};
+
+  planets.forEach((p, idx) => {
+    const pSign = window.SIGNS[(signIdx + idx * 2) % 12];
+    placements[p] = pSign;
+    const deg = (nameHash * (idx + 7)) % 30 + 0.45;
+    degrees[p] = deg;
+    kpTable[p] = {
+      sign: pSign,
+      nak: window.NAKSHATRAS[(idx * 3) % 27],
+      sub: window.SIGNS[(signIdx + idx) % 12]
+    };
+  });
+
+  const dashaSequence = [
+    { lord: "Jupiter", start: 2010, end: 2026 },
+    { lord: "Saturn", start: 2026, end: 2045 },
+    { lord: "Mercury", start: 2045, end: 2062 },
+    { lord: "Ketu", start: 2062, end: 2069 },
+    { lord: "Venus", start: 2069, end: 2089 }
+  ];
+
+  const shadbala = { Sun: 450, Moon: 420, Mars: 390, Mercury: 480, Jupiter: 510, Venus: 460, Saturn: 380, Rahu: 440, Ketu: 410 };
+
+  return {
+    d1: { lagna: lagnaSign, lagnaLord: "Jupiter", houses, placements },
+    d7: { lagna: window.SIGNS[(signIdx + 4) % 12], houses, placements },
+    d9: { lagna: window.SIGNS[(signIdx + 8) % 12], houses, placements },
+    d10: { lagna: window.SIGNS[(signIdx + 6) % 12], houses, placements },
+    d60: { lagna: lagnaSign, houses, placements },
+    moonSign,
+    sunSign,
+    nakshatra: "Rohini",
+    pada: 2,
+    dasha: dashaSequence,
+    shadbala,
+    planetaryDegrees: degrees,
+    kpTable
+  };
+};
