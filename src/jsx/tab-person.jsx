@@ -9,14 +9,12 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
   if (!ch) return <div className="p-10 text-center t50 text-sm font-mono">Awaiting Astral Data...</div>;
 
   const weekday = window.WEEKDAY[date.getDay()];
-  const gochara = window.generateDeepGochara ? window.generateDeepGochara(ch, ch.d1?.lagna || "Aries", date, weekday, bioScores || { p: 0, e: 0, i: 0 }) : {};
+  const gochara = window.generateDeepGochara ? window.generateDeepGochara(ch, ch.d1?.lagna || "Capricorn", date, weekday, bioScores || { p: 0, e: 0, i: 0 }) : {};
   const overviewText = window.runVedicRuleEngine ? window.runVedicRuleEngine("overview", pr, ch, date) : "";
 
   const activePlanet = window.PLANET_INFO[weekday === "Sun" ? "Sun" : weekday === "Mon" ? "Moon" : weekday === "Tue" ? "Mars" : weekday === "Wed" ? "Mercury" : weekday === "Thu" ? "Jupiter" : weekday === "Fri" ? "Venus" : "Saturn"];
 
   const currentYear = date.getFullYear() + (date.getMonth() / 12);
-  
-  // Format style for backend engine (e.g. "North")
   const formattedStyle = chartStyle.charAt(0).toUpperCase() + chartStyle.slice(1).toLowerCase();
 
   return (
@@ -100,7 +98,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* DASHA WITH CURRENT HIGHLIGHT */}
+        {/* DYNAMIC DASHA DRILLDOWN RESTORED */}
         <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
           <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
             <h3 className="font-serif text-sm text-amber-200">Vimshottari Dasha Drilldown</h3>
@@ -112,8 +110,31 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
                 <div key={i} className={`border rounded-xl p-3 transition-all ${isActive ? 'bg-amber-400/5 border-amber-400/30' : 'bg-black/20 border-white/5'}`}>
                   <div className="flex justify-between items-center cursor-pointer" onClick={() => setExpandedDasha(expandedDasha === i ? null : i)}>
                     <span className={`text-xs font-mono font-bold ${isActive ? 'text-amber-400' : 't85'}`}>{isActive && <span className="mr-1">●</span>} {d.lord} Mahadasha</span>
-                    <span className={`text-xs font-mono ${isActive ? 'text-amber-200' : 't60'}`}>{d.start} - {d.end} <i className={`ph ph-caret-${expandedDasha === i ? 'up' : 'down'} ml-2`}></i></span>
+                    <span className={`text-xs font-mono ${isActive ? 'text-amber-200' : 't60'}`}>{Math.floor(d.start)} - {Math.floor(d.end)} <i className={`ph ph-caret-${expandedDasha === i ? 'up' : 'down'} ml-2`}></i></span>
                   </div>
+                  
+                  {/* The missing drill-down code block! */}
+                  {expandedDasha === i && (
+                    <div className="mt-3 pt-3 border-t border-white/5 pl-2 space-y-3 gl-fadein">
+                      {window.getAntardashas ? window.getAntardashas(d.lord, d.start, d.end).slice(0, 3).map((antar, aIdx) => (
+                        <div key={aIdx}>
+                          <div className="text-[10px] font-mono text-amber-200 font-bold mb-1">
+                            ▶ {d.lord} - {antar.lord} Antar <span className="float-right t60">{window.formatYM ? window.formatYM(antar.start) : Math.floor(antar.start)}</span>
+                          </div>
+                          <div className="pl-4 space-y-1.5 border-l border-white/10 ml-1 mt-2">
+                            {window.getPratyantarDashas ? window.getPratyantarDashas(antar.lord, antar.start, antar.end).slice(0, 3).map((prat, pIdx) => (
+                              <div key={pIdx} className="text-[9px] font-mono t60 flex justify-between pl-2 relative">
+                                <span className="absolute -left-1 top-1.5 w-1 h-[1px] bg-white/20"></span>
+                                <span>↳ {prat.lord} Prat</span>
+                                <span>{window.formatYM ? window.formatYM(prat.start) : Math.floor(prat.start)}</span>
+                              </div>
+                            )) : null}
+                          </div>
+                        </div>
+                      )) : null}
+                    </div>
+                  )}
+
                 </div>
               );
             })}
@@ -143,7 +164,58 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      {/* RESTORED BIOCYCLE GRAPH */}
+      {/* DYNAMIC TRANSIT TEXT RESTORED */}
+      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
+        <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
+          <h3 className="font-serif text-sm text-amber-200">Gochara (Transit) Impact</h3>
+          <span className="text-[9px] t50 uppercase tracking-widest">{weekday}, {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+        </div>
+        <div className="space-y-4">
+          {Object.entries(gochara).map(([domain, data]) => (
+            <div key={domain}>
+              <div className="flex justify-between text-[10px] font-mono mb-1">
+                <span className="font-bold text-amber-100 capitalize">{domain.replace(/([A-Z])/g, ' $1').trim()}</span>
+                <span className="t85 font-bold">{Math.round(data.sc)}/100</span>
+              </div>
+              <div className="h-1 bg-black/50 rounded-full overflow-hidden border border-white/5 mb-1.5">
+                <div className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-400" style={{ width: `${data.sc}%` }}></div>
+              </div>
+              <div className="text-[10px] t60 font-mono leading-snug">
+                {data.text}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl mb-6">
+        <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
+          <h3 className="font-serif text-sm text-amber-200 flex items-center gap-2">
+            <i className="ph ph-sparkle"></i> Prescriptions for {weekday}
+          </h3>
+          <span className="text-[9px] text-amber-400/80 uppercase tracking-widest font-bold">● Active Hora Ruler: {activePlanet.symbol} {weekday === "Sun" ? "Sun" : weekday === "Mon" ? "Moon" : weekday === "Tue" ? "Mars" : weekday === "Wed" ? "Mercury" : weekday === "Thu" ? "Jupiter" : weekday === "Fri" ? "Venus" : "Saturn"}</span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+          <div className="bg-black/30 p-4 rounded-xl border border-white/5 col-span-1 md:col-span-2 shadow-inner">
+            <div className="t50 text-[9px] uppercase mb-1 tracking-widest">Presiding Deity & Mantras</div>
+            <div className="font-bold text-amber-200 text-sm">Adhidevata: {activePlanet.adhidevata}</div>
+            <div className="t85 mt-2 bg-black/20 p-2 rounded border border-white/5">
+              <span className="t50 text-[9px] uppercase block mb-1">Recite:</span>
+              {activePlanet.beej}
+            </div>
+          </div>
+          <div className="bg-black/30 p-4 rounded-xl border border-white/5 shadow-inner">
+            <div className="t50 text-[9px] uppercase mb-1 tracking-widest">Gemstone</div>
+            <div className="font-bold t100">{activePlanet.gem}</div>
+          </div>
+          <div className="bg-black/30 p-4 rounded-xl border border-white/5 shadow-inner">
+            <div className="t50 text-[9px] uppercase mb-1 tracking-widest">Charity (Dana)</div>
+            <div className="font-bold t100">{activePlanet.charity}</div>
+          </div>
+        </div>
+      </div>
+
       {window.BiocycleWidget && <window.BiocycleWidget bioScores={bioScores} />}
 
     </div>
