@@ -289,3 +289,54 @@ window.bio = (dob, td, utc) => {
   const eD = (Date.UTC(td.getFullYear(), td.getMonth(), td.getDate(), 12, 0, 0) - ((utc || 0) * 3600000) - (Date.UTC(Y, M - 1, D, 12, 0, 0) - ((utc || 0) * 3600000))) / 86400000;
   return { p: Math.sin((2 * Math.PI * eD) / 23), e: Math.sin((2 * Math.PI * eD) / 28), i: Math.sin((2 * Math.PI * eD) / 33), s: Math.sin((2 * Math.PI * eD) / 38) };
 };
+
+window.panchang = (dObj, ms = "amanta", utc = 5.5) => {
+  const JD = window.julianDay(dObj.toISOString().slice(0, 10), "12:00", utc);
+  const T = (JD - 2451545) / 36525;
+  const sl = window.sunLon(T).L, ml = window.moonLon(T);
+  const diff = window.norm360(ml - sl);
+  const tIdx = Math.floor(diff / 12);
+  const isS = tIdx < 15;
+  const mIdx = Math.floor(window.norm360(sl) / 30);
+  const masa = ms === "purnimanta" && !isS ? window.LUNAR_MASAS[(mIdx + 1) % 12] : window.LUNAR_MASAS[mIdx];
+
+  const d = new Date(dObj.getTime());
+  d.setHours(6, 0, 0, 0); const sr = new Date(d.getTime());
+  d.setHours(18, 0, 0, 0); const ss = new Date(d.getTime());
+  d.setHours(18, 30, 0, 0); const mr = new Date(d.getTime());
+  d.setHours(6, 30, 0, 0); const msr = new Date(d.getTime());
+  
+  const dMs = ss - sr;
+  // FIX: Calculates the exact length of the night until next sunrise!
+  const nMs = (sr.getTime() + 86400000) - ss.getTime(); 
+
+  const getS = (s, dur) => ({ s: new Date(s), e: new Date(s + dur) });
+  const dow = dObj.getDay();
+  const abh = getS(sr.getTime() + (dMs / 15) * 7, dMs / 15);
+  const ct = [{ n:"Udveg", d:"Anxiety", c:"#B23A48" }, { n:"Amrit", d:"Nectar", c:"#8FB2D9" }, { n:"Rog", d:"Disease", c:"#B23A48" }, { n:"Labh", d:"Gain", c:"#8FC9A9" }, { n:"Shubh", d:"Auspicious", c:"#D4A574" }, { n:"Char", d:"Moving", c:"#9FB8D9" }, { n:"Kaal", d:"Loss", c:"#8288A0" }];
+  const cm = { 0:[0,5,3,1,2,4,6,0], 1:[1,2,4,6,0,5,3,1], 2:[2,4,6,0,5,3,1,2], 3:[3,1,2,4,6,0,5,3], 4:[4,6,0,5,3,1,2,4], 5:[5,3,1,2,4,6,0,5], 6:[6,0,5,3,1,2,4,6] };
+  
+  const chogDay = cm[dow].map((i, idx) => ({ ...ct[i], ...getS(sr.getTime() + idx * (dMs / 8), dMs / 8) }));
+  // FIX: Night Choghadiya Array mapped out
+  const chogNight = cm[(dow + 4) % 7].map((i, idx) => ({ ...ct[i], ...getS(ss.getTime() + idx * (nMs / 8), nMs / 8) }));
+
+  const hoOrder = [0, 5, 3, 1, 6, 4, 2];
+  const sHoIdx = [0, 3, 6, 2, 5, 1, 4][dow];
+  const horas = Array.from({ length: 12 }).map((_, i) => ({ p: window.WEEKDAY[hoOrder[(hoOrder.indexOf(sHoIdx) + i) % 7]], ...getS(sr.getTime() + i * (dMs / 12), dMs / 12) }));
+  // FIX: Night Horas Array mapped out
+  const nightHoras = Array.from({ length: 12 }).map((_, i) => ({ p: window.WEEKDAY[hoOrder[(hoOrder.indexOf(sHoIdx) + 12 + i) % 7]], ...getS(ss.getTime() + i * (nMs / 12), nMs / 12) }));
+
+  const karana = window.KARANAS[Math.floor(diff / 6) % 7] || "Kimstughna";
+  const bhadraApprox = karana.includes("Bhadra") || karana.includes("Vishti") ? getS(sr.getTime() + dMs * 0.5, dMs * 0.4) : null;
+
+  return {
+    tithi: ["Pratipada","Dwitiya","Tritiya","Chaturthi","Panchami","Shashthi","Saptami","Ashtami","Navami","Dashami","Ekadashi","Dwadashi","Trayodashi","Chaturdashi",isS ? "Purnima" : "Amavasya"][tIdx % 15],
+    paksha: isS ? "Shukla" : "Krishna", masa,
+    nak: window.NAKSHATRAS[Math.floor(ml / (360 / 27))],
+    yoga: window.YOGAS[Math.floor(window.norm360(ml + sl) / (360 / 27))],
+    karana, sr, ss, mr, msr, abh, chogDay, chogNight, horas, nightHoras, bhadra: bhadraApprox, // Passed Night Arrays
+    rahu: getS(sr.getTime() + dMs * 0.8, dMs * 0.1), yamaganda: getS(sr.getTime() + dMs * 0.4, dMs * 0.1),
+    gulika: getS(sr.getTime() + dMs * 0.2, dMs * 0.1), brahma: getS(sr.getTime() - dMs * 0.15, dMs * 0.08),
+    vikram: dObj.getFullYear() + 57, saka: dObj.getFullYear() - 78
+  };
+};
