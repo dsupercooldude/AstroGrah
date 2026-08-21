@@ -39,9 +39,16 @@ const bootInterval = setInterval(() => {
       const chs = useMemo(() => { const o = {}; if (Array.isArray(prs)) { prs.forEach((p) => { if (p && p.id && window.computeKundli) { o[p.id] = window.computeKundli(p, dt); } }); } return o; }, [prs, dt]);
       const aP = prs.find((p) => p.id === activeProfileId) || (prs.length > 0 ? prs[0] : null);
 
+      // FIX: Added 300ms rendering delay so the DOM can build the tables correctly
       useEffect(() => {
         const handlePdf = async () => {
-          const el = document.getElementById('pdf-render-target'); if (!el) return; el.classList.remove('hidden'); el.style.left = '0';
+          const el = document.getElementById('pdf-render-target'); if (!el) return; 
+          el.classList.remove('hidden'); 
+          el.style.left = '0';
+          el.style.zIndex = '-50'; // Keep it behind the UI while capturing
+          
+          await new Promise(resolve => setTimeout(resolve, 300)); // CRITICAL WAIT TIME
+
           try {
             const canvas = await window.html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#0b0d19' });
             const imgData = canvas.toDataURL('image/jpeg', 0.9); const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
@@ -63,7 +70,6 @@ const bootInterval = setInterval(() => {
 
       const calculateTimezone = (lat, lon) => { if (lat >= 22.5 && lat <= 26.5 && lon >= 51.0 && lon <= 56.5) return "4.0"; if (lat >= 6.0 && lat <= 37.5 && lon >= 68.0 && lon <= 97.5) return "5.5"; if (lat >= 49.5 && lat <= 61.0 && lon >= -8.0 && lon <= 2.0) return "0.0"; return (Math.round((lon / 15) * 2) / 2).toFixed(1); };
       
-      // FIX: Robust Auto-Fetch utilizing dual APIs (Nominatim + TimeApi)
       const fetchCityCoordinates = async () => { 
         const query = formData.place; 
         if (!query) return alert("Please type a city name first."); 
@@ -79,9 +85,7 @@ const bootInterval = setInterval(() => {
                     const timeRes = await fetch(`https://timeapi.io/api/TimeZone/coordinate?latitude=${lat}&longitude=${lon}`);
                     if(timeRes.ok) {
                         const tData = await timeRes.json();
-                        if(tData.currentUtcOffset && tData.currentUtcOffset.seconds !== undefined) {
-                            tz = (tData.currentUtcOffset.seconds / 3600).toFixed(1);
-                        }
+                        if(tData.currentUtcOffset && tData.currentUtcOffset.seconds !== undefined) { tz = (tData.currentUtcOffset.seconds / 3600).toFixed(1); }
                     }
                 } catch(err) {}
                 setFormData((prev) => ({ ...prev, place: data[0].display_name.split(",")[0], lat: lat.toFixed(4), lon: lon.toFixed(4), utcOffset: tz })); 
