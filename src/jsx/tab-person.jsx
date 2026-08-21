@@ -17,7 +17,6 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
 
   const currentDecYear = date.getFullYear() + date.getMonth() / 12 + date.getDate() / 365.25;
 
-  // Auto-expand the currently active Mahadasha AND Antardasha on load
   useEffect(() => {
     if (ch?.dasha && !initialDashaSet) {
       const activeMahaIdx = ch.dasha.findIndex(d => currentDecYear >= d.start && currentDecYear < d.end);
@@ -138,94 +137,99 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         <KundaliRenderer ac={ac} ch={ch} kpTable={ch.kpTable} style={chartStyle} titleDesc={`Divisional View: D-${div}`} isExpert={expert} />
       </div>
 
-      {/* EXTRACTED FROM EXPERT MODE: VIMSHOTTARI DASHA & SHADBALA ALWAYS VISIBLE */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-3xl border border-white/10 bgcard p-5">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-serif text-sm text-amber-200">Vimshottari Dasha Drilldown</h3>
-            <span className="font-mono text-[9px] t50 uppercase">Maha / Antar / Prat</span>
-          </div>
-          <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1">
-            {ch.dasha.map((d, i) => {
-              const isActiveMaha = currentDecYear >= d.start && currentDecYear < d.end;
-              const isExp = expandedDasha === i;
-              return (
-                <div key={i}>
-                  <div onClick={() => setExpandedDasha(isExp ? null : i)} className={`flex justify-between items-center p-2.5 rounded-xl text-xs font-mono border cursor-pointer transition ${isActiveMaha ? "bg-amber-400/20 border-amber-400/50 font-bold text-amber-300 shadow-md ring-1 ring-amber-400/30" : "bg-black/30 border-white/5 hover:border-white/20"}`}>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-1.5 h-1.5 rounded-full ${isActiveMaha ? 'bg-amber-400 animate-pulse' : 'bg-transparent'}`}></div>
-                      <span style={{ color: isActiveMaha ? '#FDE68A' : PLANET_INFO[d.lord]?.color }}>{d.lord} Mahadasha</span>
+      {/* 3-TIER VIMSHOTTARI DASHA UI ACCORDION */}
+      {expert && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-3xl border border-white/10 bgcard p-5">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-serif text-sm text-amber-200">Vimshottari Dasha Drilldown</h3>
+              <span className="font-mono text-[9px] t50 uppercase">Maha / Antar / Prat</span>
+            </div>
+            <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1">
+              {ch.dasha.map((d, i) => {
+                const isActiveMaha = currentDecYear >= d.start && currentDecYear < d.end;
+                const isExp = expandedDasha === i;
+                return (
+                  <div key={i}>
+                    {/* LEVEL 1: MAHADASHA */}
+                    <div onClick={() => setExpandedDasha(isExp ? null : i)} className={`flex justify-between items-center p-2.5 rounded-xl text-xs font-mono border cursor-pointer transition ${isActiveMaha ? "bg-amber-400/20 border-amber-400/50 font-bold text-amber-300 shadow-md ring-1 ring-amber-400/30" : "bg-black/30 border-white/5 hover:border-white/20"}`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-1.5 h-1.5 rounded-full ${isActiveMaha ? 'bg-amber-400 animate-pulse' : 'bg-transparent'}`}></div>
+                        <span style={{ color: isActiveMaha ? '#FDE68A' : PLANET_INFO[d.lord]?.color }}>{d.lord} Mahadasha</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={isActiveMaha ? "text-amber-100" : "t70"}>{Math.floor(d.start)} - {Math.floor(d.end)}</span>
+                        <Icon name={isExp ? "caret-up" : "caret-down"} className={isActiveMaha ? "text-amber-200" : "t50"} />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={isActiveMaha ? "text-amber-100" : "t70"}>{Math.floor(d.start)} - {Math.floor(d.end)}</span>
-                      <Icon name={isExp ? "caret-up" : "caret-down"} className={isActiveMaha ? "text-amber-200" : "t50"} />
-                    </div>
-                  </div>
-                  
-                  {isExp && (
-                    <div className="pl-3 pr-2 py-2 mt-1 space-y-1 bg-black/40 rounded-xl border border-white/5 text-[10px] font-mono">
-                      {getAntardashas(d.lord, d.start, d.end).map((ant, idx) => {
-                        const isActiveAntar = currentDecYear >= ant.start && currentDecYear < ant.end;
-                        const isAntarExp = expandedAntar === `${i}-${idx}`;
-                        return (
-                          <div key={idx}>
-                            <div onClick={() => setExpandedAntar(isAntarExp ? null : `${i}-${idx}`)} className={`flex justify-between items-center py-1.5 border-b border-white/5 last:border-0 cursor-pointer hover:text-white transition ${isActiveAntar ? "text-amber-300 font-bold bg-amber-400/10 px-2 rounded border border-amber-400/20" : "px-1"}`}>
-                              <div className="flex items-center gap-1.5">
-                                {isActiveAntar && <span className="text-amber-400">▶</span>}
-                                <span>{d.lord} - <span style={{ color: PLANET_INFO[ant.lord]?.color }}>{ant.lord}</span></span>
+                    
+                    {isExp && (
+                      <div className="pl-3 pr-2 py-2 mt-1 space-y-1 bg-black/40 rounded-xl border border-white/5 text-[10px] font-mono">
+                        {getAntardashas(d.lord, d.start, d.end).map((ant, idx) => {
+                          const isActiveAntar = currentDecYear >= ant.start && currentDecYear < ant.end;
+                          const isAntarExp = expandedAntar === `${i}-${idx}`;
+                          return (
+                            <div key={idx}>
+                              {/* LEVEL 2: ANTARDASHA */}
+                              <div onClick={() => setExpandedAntar(isAntarExp ? null : `${i}-${idx}`)} className={`flex justify-between items-center py-1.5 border-b border-white/5 last:border-0 cursor-pointer hover:text-white transition ${isActiveAntar ? "text-amber-300 font-bold bg-amber-400/10 px-2 rounded border border-amber-400/20" : "px-1"}`}>
+                                <div className="flex items-center gap-1.5">
+                                  {isActiveAntar && <span className="text-amber-400">▶</span>}
+                                  <span>{d.lord} - <span style={{ color: PLANET_INFO[ant.lord]?.color }}>{ant.lord}</span> Antar</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span>{formatYM(ant.start)} to {formatYM(ant.end)}</span>
+                                  <Icon name={isAntarExp ? "caret-up" : "caret-down"} className="t50" />
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span>{formatYM(ant.start)} to {formatYM(ant.end)}</span>
-                                <Icon name={isAntarExp ? "caret-up" : "caret-down"} className="t50" />
-                              </div>
-                            </div>
-                            
-                            {isAntarExp && (
-                              <div className="pl-4 py-1.5 space-y-1 border-l border-white/10 ml-2 mt-1 mb-1">
-                                {getPratyantarDashas(ant.lord, ant.start, ant.end).map((prat, pIdx) => {
-                                  const isPratActive = currentDecYear >= prat.start && currentDecYear < prat.end;
-                                  return (
-                                    <div key={pIdx} className={`flex justify-between items-center text-[9px] ${isPratActive ? "text-amber-300 font-bold bg-amber-400/10 px-1.5 py-0.5 rounded" : "t60"}`}>
-                                      <div className="flex items-center gap-1">
-                                        {isPratActive && <span className="text-amber-400 text-[8px]">●</span>}
-                                        <span>➔ <span style={{ color: PLANET_INFO[prat.lord]?.color }}>{prat.lord}</span></span>
+                              
+                              {/* LEVEL 3: PRATYANTAR DASHA */}
+                              {isAntarExp && (
+                                <div className="pl-4 py-1.5 space-y-1 border-l border-white/10 ml-2 mt-1 mb-1">
+                                  {getPratyantarDashas(ant.lord, ant.start, ant.end).map((prat, pIdx) => {
+                                    const isPratActive = currentDecYear >= prat.start && currentDecYear < prat.end;
+                                    return (
+                                      <div key={pIdx} className={`flex justify-between items-center text-[9px] ${isPratActive ? "text-amber-300 font-bold bg-amber-400/10 px-1.5 py-0.5 rounded" : "t60"}`}>
+                                        <div className="flex items-center gap-1">
+                                          {isPratActive && <span className="text-amber-400 text-[8px]">●</span>}
+                                          <span>➔ <span style={{ color: PLANET_INFO[prat.lord]?.color }}>{prat.lord}</span> Prat</span>
+                                        </div>
+                                        <span>{formatYM(prat.start)} to {formatYM(prat.end)}</span>
                                       </div>
-                                      <span>{formatYM(prat.start)} to {formatYM(prat.end)}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bgcard p-5">
-          <div className="flex justify-between items-center mb-3"><h3 className="font-serif text-sm text-amber-200">Shadbala & Planetary Power</h3><span className="font-mono text-[9px] t50 uppercase">Rupas & Dignity</span></div>
-          <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
-            {Object.entries(ch.shadbala).map(([planet, score]) => {
-              const signPlaced = ch.d1.houses[ch.d1.placements[planet]] || "Aries";
-              const dignity = getPlanetaryDignity(planet, signPlaced);
-              return (
-                <div key={planet} className="text-xs bg-black/25 p-2 rounded-xl border border-white/5">
-                  <div className="flex justify-between items-center mb-1 font-mono">
-                    <span style={{ color: PLANET_INFO[planet]?.color }} className="font-bold flex items-center gap-1.5"><span>{PLANET_INFO[planet]?.symbol}</span> {planet}</span>
-                    <div className="flex items-center gap-2 text-[10px]"><span style={{ color: dignity.color }} className="font-semibold px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{dignity.status}</span><span className="text-amber-200 font-bold">{(score / 60).toFixed(1)} Rupas ({score} pts)</span></div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (score / 600) * 100)}%`, backgroundColor: PLANET_INFO[planet]?.color }}></div></div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bgcard p-5">
+            <div className="flex justify-between items-center mb-3"><h3 className="font-serif text-sm text-amber-200">Shadbala & Planetary Power</h3><span className="font-mono text-[9px] t50 uppercase">Rupas & Dignity</span></div>
+            <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
+              {Object.entries(ch.shadbala).map(([planet, score]) => {
+                const signPlaced = ch.d1.houses[ch.d1.placements[planet]] || "Aries";
+                const dignity = getPlanetaryDignity(planet, signPlaced);
+                return (
+                  <div key={planet} className="text-xs bg-black/25 p-2 rounded-xl border border-white/5">
+                    <div className="flex justify-between items-center mb-1 font-mono">
+                      <span style={{ color: PLANET_INFO[planet]?.color }} className="font-bold flex items-center gap-1.5"><span>{PLANET_INFO[planet]?.symbol}</span> {planet}</span>
+                      <div className="flex items-center gap-2 text-[10px]"><span style={{ color: dignity.color }} className="font-semibold px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{dignity.status}</span><span className="text-amber-200 font-bold">{(score / 60).toFixed(1)} Rupas ({score} pts)</span></div>
+                    </div>
+                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (score / 600) * 100)}%`, backgroundColor: PLANET_INFO[planet]?.color }}></div></div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="rounded-3xl border border-white/10 bgcard p-5 space-y-4">
         <div className="flex justify-between items-center"><h3 className="font-serif text-base text-amber-200">Gochara (Transit) Impact</h3><span className="font-mono text-[9px] t50 uppercase">{date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span></div>
@@ -248,7 +252,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
 
       <BiorhythmChart data={bsGraph} scores={scores} />
 
-      {/* Render the hidden Ghost Report for PDF */}
+      {/* Render the hidden Ghost Report for PDF without affecting Layout */}
       <GhostPDFReport pr={pr} ch={ch} date={date} activeMaha={activeMaha} activeAntar={activeAntar} scores={scores} gochara={gochara} pI={pI} pdfForecast={pdfForecast} />
     </div>
   );
