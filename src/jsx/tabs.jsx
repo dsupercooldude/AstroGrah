@@ -1,8 +1,9 @@
 // src/jsx/tabs.jsx
+const React = window.React;
 const { useState, Fragment } = window.React;
 
 window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs, chs, u, setU, updateSettings }) => {
-  const { PersonTab, PanchangTab, CompatTab, AskTab } = window;
+  const { PersonTab, ReportsTab, PanchangTab, CompatTab, AskTab } = window;
   const [tb, setTb] = useState("person");
 
   return (
@@ -10,6 +11,7 @@ window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs,
       <div className="flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bgcard p-1 font-mono text-[11px] shadow-inner mb-2">
         {[
           { id: "person", l: "Astrology & Dasha" },
+          { id: "reports", l: "Advanced Reports" },
           { id: "panchang", l: "Panchang & Muhurta" },
           { id: "union", l: "Union Milan" },
           { id: "ask", l: "Vedic AI Sage" }
@@ -21,6 +23,7 @@ window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs,
       </div>
       
       {tb === "person" && <PersonTab pr={pr} ch={ch} date={date} setDate={setDate} settings={settings} onEditProfile={onEditProfile} />}
+      {tb === "reports" && <ReportsTab pr={pr} ch={ch} />}
       {tb === "panchang" && <PanchangTab d={date} setDate={setDate} p={pr} utc={pr?.utcOffset || 5.5} settings={settings} />}
       {tb === "union" && <CompatTab prs={prs} chs={chs} settings={settings} date={date} />}
       {tb === "ask" && <AskTab em={u.email} emHash={u.emailHash} set={settings} pr={pr} ch={ch} date={date} />}
