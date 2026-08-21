@@ -6,7 +6,6 @@ window.executeMultiProviderAI = async (prompt, settings, systemInstruction = "")
       id: "gemini",
       name: "Google Gemini 3.5 Flash",
       run: async (k) => {
-        // Updated to the current, active Gemini API endpoint to fix the 404 Not Found error
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${k}`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ contents: [{ parts: [{ text: `${systemInstruction}\n\n${prompt}` }] }] })
@@ -150,8 +149,52 @@ window.generateDeepGochara = (ch, lagnaSign, date, pK, bScores) => {
   return { health: { text: health, sc: hSc }, wealth: { text: wealth, sc: wSc }, career: { text: career, sc: cSc }, home: { text: home, sc: fSc } };
 };
 
+// --- NEW: OFFLINE 12-MONTH HOROSCOPE FALLBACK ENGINE ---
+window.generateOfflineYearlyHoroscope = (pr, ch, targetDate) => {
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  let startMonth = targetDate.getMonth();
+  let startYear = targetDate.getFullYear();
+  
+  let report = "YEARLY FORECAST (Month-by-Month Offline AI Engine)\n";
+  report += "────────────────────────────────────────────────────────\n\n";
+  
+  const themes = {
+      "Aries": ["career acceleration and bold moves", "financial planning and asset restructuring", "domestic adjustments and renovations", "creative projects and social expansion"],
+      "Taurus": ["steady wealth accumulation", "diplomatic communication focus", "property matters and family grounding", "educational pursuits and deep learning"],
+      "Gemini": ["intellectual self-discovery", "financial restructuring and auditing", "travel opportunities and networking", "career pivots and skill adaptation"],
+      "Cancer": ["emotional grounding and healing", "financial gains through intuition", "relationship deepening and empathy", "health focus and vitality building"],
+      "Leo": ["leadership opportunities and visibility", "financial stability and legacy planning", "family expansion and creative joy", "spiritual retreats and introspection"],
+      "Virgo": ["meticulous project planning", "career recognition and detailed execution", "health regimens and dietary adjustments", "long-term investment strategies"],
+      "Libra": ["relationship harmony and partnerships", "professional networking and alliances", "financial balancing and ledger review", "creative arts and aesthetic pursuits"],
+      "Scorpio": ["deep psychological transformations", "career intensity and focused research", "financial windfalls and hidden assets", "emotional healing and rebirth"],
+      "Sagittarius": ["philosophical growth and publishing", "long-distance travel and expansion", "career scaling and bold visions", "relationship clarity and truth-seeking"],
+      "Capricorn": ["structural discipline and system building", "career milestones and authority gains", "financial conservatism and savings", "domestic duties and foundational stability"],
+      "Aquarius": ["innovative projects and technological leaps", "social networking and community leadership", "financial unpredictability and adaptation", "spiritual awakenings and cosmic alignment"],
+      "Pisces": ["intuitive development and artistic flow", "career fluidity and empathetic leadership", "financial intuition and charitable giving", "relationship depth and karmic clearing"]
+  };
+  
+  const signThemes = themes[ch.d1.lagna] || themes["Aries"];
+  
+  for (let i = 0; i < 12; i++) {
+      let mIdx = (startMonth + i) % 12;
+      let y = startYear + Math.floor((startMonth + i) / 12);
+      let activeTheme = signThemes[i % 4];
+      
+      report += `**${months[mIdx]} ${y}**: `;
+      report += `This month highlights ${activeTheme}. With your Lagna in ${ch.d1.lagna} and Moon in ${ch.moonSign}, planetary geometry indicates a period of systematic execution. Expect shifts in your energetic and emotional bandwidth as the lunar cycle progresses through your pivotal houses. Focus on disciplined routines.\n\n`;
+  }
+  
+  return report;
+};
+
 window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
   const lQ = query.toLowerCase();
+  
+  // If the query specifically asks for a yearly/monthly breakdown (from the PDF generator)
+  if (lQ.includes("yearly horoscope") || lQ.includes("month-by-month")) {
+      return window.generateOfflineYearlyHoroscope(profile, kundli, targetDate);
+  }
+
   const dateFormatted = targetDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
   const b = window.bio(profile?.dob, targetDate, profile?.utcOffset);
   const pK = window.WEEKDAY[targetDate.getDay()];
