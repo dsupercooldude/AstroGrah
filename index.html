@@ -1,99 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Graha Ledger V2.8 Enterprise</title>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzE0MTYyQiIgc3Ryb2tlPSIjRDRBNTc0IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzZXJpZiIgZm9udC1zaXplPSI0NSIgZmlsbD0iI0Q0QTU3NCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4KWQPC90ZXh0Pjwvc3ZnPg==" type="image/svg+xml" />
-  
-  <!-- CSS & Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  
-  <!-- External React & Utility CDNs -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://unpkg.com/otpauth@9.3.1/dist/otpauth.umd.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graha Ledger — Enterprise Vedic Jyotish & Biorhythm Vault</title>
+    
+    <!-- Anti-Cache Headers to stop browser disk caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 
-  <style>
-    body { background: #121426; margin: 0; color: #F2EFE6; font-family: 'Sora', sans-serif; overflow-x: hidden; }
-    ::-webkit-scrollbar { width: 4px; height: 4px; } 
-    ::-webkit-scrollbar-thumb { background: rgba(212,165,116,0.25); border-radius: 4px; }
-    .font-serif { font-family: 'Fraunces', serif; } .font-mono { font-family: 'IBM Plex Mono', monospace; }
-    .t100 { color: #F2EFE6; } .t85 { color: rgba(242,239,230,0.85); } .t60 { color: rgba(242,239,230,0.60); }
-    .bgcard { background: #181A33; border: 1px solid rgba(255,255,255,0.08); } 
-    .bgcard2 { background: #1C1F3D; border: 1px solid rgba(212,165,116,0.15); }
-    .bgfaint { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
-    .gl-fadein { animation: fadein 0.25s ease-out; } 
-    @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    details > summary { list-style: none; outline: none; } details > summary::-webkit-details-marker { display: none; }
-    .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget, #goog-gt-tt, .skiptranslate, #google_translate_element { display: none !important; opacity: 0 !important; pointer-events: none !important; height: 0 !important; }
-    body { top: 0px !important; }
-    .custom-lang-wrapper { position: fixed; top: 12px; right: 12px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; }
-    .custom-lang-selector { background-color: #1C1F3D; color: #D4A574; border: 1px solid rgba(212,165,116,0.4); border-radius: 8px; padding: 5px 10px; font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 500; outline: none; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.6); max-width: 140px; }
-  </style>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Fraunces & Sora -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Phosphor Icons -->
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
+
+    <!-- External Libraries (jsPDF, html2canvas, OTPAuth, React, Babel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.1.4/otpauth.umd.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      body {
+        font-family: 'Sora', sans-serif;
+        background-color: #0b0d19;
+        color: #F2EFE6;
+      }
+      .font-serif { font-family: 'Fraunces', serif; }
+      .bgcard { background-color: #121426; }
+      .bgcard2 { background-color: #181b33; }
+      .bgfaint { background-color: rgba(255, 255, 255, 0.02); }
+      .t100 { color: #F2EFE6; }
+      .t85 { color: rgba(242, 239, 230, 0.85); }
+      .t75 { color: rgba(242, 239, 230, 0.75); }
+      .t60 { color: rgba(242, 239, 230, 0.6); }
+      .t50 { color: rgba(242, 239, 230, 0.5); }
+      .t40 { color: rgba(242, 239, 230, 0.4); }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+      .gl-fadein { animation: fadeIn 0.3s ease-out forwards; }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body>
+<body class="bg-[#0b0d19] min-h-screen text-[#F2EFE6] selection:bg-amber-400 selection:text-black">
 
-  <!-- Bootloader screen displayed until React mounts -->
-  <div id="bootloader" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center;">
-      <div style="background: #1C1F3D; border: 1px solid rgba(212,165,116,0.3); padding: 30px; border-radius: 24px; max-width: 400px;">
-          <h2 style="font-family: serif; color: #D4A574; font-size: 24px; margin-bottom: 10px;">Graha Ledger Loading...</h2>
-          <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 20px;">Fetching modular fabric components...</p>
-          <button onclick="localStorage.clear(); window.location.reload();" style="background: #D4A574; color: #121426; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">Hard Reset Cache</button>
+    <!-- Initial Bootloader (Replaced by React App on Successful Load) -->
+    <div id="bootloader" class="min-h-screen flex items-center justify-center p-4">
+      <div class="text-center space-y-3">
+        <div class="w-10 h-10 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <div class="font-mono text-xs text-amber-300 tracking-widest uppercase">Initializing Graha Ledger Engine...</div>
       </div>
-  </div>
+    </div>
 
-  <div class="custom-lang-wrapper">
-    <select class="custom-lang-selector notranslate" onchange="triggerGoogleTranslate(this.value)">
-        <option value="en">English (Default)</option><option value="hi">हिन्दी (Hindi)</option><option value="sa">संस्कृतम् (Sanskrit)</option><option value="ar">العربية (Arabic)</option><option value="ta">தமிழ் (Tamil)</option><option value="te">తెలుగు (Telugu)</option><option value="mr">मराठी (Marathi)</option><option value="gu">ગુજરાતી (Gujarati)</option><option value="bn">বাংলা (Bengali)</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="ru">Русский (Russian)</option><option value="ja">日本語 (Japanese)</option><option value="zh-CN">中文 (Chinese)</option>
-    </select>
-  </div>
+    <!-- React Root Mount Point -->
+    <div id="root"></div>
 
-  <div id="root"></div>
-  <div id="google_translate_element"></div>
+    <!-- Core JavaScript Support Files -->
+    <script src="src/js/database.js"></script>
+    <script src="src/js/crypto.js"></script>
+    <script src="src/js/ai-rules.js"></script>
 
-  <script type="text/javascript">
-    function googleTranslateElementInit() { new google.translate.TranslateElement({ pageLanguage: 'en', autoDisplay: false }, 'google_translate_element'); }
-    function triggerGoogleTranslate(langCode) { var sel = document.querySelector('.goog-te-combo'); if (sel) { sel.value = langCode; sel.dispatchEvent(new Event('change')); } else { setTimeout(() => triggerGoogleTranslate(langCode), 500); } }
-  </script>
-  <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <!-- Dynamic Cache-Busting Script Loader -->
+    <script type="text/javascript">
+      (function() {
+        const modules = [
+          "src/jsx/components.jsx",
+          "src/jsx/modals.jsx",
+          "src/jsx/charts.jsx",
+          "src/jsx/pdf-report.jsx",
+          "src/jsx/tab-person.jsx",
+          "src/jsx/tab-panchang.jsx",
+          "src/jsx/tab-union.jsx",
+          "src/jsx/tab-ask.jsx",
+          "src/jsx/tab-reports.jsx",
+          "src/jsx/tabs.jsx",
+          "src/jsx/app.jsx"
+        ];
 
-  <!-- ================================================================= -->
-  <!-- MODULAR INJECTION FABRIC (Loaded in strict sequence)              -->
-  <!-- ================================================================= -->
-  
-  <!-- 1. Pure JavaScript Core Engines -->
-  <script src="src/js/cryptography.js"></script>
-  <script src="src/js/database.js"></script>
-  <script src="src/js/formulas.js"></script>
-  <script src="src/js/ai-rules.js"></script>
+        // Generates a unique live timestamp on every page refresh to bypass browser disk cache
+        const cacheBuster = Date.now();
 
-  
-  <!-- Application Modules (Notice the ?v=2.9 at the end) -->
-  <script type="text/babel" src="src/jsx/components.jsx"></script>
-  <script type="text/babel" src="src/jsx/modals.jsx"></script>
-  <script type="text/babel" src="src/jsx/charts.jsx"></script>
-  
-  <!-- Tab Modules -->
-  <script type="text/babel" src="src/jsx/pdf-report.jsx"></script>
-  <script type="text/babel" src="src/jsx/tab-person.jsx"></script>
-  <script type="text/babel" src="src/jsx/tab-panchang.jsx"></script>
-  <script type="text/babel" src="src/jsx/tab-union.jsx"></script>
-  <script type="text/babel" src="src/jsx/tab-ask.jsx"></script>
-  <script type="text/babel" src="src/jsx/tab-reports.jsx"></script> <!-- New Module -->
-  <script type="text/babel" src="src/jsx/tabs.jsx"></script>
-
-  <!-- Bootloader -->
-  <script type="text/babel" src="src/jsx/app.jsx"></script>
-
+        modules.forEach(function(src) {
+          const script = document.createElement('script');
+          script.type = 'text/babel';
+          script.src = src + '?t=' + cacheBuster;
+          document.body.appendChild(script);
+        });
+      })();
+    </script>
 </body>
 </html>
