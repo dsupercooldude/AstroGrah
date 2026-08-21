@@ -1,5 +1,5 @@
 // src/jsx/charts.jsx
-const React = window.React;
+var React = window.React;
 const { useState } = window.React;
 
 // --- 1. CORE KUNDALI CHART RENDERER ---
