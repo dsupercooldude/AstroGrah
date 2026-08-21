@@ -1,5 +1,5 @@
 // src/jsx/tabs.jsx
-const React = window.React;
+var React = window.React;
 const { useState, Fragment } = window.React;
 
 window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs, chs, u, setU, updateSettings }) => {
