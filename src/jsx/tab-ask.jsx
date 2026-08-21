@@ -1,4 +1,5 @@
 // src/jsx/tab-ask.jsx
+const React = window.React;
 const { useState, useEffect } = window.React;
 
 window.AskTab = ({ emHash, set, pr, ch, date }) => {
