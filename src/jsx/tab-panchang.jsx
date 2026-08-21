@@ -4,23 +4,13 @@ var { useState } = window.React;
 
 window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
   const { Icon, panchang, PLANET_INFO } = window;
-  const [liveValidated, setLiveValidated] = useState(false);
-  const [validating, setValidating] = useState(false);
-
   const pan = panchang ? panchang(d, settings?.monthSystem || "amanta", utc) : {};
-
-  const fm = (dt) => {
-    if (!dt) return "—";
-    if (dt instanceof Date) return dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-    return typeof dt === "string" ? dt : "—";
-  };
-
-  const validateLivePanchang = async () => { /* Same as before */ };
+  const fm = (dt) => dt ? (dt instanceof Date ? dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : dt) : "—";
 
   return (
     <div className="space-y-4 pb-12 gl-fadein mt-4">
       {/* ... [KEEP HEADER, SUN/MOON RISE, AND GRID IDENTICAL] ... */}
-
+      
       <div className="rounded-3xl border border-white/10 bgcard p-5">
         <h3 className="font-serif text-sm text-amber-200 mb-4">Day Choghadiya Timings</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -45,7 +35,7 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
       </div>
 
       <div className="rounded-3xl border border-white/10 bgcard p-5">
-        <h3 className="font-serif text-sm text-blue-200 mb-4">Planetary Hora Tracking (24H)</h3>
+        <h3 className="font-serif text-sm text-amber-200 mb-4">Planetary Hora Tracking (24H)</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {/* FIX: Combined Day + Night Horas */}
             {[...(pan.horas || []), ...(pan.nightHoras || [])].map((h, i) => ( 
