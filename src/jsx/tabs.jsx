@@ -6,7 +6,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
 
   const [div, setDiv] = useState(1);
   const [chartStyle, setChartStyle] = useState(settings.kundaliStyle || "north");
-  const [expert, setExpert] = useState(false); // Controls Basic vs Expert toggle
+  const [expert, setExpert] = useState(false);
   const [expandedDasha, setExpandedDasha] = useState(null);
   const [expandedAntar, setExpandedAntar] = useState(null);
 
@@ -28,18 +28,71 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
   const gochara = generateDeepGochara(ch, ch.d1.lagna, date, pK, scores);
   const currentDecYear = date.getFullYear() + date.getMonth() / 12 + date.getDate() / 365;
 
+  // --- PDF EXPORT ENGINE ---
+  const handleExportPDF = async () => {
+    if (!window.html2canvas || !window.jspdf) return alert("PDF Engine loading, please wait a second...");
+    
+    const zone = document.getElementById("pdf-export-zone");
+    if (!zone) return;
+    
+    const btnIcon = document.getElementById("export-btn-icon");
+    if (btnIcon) btnIcon.className = "ph ph-spinner animate-spin";
+    
+    try {
+      // Create high-res 2x snapshot, ignoring interactive UI controls
+      const canvas = await window.html2canvas(zone, {
+        scale: 2,
+        backgroundColor: "#121426",
+        ignoreElements: (el) => el.classList.contains("no-export")
+      });
+      
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new window.jspdf.jsPDF("p", "mm", "a4");
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Map canvas to A4 dimensions and calculate pagination
+      pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const safeName = pr.name.replace(/\s+/g, "_");
+      pdf.save(`${safeName}_Graha_Ledger_Report.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert("PDF Export failed: " + e.message);
+    } finally {
+      if (btnIcon) btnIcon.className = "ph ph-download-simple";
+    }
+  };
+
   return (
-    <div className="space-y-4 pb-12 gl-fadein">
+    <div className="space-y-4 pb-12 gl-fadein" id="pdf-export-zone">
+      {/* 1. ACTIVE PROFILE HEADER */}
       <div className="rounded-3xl border border-white/10 p-5 mt-4 bgcard2 shadow-xl">
         <div className="flex justify-between items-start">
           <div>
-            <div className="font-mono text-[9px] uppercase text-amber-300 tracking-[0.25em]">Active Profile</div>
+            <div className="font-mono text-[9px] uppercase text-amber-300 tracking-[0.25em]">Astrological Report</div>
             <h2 className="font-serif text-2xl mt-0.5 text-white font-bold">{pr.name}</h2>
             <div className="text-[11px] font-mono t60 mt-1">
               {pr.dob} · {pr.time} · {pr.place} (UTC{pr.utcOffset >= 0 ? `+${pr.utcOffset}` : pr.utcOffset})
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 no-export">
+            <button onClick={handleExportPDF} title="Download PDF Report" className="p-2 border border-emerald-500/30 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 transition text-emerald-400">
+              <i id="export-btn-icon" className="ph ph-download-simple" style={{ fontSize: 18 }} />
+            </button>
             <button onClick={() => onEditProfile(pr)} title="Edit Profile" className="p-2 border border-white/10 rounded-full bg-black/30 hover:bg-white/10 transition text-amber-300">
               <Icon name="pencil-simple" size={18} />
             </button>
@@ -47,7 +100,8 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         </div>
       </div>
 
-      <div className="bgcard rounded-2xl border border-amber-400/20 p-4 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-3">
+      {/* 2. PROMINENT TIME-TRAVEL CONTROL BAR (Hidden from PDF) */}
+      <div className="bgcard rounded-2xl border border-amber-400/20 p-4 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-3 no-export">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300">
             <Icon name="clock-countdown" size={22} />
@@ -76,8 +130,10 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         </div>
       </div>
 
+      {/* 3. KUNDALI CHART SECTION */}
       <div className="rounded-3xl border border-white/10 bgcard p-4">
-        <div className="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-white/5 pb-3">
+        {/* Render Controls hidden from PDF */}
+        <div className="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-white/5 pb-3 no-export">
           <div className="flex gap-1 flex-wrap bg-black/40 border border-white/10 rounded-xl p-1 font-mono text-[10px]">
             {expert && <Fragment>
               {[1, 7, 9, 10, 60].map((divNum) => (
@@ -101,10 +157,10 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
           </div>
         </div>
         
-        {/* Basic Mode has been dynamically restored using `isExpert={expert}` instead of true */}
         <KundaliRenderer ac={ac} ch={ch} kpTable={ch.kpTable} style={chartStyle} titleDesc={`Divisional View: D-${div}`} isExpert={expert} />
       </div>
 
+      {/* 4. PLANETARY STRENGTH & VIMSHOTTARI DASHA DRILLDOWN */}
       {expert && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-3xl border border-white/10 bgcard p-5">
@@ -125,7 +181,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
                       <span style={{ color: PLANET_INFO[d.lord]?.color }}>{d.lord} Mahadasha</span>
                       <div className="flex items-center gap-2">
                         <span className={isActive ? "text-amber-200" : "t70"}>{Math.floor(d.start)} - {Math.floor(d.end)}</span>
-                        <Icon name={isExp ? "caret-up" : "caret-down"} className="t50" />
+                        <Icon name={isExp ? "caret-up" : "caret-down"} className="t50 no-export" />
                       </div>
                     </div>
                     {isExp && (
@@ -142,7 +198,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
                                 <span>{d.lord} - <span style={{ color: PLANET_INFO[ant.lord]?.color }}>{ant.lord}</span></span>
                                 <div className="flex items-center gap-2">
                                   <span>{formatYM(ant.start)} to {formatYM(ant.end)}</span>
-                                  <Icon name={isAntarExp ? "caret-up" : "caret-down"} className="t50" />
+                                  <Icon name={isAntarExp ? "caret-up" : "caret-down"} className="t50 no-export" />
                                 </div>
                               </div>
                               {isAntarExp && (
@@ -200,6 +256,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         </div>
       )}
 
+      {/* 5. DEEP GOCHARA FORECAST */}
       <div className="rounded-3xl border border-white/10 bgcard p-5 space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-serif text-base text-amber-200">Gochara (Transit) Impact</h3>
@@ -237,6 +294,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, onEditProfile }) => {
         </div>
       </div>
 
+      {/* 6. DAILY PRESCRIPTIONS */}
       <div className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/10 via-transparent to-transparent p-5 space-y-3">
         <div className="flex justify-between items-center">
           <h3 className="font-serif text-base text-amber-300 flex items-center gap-2"><Icon name="sparkle" /> Prescriptions for {pK}</h3>
@@ -278,7 +336,6 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
     try {
       const res = await fetch(`https://api.sunrisesunset.io/json?lat=${p?.lat || 25.2}&lng=${p?.lon || 55.2}&date=${d.toISOString().slice(0, 10)}`);
       const data = await res.json();
-      // Allowing infinite button clicks by toggling text rather than locking it
       if (data && data.results) {
           setLiveValidated(true);
           setTimeout(() => setLiveValidated(false), 4000); 
@@ -344,7 +401,6 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
         </div>
       </div>
 
-      {/* ISOLATED AND PROMINENT CHOGHADIYA SECTION */}
       <div className="rounded-3xl border border-white/10 bgcard p-5">
         <h3 className="font-serif text-sm text-amber-200 mb-4">Day Choghadiya Timings</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -358,7 +414,6 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
         </div>
       </div>
 
-      {/* ISOLATED AND PROMINENT HORA SECTION */}
       <div className="rounded-3xl border border-white/10 bgcard p-5">
         <h3 className="font-serif text-sm text-blue-200 mb-4">Planetary Hora Tracking</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
