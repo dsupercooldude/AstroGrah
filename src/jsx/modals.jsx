@@ -42,8 +42,8 @@ window.SetupModal = ({ onConfig }) => {
 };
 
 window.AuthModal = ({ onLogin }) => {
-  const { SageLogo, Icon, AppDB, CryptoUtils } = window;
-  const [mode, setMode] = useState("login"); const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState(""); const [mfaPin, setMfaPin] = useState("");
+  const { SageLogo, Icon, AppDB, CryptoUtils, PasskeyAuth } = window;
+  const [mode, setMode] = useState("login"); const [e, setE]=useState(""); const [p, setP]=useState(""); const [err, setErr]=useState(""); const [gp, setGp]=useState(""); const [mfaPin, setMfaPin] = useState(""); const [passkeyBusy, setPasskeyBusy] = useState(false);
   
   const proceedToVault = async (normE, emailHash, reqChange, isMfaEnabled) => {
     const vaultFile = await AppDB.getFile(`gl_vault_${emailHash}.json`);
@@ -72,6 +72,30 @@ window.AuthModal = ({ onLogin }) => {
       }
     } catch(error) { setErr(error.message); }
   };
+
+  const handlePasskeyLogin = async () => {
+    setErr("");
+    setPasskeyBusy(true);
+    try {
+      const normE = e.trim().toLowerCase();
+      const authFile = await AppDB.getFile('gl_auth.json');
+      let emailHash;
+      let record;
+      if (normE) {
+        emailHash = await AppDB.hashKey(normE);
+        const account = authFile.content.users?.[emailHash];
+        record = await PasskeyAuth.authenticate(emailHash, account?.passkey);
+      } else {
+        const records = Object.values(authFile.content.users || {}).map((account) => account.passkey).filter(Boolean);
+        record = await PasskeyAuth.authenticateAny(records);
+        emailHash = record.emailHash;
+      }
+      const account = authFile.content.users?.[emailHash];
+      if (!account || record.emailHash !== emailHash) throw new Error("Passkey account could not be verified.");
+      await proceedToVault(normE || record.email, emailHash, account.req, !!account.mfa);
+    } catch (error) { setErr(error.message); }
+    finally { setPasskeyBusy(false); }
+  };
   
   const handleMfaSubmit = async (ev) => {
     ev.preventDefault(); setErr(""); const normE = e.trim().toLowerCase();
@@ -91,7 +115,7 @@ window.AuthModal = ({ onLogin }) => {
   
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 gl-fadein"><div className="w-full max-w-sm rounded-3xl bgcard2 p-6 shadow-2xl border border-white/10 relative">
-      <form onSubmit={handleSubmit}><SageLogo size={44}/><h2 className="text-center font-serif text-2xl mt-1 mb-4 text-amber-200">{mode==="signup"?"Create Account":"Sign In"}</h2>{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<div className="space-y-3"><div><label className="text-[10px] t40 uppercase font-mono">Email Address</label><input required type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>{mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input required type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>}</div><button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-5 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">{mode==="signup"?"Generate Credentials":"Enter Vault"}</button><div className="flex justify-between items-center mt-4"><button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white">{mode==="login"?"New User? Quick Sign Up":"Existing User? Sign In"}</button></div></form></div></div>
+      <form onSubmit={handleSubmit}><SageLogo size={44}/><h2 className="text-center font-serif text-2xl mt-1 mb-4 text-amber-200">{mode==="signup"?"Create Account":"Sign In"}</h2>{err && <div className="text-[10px] text-red-300 bg-red-900/30 p-2.5 mb-3 rounded-xl border border-red-500/20">{err}</div>}<div className="space-y-3"><div><label className="text-[10px] t40 uppercase font-mono">Email Address (optional for passkey)</label><input type="email" value={e} onChange={ev=>setE(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>{mode==="login" && <div><label className="text-[10px] t40 uppercase font-mono">Password</label><input type="password" value={p} onChange={ev=>setP(ev.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none text-white focus:border-amber-400/50"/></div>}</div><button type="submit" className="w-full bg-amber-400 text-black font-semibold rounded-full py-3 mt-5 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20">{mode==="signup"?"Generate Credentials":"Enter Vault"}</button>{mode==="login" && <button type="button" disabled={passkeyBusy} onClick={handlePasskeyLogin} className="w-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold rounded-full py-3 mt-2 hover:bg-emerald-500/25 transition"><Icon name="fingerprint" size={16} /> {passkeyBusy ? "Verifying Passkey..." : "Use Face ID / Passkey"}</button>}<div className="flex justify-between items-center mt-4"><button type="button" onClick={()=>{setMode(mode==="login"?"signup":"login"); setErr("");}} className="text-[11px] t60 hover:text-white">{mode==="login"?"New User? Quick Sign Up":"Existing User? Sign In"}</button></div></form></div></div>
   );
 };
 
@@ -153,8 +177,10 @@ window.AdminConsoleModal = ({ onClose, onResetDb }) => {
 };
 
 window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }) => {
-  const { Icon, AppDB, CryptoUtils } = window;
+  const { Icon, AppDB, CryptoUtils, PasskeyAuth } = window;
   const [mfaSetup, setMfaSetup] = useState(null);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [passkeyReady, setPasskeyReady] = useState(!!PasskeyAuth?.getRecord(u.emailHash));
   const [localSet, setLocalSet] = useState(settings || { aiModel: "auto", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {} });
 
   const enableMFA = () => {
@@ -190,6 +216,13 @@ window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }
     onUpdateSettings(updated);
   };
 
+  const registerPasskey = async () => {
+    setPasskeyBusy(true);
+    try { const record = await PasskeyAuth.register(u.email, u.emailHash, u.email); const authDB = await AppDB.getFile("gl_auth.json"); const account = authDB.content.users?.[u.emailHash]; if (!account) throw new Error("Account record was not found."); account.passkey = { credentialId: record.credentialId, email: u.email, emailHash: u.emailHash, rpId: record.rpId, transports: record.transports }; await AppDB.saveFile("gl_auth.json", authDB.content, authDB.sha); setPasskeyReady(true); alert("Passkey enabled. Your device may now use Face ID, Windows Hello, or its security key to unlock this vault."); }
+    catch (error) { alert(error.message); }
+    finally { setPasskeyBusy(false); }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg p-6 rounded-3xl border border-white/10 bgcard2 space-y-5 max-h-[88vh] overflow-y-auto gl-fadein shadow-2xl relative">
@@ -222,6 +255,14 @@ window.SettingsModal = ({ u, settings, onClose, onUpdateSettings, onMfaSuccess }
               </form>
             </div>
           )}
+        </div>
+
+        <div>
+          <label className="text-[10px] font-mono uppercase text-blue-400 mb-1.5 block font-bold">Device Passkey / Face Authentication</label>
+          <button type="button" disabled={passkeyBusy || !PasskeyAuth?.supported()} onClick={registerPasskey} className="w-full py-2.5 bg-blue-500/15 text-blue-300 font-semibold rounded-xl text-xs hover:bg-blue-500/25 transition border border-blue-500/30 flex items-center justify-center gap-2">
+            <Icon name="fingerprint" size={18} /> {passkeyBusy ? "Registering Device..." : passkeyReady ? "Passkey Enabled on This Device" : "Enable Face ID / Passkey"}
+          </button>
+          {!PasskeyAuth?.supported() && <div className="text-[10px] t50 mt-1">This browser does not provide WebAuthn passkeys.</div>}
         </div>
 
         <div className="grid grid-cols-2 gap-2">

@@ -144,6 +144,8 @@ const bootInterval = setInterval(() => {
           <datalist id="jaatis">{window.JAATIS?.map((j) => (<option key={j} value={j} />))}</datalist>
 
           {ss && <SettingsModal u={u} settings={set} onClose={() => setSs(false)} onUpdateSettings={updateSettings} onMfaSuccess={() => setU({ ...u, mfaEnabled: true })} />}
+          {adminAuthOpen && <AdminAuthModal u={u} onClose={() => setAdminAuthOpen(false)} onAuthenticated={() => { setAdminAuthOpen(false); setAdminConsoleOpen(true); }} />}
+          {adminConsoleOpen && <AdminConsoleModal onClose={() => setAdminConsoleOpen(false)} onResetDb={() => { AppDB.clearConfig(); setAdminConsoleOpen(false); setDbC(false); setU(null); try { localStorage.removeItem("gl_active_user"); } catch (e) {} }} />}
 
           <div className="bgcard2 border-b border-white/10 sticky top-0 z-30 shadow-lg">
             <div className="mx-auto max-w-md sm:max-w-3xl px-4 py-3 flex justify-between items-center">
@@ -152,6 +154,7 @@ const bootInterval = setInterval(() => {
                 {prs.length > 1 && ( <select value={aP?.id || ""} onChange={(e) => setActiveProfileId(e.target.value)} className="bg-black/40 border border-white/10 rounded-xl px-2 py-1.5 font-serif text-xs text-amber-200 outline-none max-w-[80px] sm:max-w-[120px] truncate">{prs.map((p) => (<option key={p.id} value={p.id}>{p.name.split(" ")[0]}</option>))}</select> )}
                 <button onClick={() => handleOpenEdit({})} className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-amber-300"><Icon name="user-plus" size={17} /></button>
                 <button onClick={() => setSs(true)} className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-amber-300"><Icon name="gear" size={17} /></button>
+                <button onClick={() => setAdminAuthOpen(true)} title="Admin repository settings" className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-blue-300"><Icon name="shield-check" size={17} /></button>
                 <button onClick={logoutUser} className="p-2 rounded-full border border-white/10 bg-black/30 hover:bg-white/10 transition text-red-400"><Icon name="sign-out" size={17} /></button>
               </div>
             </div>

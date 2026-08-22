@@ -17,7 +17,10 @@ window.AppDB = {
             // 1. Try to load from browser memory first (Fastest)
             const stored = localStorage.getItem('gl_db_config');
             if (stored) {
-                this.config = JSON.parse(stored);
+                let decoded;
+                try { decoded = JSON.parse(stored); } catch (e) { decoded = window.CryptoUtils.decrypt(stored); }
+                this.config = typeof decoded === 'string' ? JSON.parse(decoded) : decoded;
+                if (this.config?.owner && this.config?.repo && this.config?.token) localStorage.setItem('gl_db_config', window.CryptoUtils.encrypt(this.config));
                 return true;
             }
             
@@ -29,7 +32,7 @@ window.AppDB = {
                     token: this.autoTokenPart1 + this.autoTokenPart2
                 };
                 // Save it to memory so it doesn't have to reconstruct it next time
-                localStorage.setItem('gl_db_config', JSON.stringify(this.config));
+                localStorage.setItem('gl_db_config', window.CryptoUtils.encrypt(this.config));
                 return true;
             }
             
@@ -45,7 +48,7 @@ window.AppDB = {
     setConfig: function(owner, repo, token) {
         this.config = { owner, repo, token };
         this.useLocal = false;
-        localStorage.setItem('gl_db_config', JSON.stringify(this.config));
+        localStorage.setItem('gl_db_config', window.CryptoUtils.encrypt(this.config));
         localStorage.removeItem('gl_use_local');
     },
 
