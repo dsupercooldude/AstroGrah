@@ -7,8 +7,10 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
   const details = window.calculatePlanetaryDetails ? window.calculatePlanetaryDetails(ch.d1?.placements || {}, ch.planetaryDegrees) : {};
   const jaimini = window.calculateJaiminiKarakas ? window.calculateJaiminiKarakas(ch.planetaryDegrees) : {};
   const avasthas = window.calculateBaladiAvastha ? window.calculateBaladiAvastha(ch.planetaryDegrees, ch.d1?.placements || {}) : {};
+  
   const weekday = window.WEEKDAY[date.getDay()];
   const gochara = window.generateDeepGochara ? window.generateDeepGochara(ch, ch.d1?.lagna || "Aries", date, weekday, bioScores || { p: 0, e: 0, i: 0 }) : {};
+  const overviewText = window.runVedicRuleEngine ? window.runVedicRuleEngine("overview", profile, ch, date) : "";
   const deepSynthesis = window.generateDeepSynthesis ? window.generateDeepSynthesis(profile, ch, bioScores || {p:0,e:0,i:0}) : {};
   const dynamicRx = deepSynthesis.dynamicPrescription || {};
   
@@ -39,10 +41,10 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
   const weakPlanets = Object.entries(avasthas).filter(([p, a]) => a.includes("Mrita") || a.includes("Vriddha")).map(([p]) => p);
 
   return (
-    <div id="pdf-render-target" ref={ref} className="fixed top-0 -left-[20000px] hidden flex-col gap-10 bg-[#0b0d19] z-[-9999]">
+    <div id="pdf-render-target" ref={ref} className="absolute hidden flex flex-col gap-10 bg-[#0b0d19] z-[-9999]">
       
       {/* ========================================== */}
-      {/* PAGE 1: EXECUTIVE SUMMARY & SYNTHESIS      */}
+      {/* PAGE 1: EXECUTIVE SUMMARY                  */}
       {/* ========================================== */}
       <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         
@@ -56,9 +58,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
         </div>
 
         <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8">
-          <h3 className="font-serif text-2xl text-amber-200 mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
-            The Jyotish Core Synthesis
-          </h3>
+          <h3 className="font-serif text-2xl text-amber-200 mb-4 border-b border-white/10 pb-2">The Jyotish Core Synthesis</h3>
           <div className="space-y-4 text-sm text-white/80 leading-relaxed font-mono">
             <p><strong>The Core Self:</strong> {deepSynthesis.basicKundali}</p>
             <p><strong>Time & Cycles:</strong> {deepSynthesis.basicDasha}</p>
@@ -84,31 +84,33 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
               <li><span className="text-white/60 inline-block w-24">Gemstone:</span> <span className="font-bold">{dynamicRx.gem}</span></li>
               <li><span className="text-white/60 inline-block w-24">Charity:</span> <span className="font-bold">{dynamicRx.charity}</span></li>
             </ul>
-            <div className="mt-4 text-xs text-amber-400 bg-black/30 p-3 rounded-lg border border-white/5">
+            <div className="mt-4 text-[11px] text-amber-400 bg-black/30 p-3 rounded-lg border border-white/5">
               <span className="text-white/60 block mb-1 uppercase text-[10px]">Active Mantra:</span> {dynamicRx.mantra}
             </div>
           </div>
         </div>
-
       </div>
 
       {/* ========================================== */}
-      {/* PAGE 2: CHARTS & ENERGY CYCLES             */}
+      {/* PAGE 2: ASTROLOGICAL CHARTS & BIORHYTHMS   */}
       {/* ========================================== */}
       <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Astrological Charts & Energy Cycles</h3>
         
-        <div className="grid grid-cols-2 gap-6 mb-8">
-          <div className="bg-[#121426] p-4 rounded-2xl border border-white/10 flex flex-col items-center">
+        <div className="grid grid-cols-2 gap-6 mb-10">
+          <div className="bg-[#121426] p-4 rounded-2xl border border-white/10 flex flex-col items-center justify-center">
             {window.KundaliRenderer && <window.KundaliRenderer ac={ch.d1} ch={ch} kpTable={null} style="NORTH" isExpert={false} titleDesc="North Indian (Diamond)" />}
           </div>
-          <div className="bg-[#121426] p-4 rounded-2xl border border-white/10 flex flex-col items-center">
+          <div className="bg-[#121426] p-4 rounded-2xl border border-white/10 flex flex-col items-center justify-center">
             {window.KundaliRenderer && <window.KundaliRenderer ac={ch.d1} ch={ch} kpTable={null} style="SOUTH" isExpert={false} titleDesc="South Indian (Grid)" />}
           </div>
         </div>
 
-        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8">
+        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
           <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">30-Day Biorhythm Progression</h3>
+          <p className="text-xs text-white/80 leading-relaxed font-mono mb-6 bg-black/30 p-4 rounded-xl border border-white/5">
+            {deepSynthesis.pdfBiorhythm}
+          </p>
           <div className="flex justify-between items-center mb-6 font-mono px-10">
             <div className="text-center"><div className="text-[10px] text-red-400 mb-1">PHYSICAL</div><div className="text-2xl font-bold">{formatBio(bioScores.p)}%</div></div>
             <div className="text-center"><div className="text-[10px] text-blue-400 mb-1">EMOTIONAL</div><div className="text-2xl font-bold">{formatBio(bioScores.e)}%</div></div>
@@ -125,30 +127,33 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
             <div className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] font-bold text-white bg-black/60 px-2 rounded border border-white/20">TODAY</div>
           </div>
         </div>
+      </div>
 
-        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
+      {/* ========================================== */}
+      {/* PAGE 3: SHADBALA & PLANETARY LEDGER        */}
+      {/* ========================================== */}
+      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+        <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Planetary Strengths & Positions</h3>
+
+        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8">
           <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Shadbala (Planetary Strength)</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <p className="text-xs text-white/80 leading-relaxed font-mono mb-6 bg-black/30 p-4 rounded-xl border border-white/5">
+            {deepSynthesis.pdfShadbala}
+          </p>
+          <div className="grid grid-cols-2 gap-6">
             {Object.entries(ch.shadbala || {}).sort((a,b)=>b[1]-a[1]).map(([planet, score]) => {
               const pInfo = window.PLANET_INFO[planet]; const percentage = Math.min(100, (score / 600) * 100);
               return (
-                <div key={planet} className="relative bg-black/20 p-3 rounded-lg border border-white/5">
-                  <div className="flex justify-between text-xs font-mono mb-2"><span className="font-bold flex items-center gap-1" style={{ color: pInfo?.color }}>{pInfo?.symbol} {planet}</span><span className="text-white/80">{(score / 60).toFixed(1)} Rupas</span></div>
+                <div key={planet} className="relative bg-black/20 p-4 rounded-lg border border-white/5">
+                  <div className="flex justify-between text-xs font-mono mb-2"><span className="font-bold flex items-center gap-1" style={{ color: pInfo?.color }}>{pInfo?.symbol} {planet}</span><span className="text-white/80 font-bold">{(score / 60).toFixed(1)} Rupas</span></div>
                   <div className="h-[8px] bg-black/50 rounded-full overflow-hidden border border-white/5"><div className="h-full rounded-full" style={{ width: `${percentage}%`, backgroundColor: pInfo?.color }}></div></div>
                 </div>
               )
             })}
           </div>
         </div>
-      </div>
 
-      {/* ========================================== */}
-      {/* PAGE 3: PLANETARY LEDGER & GOCHARA         */}
-      {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
-        <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Advanced Planetary Framework</h3>
-
-        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8">
+        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
           <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Detailed Planetary Ledger</h3>
           <table className="w-full text-sm font-mono text-left" style={{ borderCollapse: 'collapse' }}>
             <thead>
@@ -172,27 +177,13 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
             </tbody>
           </table>
         </div>
-
-        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
-          <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Current Gochara (Transit) Impact</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {Object.entries(gochara).map(([domain, data]) => (
-              <div key={domain} className="p-5 bg-black/20 rounded-xl border border-white/5">
-                <div className="flex justify-between text-xs font-mono mb-2"><span className="font-bold text-amber-100 capitalize">{domain.replace(/([A-Z])/g, ' $1').trim()}</span><span className="text-white/80 font-bold">{Math.round(data.sc)}/100</span></div>
-                <div className="h-1.5 bg-black/50 rounded-full mb-3"><div className="h-full rounded-full bg-amber-500" style={{ width: `${data.sc}%` }}></div></div>
-                <div className="text-[10px] text-white/70 font-mono leading-relaxed">{data.text}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
 
       {/* ========================================== */}
-      {/* PAGE 4: JAIMINI & AVASTHAS                 */}
+      {/* PAGE 4: KARMIC PROFILING & TRANSITS        */}
       {/* ========================================== */}
       <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
-        <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Karmic Profiling</h3>
+        <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Karmic Profiling & Current Transits</h3>
 
         <div className="grid grid-cols-2 gap-6 mb-8">
           <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
@@ -221,18 +212,44 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
         </div>
 
         <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
-          <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Vimshottari Dasha Drilldown</h3>
-          <div className="grid grid-cols-2 gap-4 font-mono text-xs">
+          <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Current Gochara (Transit) Impact</h3>
+          <p className="text-xs text-white/80 leading-relaxed font-mono mb-6 bg-black/30 p-4 rounded-xl border border-white/5">
+            Gochara translates the real-time movement of the planets in the sky today against your fixed birth chart to predict immediate weekly outcomes.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            {Object.entries(gochara).map(([domain, data]) => (
+              <div key={domain} className="p-4 bg-black/20 rounded-xl border border-white/5">
+                <div className="flex justify-between text-xs font-mono mb-2"><span className="font-bold text-amber-100 capitalize">{domain.replace(/([A-Z])/g, ' $1').trim()}</span><span className="text-white/80 font-bold">{Math.round(data.sc)}/100</span></div>
+                <div className="h-1.5 bg-black/50 rounded-full mb-3"><div className="h-full rounded-full bg-amber-500" style={{ width: `${data.sc}%` }}></div></div>
+                <div className="text-[10px] text-white/70 font-mono leading-relaxed">{data.text}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================== */}
+      {/* PAGE 5: VIMSHOTTARI DASHA DRILLDOWN        */}
+      {/* ========================================== */}
+      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+        <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Vimshottari Dasha Timeline</h3>
+        
+        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 h-full">
+          <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">Active Dasha Drilldown</h3>
+          <p className="text-sm text-white/80 leading-relaxed font-mono mb-8 bg-black/30 p-5 rounded-xl border border-white/5">
+            {deepSynthesis.pdfDasha}
+          </p>
+          <div className="grid grid-cols-2 gap-6 font-mono text-xs">
             {displayDashas.map((d, i) => {
               const isActive = currentYear >= d.start && currentYear < d.end;
               return (
-                <div key={i} className={`p-4 border rounded-xl ${isActive ? 'bg-amber-400/10 border-amber-400/50' : 'bg-black/30 border-white/10'}`}>
+                <div key={i} className={`p-5 border rounded-xl ${isActive ? 'bg-amber-400/10 border-amber-400/50' : 'bg-black/30 border-white/10'}`}>
                   <div className={`font-bold mb-3 ${isActive ? 'text-amber-400 text-base' : 'text-white text-sm'}`}>
                     {d.lord} Mahadasha ({Math.floor(d.start)} - {Math.floor(d.end)})
                   </div>
-                  <div className="space-y-2 pl-3 border-l border-white/20">
+                  <div className="space-y-2 pl-3 border-l border-white/20 mt-3 text-sm">
                     {window.getAntardashas && window.getAntardashas(d.lord, d.start, d.end).slice(0, 5).map((a, j) => (
-                      <div key={j} className="flex justify-between text-white/80"><span>{a.lord} Antar</span><span>{Math.floor(a.start)}</span></div>
+                      <div key={j} className="flex justify-between text-white/80 py-1"><span>{a.lord} Antar</span><span>{Math.floor(a.start)}</span></div>
                     ))}
                   </div>
                 </div>
@@ -240,30 +257,42 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
             })}
           </div>
         </div>
-
       </div>
 
       {/* ========================================== */}
-      {/* PAGE 5: FORECASTING                        */}
+      {/* PAGE 6: 12-MONTH HOROSCOPE (PART 1)        */}
       {/* ========================================== */}
       <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
-        <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Forecasting & Timelines</h3>
-        
-        <div className="bg-[#121426] p-6 rounded-2xl border border-white/10">
-          <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">12-Month Deterministic Horoscope</h3>
-          <div className="grid grid-cols-2 gap-6">
-            {yearlyMonths.slice(0, 12).map((monthText, idx) => {
-              const [monthName, ...descParts] = monthText.split(':');
-              return (
-                <div key={idx} className="p-5 bg-black/20 rounded-xl border border-white/5 shadow-sm">
-                  <div className="font-bold text-amber-300 font-mono text-sm mb-3">{monthName}</div>
-                  <div className="text-xs text-white/80 leading-relaxed font-mono">{descParts.join(':').trim()}</div>
-                </div>
-              )
-            })}
-          </div>
+        <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Deterministic Horoscope (Part 1)</h3>
+        <div className="grid grid-cols-2 gap-6">
+          {yearlyMonths.slice(0, 6).map((monthText, idx) => {
+            const [monthName, ...descParts] = monthText.split(':');
+            return (
+              <div key={idx} className="p-6 bg-[#121426] rounded-xl border border-white/10 shadow-sm h-[250px] flex flex-col">
+                <div className="font-bold text-amber-300 font-mono text-lg mb-3 border-b border-white/5 pb-2">{monthName}</div>
+                <div className="text-sm text-white/80 leading-relaxed font-mono overflow-hidden">{descParts.join(':').trim()}</div>
+              </div>
+            )
+          })}
         </div>
+      </div>
 
+      {/* ========================================== */}
+      {/* PAGE 7: 12-MONTH HOROSCOPE (PART 2)        */}
+      {/* ========================================== */}
+      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+        <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Deterministic Horoscope (Part 2)</h3>
+        <div className="grid grid-cols-2 gap-6">
+          {yearlyMonths.slice(6, 12).map((monthText, idx) => {
+            const [monthName, ...descParts] = monthText.split(':');
+            return (
+              <div key={idx} className="p-6 bg-[#121426] rounded-xl border border-white/10 shadow-sm h-[250px] flex flex-col">
+                <div className="font-bold text-amber-300 font-mono text-lg mb-3 border-b border-white/5 pb-2">{monthName}</div>
+                <div className="text-sm text-white/80 leading-relaxed font-mono overflow-hidden">{descParts.join(':').trim()}</div>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
     </div>
