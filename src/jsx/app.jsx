@@ -89,7 +89,7 @@ const bootInterval = setInterval(() => {
               const fitScale = Math.min(1, pdfHeight / imgHeight);
               const drawWidth = pdfWidth * fitScale;
               const drawHeight = imgHeight * fitScale;
-              pdf.addImage(imgData, 'JPEG', (pdfWidth - drawWidth) / 2, 0, drawWidth, drawHeight); 
+              pdf.addImage(imgData, 'JPEG', (pdfWidth - drawWidth) / 2, 0, drawWidth, drawHeight);
             }
             
             pdf.save(`${aP?.name?.replace(/\s+/g, '_') || 'Graha_Ledger'}_Astrology_Report.pdf`);
