@@ -17,6 +17,10 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
   // Safely format the sine wave percentages (-1 to +1 -> 0% to 100%)
   const formatBio = (val) => Math.round(((val + 1) / 2) * 100);
 
+  // FIX: Find the ACTIVE Mahadasha index to display relevant PDF timelines
+  const activeDashaIdx = ch.dasha?.findIndex(d => currentYear >= d.start && currentYear < d.end) || 0;
+  const displayDashas = ch.dasha?.slice(activeDashaIdx, activeDashaIdx + 4) || [];
+
   return (
     <div 
       id="pdf-render-target" 
@@ -183,7 +187,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
         </div>
       </div>
 
-      {/* 6. GOCHARA TRANSITS (FLEXBOX GRID REPLACEMENT) */}
+      {/* 6. GOCHARA TRANSITS */}
       <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8 w-full">
         <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">
           Gochara (Transit) Impact
@@ -208,13 +212,13 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
         </div>
       </div>
 
-      {/* 7. VIMSHOTTARI DASHA DRILLDOWN */}
+      {/* 7. VIMSHOTTARI DASHA DRILLDOWN (FIXED TO SHOW CURRENT DASHA) */}
       <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8 w-full page-break-before">
         <h3 className="font-serif text-xl text-amber-200 mb-4 border-b border-white/10 pb-2">
           Vimshottari Dasha Drilldown
         </h3>
         <div className="flex flex-row flex-wrap gap-4 font-mono text-xs">
-          {ch.dasha?.slice(0, 4).map((d, i) => {
+          {displayDashas.map((d, i) => {
             const isActive = currentYear >= d.start && currentYear < d.end;
             return (
               <div key={i} className={`p-4 border rounded-xl ${isActive ? 'bg-amber-400/10 border-amber-400/50' : 'bg-black/30 border-white/10'}`} style={{ width: 'calc(50% - 8px)' }}>
