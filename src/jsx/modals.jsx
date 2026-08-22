@@ -52,7 +52,7 @@ window.AuthModal = ({ onLogin }) => {
     const prof = typeof decodedProfiles === 'string' ? JSON.parse(decodedProfiles) : (decodedProfiles || []);
     const sett = typeof decodedSettings === 'string' ? JSON.parse(decodedSettings) : (decodedSettings || {});
     try { localStorage.setItem('gl_active_user', JSON.stringify({ email: normE, emailHash, mfaEnabled: isMfaEnabled })); } catch(ex){}
-    onLogin({ email: normE, emailHash, profiles: prof, settings: sett, requiresPasswordChange: reqChange, mfaEnabled: isMfaEnabled });
+    onLogin({ email: normE, emailHash, profiles: prof, settings: { aiModel: "auto", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {}, ...sett, apiKeys: { ...(sett.apiKeys || {}) } }, requiresPasswordChange: reqChange, mfaEnabled: isMfaEnabled });
   };
   
   const handleSubmit = async (ev) => { 

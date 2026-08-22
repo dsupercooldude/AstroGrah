@@ -13,12 +13,16 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
+        systemInstruction: { parts: [{ text: systemPrompt }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 1200 }
       })
     });
-    if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
+    if (!res.ok) {
+      let detail = "";
+      try { detail = (await res.json())?.error?.message || ""; } catch (e) {}
+      throw new Error(`Gemini HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
+    }
     const data = await res.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text;
   };

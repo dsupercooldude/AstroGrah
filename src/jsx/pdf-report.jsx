@@ -68,6 +68,12 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
         .pdf-dasha .grid > div { padding: 14px; }
         .pdf-dasha .grid > div .text-xl { font-size: 15px; }
         .pdf-dasha .grid > div .text-base { font-size: 10px; }
+        .pdf-gochara > div:last-child { padding: 14px; }
+        .pdf-gochara > div:last-child > div { gap: 12px; }
+        .pdf-gochara > div:last-child > div > div { padding: 14px; }
+        .pdf-gochara > div:last-child > div > div .text-2xl { font-size: 15px; }
+        .pdf-gochara > div:last-child > div > div .text-xl { font-size: 12px; }
+        .pdf-gochara > div:last-child > div > div .text-base { font-size: 10px; line-height: 1.35; }
         .pdf-forecast > div:last-child { gap: 12px; }
         .pdf-forecast > div:last-child > div { padding: 14px; }
         .pdf-forecast > div:last-child > div .text-xl { font-size: 14px; }
@@ -128,7 +134,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 2: ASTROLOGICAL CHARTS & BIORHYTHMS   */}
       {/* ========================================== */}
-      <div className="pdf-page pdf-shadbala w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Astrological Charts & Energy Cycles</h3>
         
@@ -180,7 +186,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 3: PLANETARY LEDGER (ISOLATED)        */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+        <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Planetary Alignments & Coordinates</h3>
         
@@ -221,7 +227,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 4: SHADBALA (ISOLATED)                */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+        <div className="pdf-page pdf-shadbala w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Planetary Strengths</h3>
 
         <div className="bg-[#121426] p-8 rounded-2xl border border-white/10 h-full">
@@ -314,7 +320,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 7: CURRENT GOCHARA (ISOLATED)         */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page pdf-gochara w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Real-Time Gochara (Transit) Impact</h3>
         
@@ -479,7 +485,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 12: 12-MONTH HOROSCOPE (MONTHS 10-12) */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page pdf-forecast w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Matrix (Q4)</h3>
         <div className="flex flex-col gap-8">
           {yearlyForecast.slice(9, 12).map((m, idx) => (

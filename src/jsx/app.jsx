@@ -26,7 +26,7 @@ const bootInterval = setInterval(() => {
                 const pS = JSON.parse(sess); const vaultFile = await AppDB.getFile(`gl_vault_${pS.emailHash}.json`);
                 let pr = []; try { const decodedProfiles = typeof vaultFile.content.profiles === "string" ? CryptoUtils.decrypt(vaultFile.content.profiles) : vaultFile.content.profiles; pr = typeof decodedProfiles === "string" ? JSON.parse(decodedProfiles) : decodedProfiles || []; } catch(e){}
                 let se = {}; try { const decodedSettings = typeof vaultFile.content.settings === "string" ? CryptoUtils.decrypt(vaultFile.content.settings) : vaultFile.content.settings; se = typeof decodedSettings === "string" ? JSON.parse(decodedSettings) : decodedSettings || {}; } catch(e){}
-                setU({ email: pS.email, emailHash: pS.emailHash, profiles: pr, settings: se, mfaEnabled: pS.mfaEnabled });
+                setU({ email: pS.email, emailHash: pS.emailHash, profiles: pr, settings: { aiModel: "auto", monthSystem: "amanta", kundaliStyle: "north", apiKeys: {}, ...se, apiKeys: { ...(se.apiKeys || {}) } }, mfaEnabled: pS.mfaEnabled });
                 if (pr.length) setActiveProfileId(pr[0].id);
               }
             } catch (e) {}

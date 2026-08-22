@@ -782,6 +782,7 @@ window.generateDeepSynthesis = (pr, ch, bio, targetDate) => {
   if (mahaObj && window.getAntardashas) { activeAntar = window.getAntardashas(activeMaha, mahaObj.start, mahaObj.end).find((a) => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha; }
 
   const bioP = Math.round(((bio.p + 1) / 2) * 100); const bioE = Math.round(((bio.e + 1) / 2) * 100); const bioI = Math.round(((bio.i + 1) / 2) * 100);
+  const chartPositionSummary = Object.entries(ch.d1.signs || {}).map(([planet, sign]) => `${planet} in ${sign}`).join(", ");
 
   // Deep Jaimini Meanings
   const karakaMeanings = {
@@ -822,7 +823,7 @@ window.generateDeepSynthesis = (pr, ch, bio, targetDate) => {
     pdfShadbala: `Shadbala calculates the exact mathematical "weight" of each planet in your chart. Your highest scoring planet is ${topPlanet}. You have a natural advantage in areas governed by it. Conversely, your lowest scoring planet is ${weakPlanet}, indicating your primary karmic bottleneck where you must apply conscious effort.`,
     pdfBiorhythm: `Biorhythms mathematically map your 30-day internal energy fluctuations. Today, your Physical stamina is ${bioP}%, Emotional stability is ${bioE}%, and Intellectual focus is ${bioI}%. Execute heavy analytical tasks when Intellectual peaks, and prioritize rest when Physical dips.`,
     pdfDasha: `Vimshottari Dasha is the Vedic timeline of your life. While your main cycle is ${activeMaha}, your current sub-cycle (Antardasha) is ruled by ${activeAntar}. This means the immediate focus of your life is drawn toward ${antarTraits[activeAntar]}. To make the absolute best use of this phase, lean entirely into the behavioral traits of ${activeAntar} rather than fighting its natural current.`,
-    advLedger: `This table is your chart's factual foundation. Each planet represents a life function: the Sun relates to confidence and authority, the Moon to emotions and habits, Mars to courage and action, Mercury to learning and communication, Jupiter to wisdom and growth, Venus to relationships and comforts, Saturn to responsibility and delays, Rahu to intense worldly ambition, and Ketu to detachment and spiritual insight. The sign tells you the style in which that function operates, the degree shows its exact position, the nakshatra adds a finer psychological pattern, and the motion indicates whether the planet is moving forward or retrograde. Read the strongest planets as easier channels to develop and the weaker planets as areas that need patience and deliberate practice.` ,
+    advLedger: `For ${pr?.name || "this native"}, the ${lagna} Ascendant describes your outward approach to life and your ${moon} Moon describes your emotional habits. Your chart places ${chartPositionSummary}. ${topPlanet} is your strongest planetary channel, so its themes are easier for you to express; ${weakPlanet} is the area that benefits most from patience and deliberate practice. In the ledger, the planet identifies a life function, its Rashi shows the style in which that function operates, the degree marks its exact position, and the nakshatra adds a finer psychological pattern. In practical terms, use strong planets as existing strengths and develop weaker planets as skills rather than treating them as fixed limitations.`,
     karakaMeanings,
     avasthaMeanings
   };
