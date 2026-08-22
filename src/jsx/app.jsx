@@ -39,47 +39,46 @@ const bootInterval = setInterval(() => {
       const chs = useMemo(() => { const o = {}; if (Array.isArray(prs)) { prs.forEach((p) => { if (p && p.id && window.computeKundli) { o[p.id] = window.computeKundli(p, dt); } }); } return o; }, [prs, dt]);
       const aP = prs.find((p) => p.id === activeProfileId) || (prs.length > 0 ? prs[0] : null);
 
-      // FIX: Seamless Off-Screen Multi-Page PDF Capture
+      // FIX: Seamless Off-Screen Multi-Page PDF Capture with background painting
       useEffect(() => {
         const handlePdf = async () => {
           const el = document.getElementById('pdf-render-target'); 
           if (!el) return; 
           
-          // Move completely off-screen to avoid layout collisions
-          el.style.position = 'fixed';
-          el.style.top = '0';
-          el.style.left = '-20000px'; 
-          el.style.zIndex = '-9999';
           el.classList.remove('hidden'); 
           
-          // Fullscreen Loading Overlay
           const loader = document.createElement('div');
           loader.id = 'pdf-loader-overlay';
           loader.innerHTML = `
             <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
             <div style="position:fixed;inset:0;z-index:99999;background:rgba(11,13,25,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fbbf24;font-family:monospace;font-size:14px;">
               <div style="width:50px;height:50px;border:4px solid #fbbf24;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px;"></div>
-              Generating Comprehensive 4-Page Dossier...
+              Generating 5-Page Dossier...
             </div>
           `;
           document.body.appendChild(loader);
 
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for SVGs to paint
+          await new Promise(resolve => setTimeout(resolve, 1000)); 
 
           try {
             const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
             const pages = el.querySelectorAll('.pdf-page');
             
-            // Loop and capture distinct A4 pages
             for (let i = 0; i < pages.length; i++) {
-              const canvas = await window.html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#0b0d19' });
+              const canvas = await window.html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#0b0d19', logging: false });
               const imgData = canvas.toDataURL('image/jpeg', 1.0); 
               
               if (i > 0) pdf.addPage();
               
               const pdfWidth = pdf.internal.pageSize.getWidth(); 
-              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight); 
+              const pdfHeight = pdf.internal.pageSize.getHeight();
+              
+              // Paint the literal PDF paper dark to prevent white gaps
+              pdf.setFillColor(11, 13, 25);
+              pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+
+              const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight); 
             }
             
             pdf.save(`${aP?.name?.replace(/\s+/g, '_') || 'Graha_Ledger'}_Astrology_Report.pdf`);
