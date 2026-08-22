@@ -10,7 +10,6 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
 
   const currentYear = date.getFullYear() + (date.getMonth() / 12);
 
-  // FIX: Dynamically find and expand the currently ACTIVE Mahadasha
   useEffect(() => {
     if (ch && ch.dasha) {
       const activeIndex = ch.dasha.findIndex(d => currentYear >= d.start && currentYear < d.end);
@@ -38,7 +37,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         .beauty-scroll::-webkit-scrollbar-thumb { background-color: rgba(251, 191, 36, 0.2); border-radius: 10px; }
       `}</style>
 
-      {/* 1. HEADER & SANKALP */}
+      {/* HEADER & SANKALP */}
       <div className="bgcard rounded-3xl border border-white/10 p-6 shadow-xl flex justify-between items-start">
         <div>
           <div className="text-[10px] text-amber-400 font-mono tracking-widest uppercase mb-1">Astrological Profile</div>
@@ -60,7 +59,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      {/* 2. TIME HORIZON CONTROLLER */}
+      {/* TIME HORIZON CONTROLLER */}
       <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl flex flex-col xl:flex-row justify-between items-center gap-4 relative z-20">
         <div className="flex items-center gap-4 w-full xl:w-auto">
           <div className="w-12 h-12 rounded-full border border-amber-400/30 flex items-center justify-center text-amber-400 bg-amber-400/5 shadow-inner shrink-0">
@@ -80,7 +79,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      {/* 3. DYNAMIC AI JYOTISH SYNTHESIS */}
+      {/* DYNAMIC AI JYOTISH SYNTHESIS */}
       <div className="bg-[#121426] p-6 rounded-3xl border border-amber-500/20 shadow-xl">
         <h3 className="font-serif text-amber-200 mb-4 text-lg flex items-center gap-2">
           <i className="ph ph-sparkle text-amber-400"></i> AI Jyotish Engine Synthesis
@@ -101,7 +100,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         )}
       </div>
 
-      {/* 4. CHART KUNDALI ENGINE */}
+      {/* CHART KUNDALI ENGINE */}
       <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl relative overflow-visible">
         <div className="flex justify-between items-center mb-6 relative z-20">
           <div className="text-xs t50 font-mono tracking-widest uppercase">Divisional View: D-1</div>
@@ -132,7 +131,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      {/* 5. DASHAS AND SHADBALA */}
+      {/* DASHAS AND SHADBALA */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
           <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
@@ -207,7 +206,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      {/* 6. GOCHARA / TRANSITS */}
+      {/* GOCHARA / TRANSITS */}
       <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl">
         <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
           <h3 className="font-serif text-sm text-amber-200">Gochara (Transit) Impact</h3>
@@ -230,7 +229,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      {/* 7. DYNAMIC PRESCRIPTIONS */}
+      {/* DYNAMIC PRESCRIPTIONS */}
       <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl mb-6">
         <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
           <h3 className="font-serif text-sm text-amber-200 flex items-center gap-2"><i className="ph ph-sparkle"></i> Highly Personalized Remediation</h3>
@@ -257,8 +256,8 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
         </div>
       </div>
 
-      {/* 8. BIOCYCLE WIDGET */}
-      {window.BiocycleWidget && <window.BiocycleWidget bioScores={bioScores} />}
+      {/* FIX: NOW PASSING DOB, TARGET DATE, AND UTC TO TRIGGER THE TRUE SINE WAVES */}
+      {window.BiocycleWidget && <window.BiocycleWidget dob={pr.dob} targetDate={date} utcOffset={pr.utcOffset} />}
     </div>
   );
 };
