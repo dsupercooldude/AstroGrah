@@ -3,12 +3,10 @@
 // ══════════════════════════════════════════════════════════════════════════════
 // 1. CLOUD AI GATEWAY (MULTI-PROVIDER API ROUTER)
 // ══════════════════════════════════════════════════════════════════════════════
-
 window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
   const keys = settings?.apiKeys || {};
   const preferredModel = settings?.aiModel || "auto";
 
-  // 1. Gemini
   const callGemini = async (apiKey) => {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: "POST",
@@ -24,15 +22,18 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
     return data.candidates?.[0]?.content?.parts?.[0]?.text;
   };
 
-  // 2. OpenAI
   const callOpenAI = async (apiKey) => {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
-        temperature: 0.7, max_tokens: 1200
+        temperature: 0.7,
+        max_tokens: 1200
       })
     });
     if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`);
@@ -40,15 +41,18 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
     return data.choices?.[0]?.message?.content;
   };
 
-  // 3. Groq (Llama 3.1)
   const callGroq = async (apiKey) => {
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
-        temperature: 0.7, max_tokens: 1200
+        temperature: 0.7,
+        max_tokens: 1200
       })
     });
     if (!res.ok) throw new Error(`Groq HTTP ${res.status}`);
@@ -56,15 +60,18 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
     return data.choices?.[0]?.message?.content;
   };
 
-  // 4. DeepSeek
   const callDeepSeek = async (apiKey) => {
     const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
         model: "deepseek-chat",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
-        temperature: 0.7, max_tokens: 1200
+        temperature: 0.7,
+        max_tokens: 1200
       })
     });
     if (!res.ok) throw new Error(`DeepSeek HTTP ${res.status}`);
@@ -72,11 +79,13 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
     return data.choices?.[0]?.message?.content;
   };
 
-  // 5. Kimi (Moonshot)
   const callKimi = async (apiKey) => {
     const res = await fetch("https://api.moonshot.cn/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
         model: "moonshot-v1-8k",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
@@ -88,11 +97,13 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
     return data.choices?.[0]?.message?.content;
   };
 
-  // 6. OpenRouter
   const callOpenRouter = async (apiKey) => {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
         model: "meta-llama/llama-3.1-8b-instruct:free",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }]
@@ -103,19 +114,22 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
     return data.choices?.[0]?.message?.content;
   };
 
-  // 7. Hugging Face
   const callHuggingFace = async (apiKey) => {
     const res = await fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ inputs: `<s>[INST] ${systemPrompt}\n\nUser Question: ${prompt} [/INST]` })
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        inputs: `<s>[INST] ${systemPrompt}\n\nUser Question: ${prompt} [/INST]`
+      })
     });
     if (!res.ok) throw new Error(`HuggingFace HTTP ${res.status}`);
     const data = await res.json();
     return Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
   };
 
-  // Execution dispatch with cascade
   const providers = [
     { id: "gemini", fn: callGemini, key: keys.gemini },
     { id: "openai", fn: callOpenAI, key: keys.openai },
@@ -138,7 +152,6 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
     }
   }
 
-  // Auto mode: Cascade across all populated keys
   for (const prov of providers) {
     if (prov.key) {
       try {
@@ -149,7 +162,6 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
       }
     }
   }
-
   return null;
 };
 
@@ -157,103 +169,106 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
 // 2. OFFLINE VEDIC RULE ENGINE (DETERMINISTIC TEXT GENERATION)
 // ══════════════════════════════════════════════════════════════════════════════
 
-window.generateOfflineYearlyHoroscope = (pr, ch, targetDate) => {
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+window.getYearlyForecastData = (pr, ch, targetDate) => {
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const startMonth = targetDate.getMonth();
   const startYear = targetDate.getFullYear();
-  let report = "YEARLY FORECAST (Month-by-Month Deterministic Engine)\n────────────────────────────────────────────────────────\n\n";
-
-  const themes = {
-    Aries: ["career acceleration and bold leadership", "financial restructuring and capital asset buildup", "domestic expansion, renovations, and family travel", "creative product milestones and intellectual pivots"],
-    Taurus: ["steady commercial wealth accumulation", "diplomatic high-value negotiation windows", "real estate and property settlement focus", "executive education and technical certifications"],
-    Gemini: ["intellectual research and patent work", "financial auditing and multi-currency ledger review", "international travel and strategic partnerships", "career pivots and product engineering"],
-    Cancer: ["emotional grounding and family heritage", "intuitive financial investments and asset shielding", "relational deepening and home stability", "vitality enhancement and holistic retreats"],
-    Leo: ["executive command and organizational leadership", "legacy wealth formation and contract wins", "creative enterprise joy and societal recognition", "spiritual study and meditative balance"],
-    Virgo: ["meticulous architecture and security design", "career milestone delivery and precision auditing", "health optimizations and physical vitality", "long-term institutional investments"],
-    Libra: ["strategic commercial alliances and diplomacy", "balanced capital growth and equity review", "aesthetic design and smart infrastructure", "harmonious marital and domestic integration"],
-    Scorpio: ["deep architectural transformations", "focused research in cybersecurity and analytics", "hidden asset monetization and windfalls", "karmic clearing and spiritual fortitude"],
-    Sagittarius: ["philosophical expansion and publishing", "cross-border roadmap scaling and travel", "high-visibility leadership and strategy", "truth-seeking in commercial enterprise"],
-    Capricorn: ["structural discipline and enterprise systems", "career authority gains and corporate mentorship", "financial conservatism and compound growth", "foundational domestic grounding"],
-    Aquarius: ["breakthrough technological innovation", "community leadership and ecosystem building", "forward-looking equity adaptation", "spiritual awakening and cosmic alignment"],
-    Pisces: ["intuitive design flow and strategic vision", "empathic leadership and team nurturing", "charitable foundations and ethical wealth", "deep contemplation and karmic peace"]
+  
+  const cT = [
+    "Strategic execution and milestone delivery",
+    "Networking and alliance building",
+    "Deep focus on complex problem solving",
+    "High-visibility leadership and command"
+  ];
+  
+  const wT = [
+    "Conservative saving and ledger auditing",
+    "Aggressive investment in assets",
+    "Portfolio review and tax optimization",
+    "Sudden windfall potential through tech"
+  ];
+  
+  const hT = [
+    "Domestic expansion and family gatherings",
+    "Property maintenance and structural upgrades",
+    "Emotional grounding and quiet retreat",
+    "Resolving ancestral or familial disputes"
+  ];
+  
+  const hlT = [
+    "Vitality peaking. Excellent for physical training",
+    "Monitor stress levels. Prioritize sleep hygiene",
+    "Dietary adjustments needed. Focus on digestion",
+    "Mental fatigue possible. Pranic breathing required"
+  ];
+  
+  const gT = {
+    Aries: "career acceleration", Taurus: "steady wealth accumulation", Gemini: "intellectual research",
+    Cancer: "emotional grounding", Leo: "executive command", Virgo: "meticulous architecture",
+    Libra: "strategic alliances", Scorpio: "deep transformations", Sagittarius: "philosophical expansion",
+    Capricorn: "structural discipline", Aquarius: "technological innovation", Pisces: "intuitive design flow"
   };
 
-  const signThemes = themes[ch.d1.lagna] || themes.Aries;
+  const activeGeneral = gT[ch.d1.lagna] || "karmic progression";
+  const forecastArray = [];
+
   for (let i = 0; i < 12; i++) {
     const mIdx = (startMonth + i) % 12;
     const y = startYear + Math.floor((startMonth + i) / 12);
-    const activeTheme = signThemes[i % 4];
-    report += `• ${months[mIdx]} ${y}: Focus on ${activeTheme}. Transits across your ${ch.d1.lagna} Lagna and ${ch.moonSign} Moon indicate a productive phase for disciplined milestone execution.\n\n`;
+    forecastArray.push({
+      month: `${months[mIdx]} ${y}`,
+      general: `A period heavily emphasizing ${activeGeneral}. Transiting planetary matrices cross referencing your ${ch.moonSign} Moon indicate broad progressive stability.`,
+      career: cT[i % 4],
+      wealth: wT[(i + 1) % 4],
+      home: hT[(i + 2) % 4],
+      health: hlT[(i + 3) % 4]
+    });
   }
+  return forecastArray;
+};
+
+window.generateOfflineYearlyHoroscope = (pr, ch, targetDate) => {
+  const data = window.getYearlyForecastData(pr, ch, targetDate);
+  let report = "YEARLY FORECAST (Month-by-Month Deterministic Engine)\n────────────────────────────────────────────────────────\n\n";
+  data.forEach(m => {
+    report += `• **${m.month}**\n  - **General:** ${m.general}\n  - **Career:** ${m.career}\n  - **Wealth:** ${m.wealth}\n  - **Home:** ${m.home}\n  - **Health:** ${m.health}\n\n`;
+  });
   return report;
 };
 
 window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
   const lQ = query.toLowerCase();
   
-  // Specific intercept for the Yearly Horoscope query
   if (lQ.includes("yearly horoscope") || lQ.includes("month-by-month")) {
     return window.generateOfflineYearlyHoroscope(profile, kundli, targetDate);
   }
   
   const dateFormatted = targetDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
   const b = window.bio ? window.bio(profile?.dob, targetDate, profile?.utcOffset) : { p: 0, e: 0, i: 0 };
-  
   const pK = window.WEEKDAY ? window.WEEKDAY[targetDate.getDay()] : "Sun";
   const rulingPlanet = { Sun: "Sun", Mon: "Moon", Tue: "Mars", Wed: "Mercury", Thu: "Jupiter", Fri: "Venus", Sat: "Saturn" }[pK] || "Sun";
-
-  const lagna = kundli.d1.lagna;
-  const moonSign = kundli.moonSign;
-  const nak = kundli.nak;
-  const pada = kundli.pada;
-  const jupDeg = kundli.planetaryDegrees?.Jupiter?.toFixed(2) || 0;
-  const satDeg = kundli.planetaryDegrees?.Saturn?.toFixed(2) || 0;
-  const moonDeg = kundli.planetaryDegrees?.Moon?.toFixed(2) || 0;
-
+  
   const currentDecYear = targetDate.getFullYear() + (targetDate.getMonth() / 12) + (targetDate.getDate() / 365);
   const mahaObj = kundli.dasha?.find((d) => currentDecYear >= d.start && currentDecYear < d.end);
   const activeMaha = mahaObj ? mahaObj.lord : "Jupiter";
-  
   let activeAntar = activeMaha;
-  if (mahaObj && window.getAntardashas) {
-    const antarList = window.getAntardashas(activeMaha, mahaObj.start, mahaObj.end);
-    activeAntar = antarList.find((a) => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha;
-  }
-
-  let domain = "Holistic Jyotish & Gochara Synthesis";
-  let analysis = "";
-  let roadmap = "";
-  let muhurtaRemedy = "";
-
-  // Query Context Router
-  if (lQ.includes("target") || lQ.includes("commission") || lQ.includes("career") || lQ.includes("job")) {
-    domain = "Career Milestones & Revenue Achievement";
-    analysis = `**Real-Time Transit Matrix:** Jupiter transits ${kundli.transits?.Jupiter} (${jupDeg}°), Saturn transits ${kundli.transits?.Saturn} (${satDeg}°).\n**Active Vimshottari Cycle:** ${activeMaha} Mahadasha / ${activeAntar} Antardasha governing key house axes.\n**Cognitive Resonance:** Intellectual biorhythm wave is calculated at ${Math.round(((b.i + 1) / 2) * 100)}%, indicating high bandwidth for complex negotiations.`;
-    roadmap = `1. **Target Alignment:** Execute formal contract milestones during your ruling ${pK} Horas and Abhijit Muhurta.\n2. **Negotiation Vector:** Anchor multi-party deliverables with verifiable data to satisfy Saturnian rigor.`;
-    muhurtaRemedy = `Chant "${window.PLANET_INFO?.[activeMaha]?.beej}" and align with ${window.PLANET_INFO?.[activeMaha]?.gem} for sustained career momentum.`;
   
-  } else if (lQ.includes("marriage") || lQ.includes("wife") || lQ.includes("husband") || lQ.includes("union")) {
-    domain = "Relational Harmony & Domestic Synthesis";
-    analysis = `**Core Venusian & Lunar Energy:** With your Moon in ${moonSign}, emotional stability is currently being filtered through your ${activeMaha} Mahadasha.\n**Domestic Transits:** Current planetary shifts indicate a period demanding patience and active listening within the household.`;
-    roadmap = `1. **Communication Strategy:** Utilize your Emotional biorhythm (currently at ${Math.round(((b.e + 1) / 2) * 100)}%) to guide your empathy and active listening.\n2. **De-escalation:** Avoid initiating heavy family discussions during Rahu Kaalam or Yamaganda windows.`;
-    muhurtaRemedy = `Focus on the Venusian principle. Recite: "${window.PLANET_INFO?.Venus?.beej}" to harmonize the domestic sphere.`;
-
-  } else if (lQ.includes("health") || lQ.includes("disease") || lQ.includes("body")) {
-    domain = "Physical Vitality & Medical Astrology";
-    analysis = `**Lagna Lord Status:** Your ${lagna} ascendant demands a flow of vital energy. Current physical biorhythms are measuring at ${Math.round(((b.p + 1) / 2) * 100)}%.\n**Transit Sensitivities:** Observe the transit of the 6th and 8th house lords to prevent sudden physical drainage.`;
-    roadmap = `1. **Pranic Preservation:** If Physical Biorhythm drops below 30%, suspend heavy physical exertion and pivot to restorative practices.\n2. **Dietary Focus:** Align your nutritional intake with the elemental nature of your ${moonSign} Moon.`;
-    muhurtaRemedy = `Invoke the healing energy of the Sun (Surya): "${window.PLANET_INFO?.Sun?.beej}".`;
-
-  } else {
-    domain = "Comprehensive Vedic Life Guidance";
-    analysis = `**Native:** ${profile?.name || "Native"} | **Target Date:** ${dateFormatted}\n**Core Matrix:** ${lagna} Lagna, Moon at ${moonDeg}° in ${nak} (Pada ${pada}).\n**Current Cosmic Rulers:** ${activeMaha} Mahadasha is guiding your overarching karmic trajectory, with day energy governed by ${rulingPlanet}.`;
-    roadmap = `1. **Strategic Decisions:** Align high-value tasks with favorable Choghadiya windows (Amrit, Shubh, Labh) visible in your Panchang tab.\n2. **Energy Output:** Maintain balanced output tailored to your 15-day biorhythm metrics (P: ${Math.round(((b.p + 1) / 2) * 100)}%, E: ${Math.round(((b.e + 1) / 2) * 100)}%, I: ${Math.round(((b.i + 1) / 2) * 100)}%).`;
-    muhurtaRemedy = `Recite the Beej Mantra for today's active Hora ruler (${rulingPlanet}): "${window.PLANET_INFO?.[rulingPlanet]?.beej}".`;
+  if (mahaObj && window.getAntardashas) {
+    activeAntar = window.getAntardashas(activeMaha, mahaObj.start, mahaObj.end)
+      .find((a) => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha;
   }
 
-  // Return formatted Markdown so the custom AskTab formatter can render it beautifully
+  let domain = "Comprehensive Vedic Life Guidance";
+  let analysis = `**Native:** ${profile?.name || "Native"} | **Target Date:** ${dateFormatted}\n**Core Matrix:** ${kundli.d1.lagna} Lagna, Moon in ${kundli.nak} (Pada ${kundli.pada}).\n**Current Cosmic Rulers:** ${activeMaha} Mahadasha is guiding your overarching karmic trajectory, with day energy governed by ${rulingPlanet}.`;
+  let roadmap = `1. **Strategic Decisions:** Align high-value tasks with favorable Choghadiya windows visible in your Panchang tab.\n2. **Energy Output:** Maintain balanced output tailored to your 15-day biorhythms (P: ${Math.round(((b.p + 1) / 2) * 100)}%, E: ${Math.round(((b.e + 1) / 2) * 100)}%, I: ${Math.round(((b.i + 1) / 2) * 100)}%).`;
+  let muhurtaRemedy = `Recite the Beej Mantra for today's active Hora ruler (${rulingPlanet}): "${window.PLANET_INFO?.[rulingPlanet]?.beej}".`;
+
+  if (lQ.includes("target") || lQ.includes("career")) {
+    domain = "Career Milestones & Revenue Achievement";
+    analysis = `**Transit Matrix:** Jupiter transits ${kundli.transits?.Jupiter}, Saturn transits ${kundli.transits?.Saturn}.\n**Active Cycle:** ${activeMaha} / ${activeAntar} axis.\n**Cognitive:** Intellect biorhythm is ${Math.round(((b.i + 1) / 2) * 100)}%.`;
+    roadmap = `1. Target Alignment: Execute formal contract milestones during your ruling ${pK} Horas and Abhijit Muhurta.\n2. Negotiation Vector: Anchor multi-party deliverables with verifiable data to satisfy Saturnian rigor.`;
+    muhurtaRemedy = `Chant "${window.PLANET_INFO?.[activeMaha]?.beej}" for sustained career momentum.`;
+  }
+  
   return `### 📍 DOMAIN: ${domain}\n\n## 1. DATA-DRIVEN VEDIC SYNTHESIS:\n${analysis}\n\n## 2. PRESCRIBED ACTION ROADMAP:\n${roadmap}\n\n## 3. DIVINE REMEDY & MANTRAS:\n* ${muhurtaRemedy}\n* **Daily Action:** ${window.PLANET_INFO?.[rulingPlanet]?.action}`;
 };
