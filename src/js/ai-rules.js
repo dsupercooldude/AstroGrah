@@ -15,7 +15,7 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1200 }
+        generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
       })
     });
     if (!res.ok) {
@@ -38,7 +38,7 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
         model: "gpt-4o-mini",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
         temperature: 0.7,
-        max_tokens: 1200
+        max_tokens: 4096
       })
     });
     if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`);
@@ -57,7 +57,7 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
         model: "llama-3.1-8b-instant",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
         temperature: 0.7,
-        max_tokens: 1200
+        max_tokens: 4096
       })
     });
     if (!res.ok) throw new Error(`Groq HTTP ${res.status}`);
@@ -76,7 +76,7 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
         model: "deepseek-chat",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
         temperature: 0.7,
-        max_tokens: 1200
+        max_tokens: 4096
       })
     });
     if (!res.ok) throw new Error(`DeepSeek HTTP ${res.status}`);
@@ -94,7 +94,8 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
       body: JSON.stringify({
         model: "moonshot-v1-8k",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
-        temperature: 0.7
+        temperature: 0.7,
+        max_tokens: 4096
       })
     });
     if (!res.ok) throw new Error(`Kimi HTTP ${res.status}`);
@@ -111,7 +112,8 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
       },
       body: JSON.stringify({
         model: "meta-llama/llama-3.1-8b-instruct:free",
-        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }]
+        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
+        max_tokens: 4096
       })
     });
     if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`);
@@ -127,7 +129,8 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
         Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        inputs: `<s>[INST] ${systemPrompt}\n\nUser Question: ${prompt} [/INST]`
+        inputs: `<s>[INST] ${systemPrompt}\n\nUser Question: ${prompt} [/INST]`,
+        parameters: { max_new_tokens: 4096, return_full_text: false }
       })
     });
     if (!res.ok) throw new Error(`HuggingFace HTTP ${res.status}`);
@@ -158,16 +161,23 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
     }
   }
 
-  for (const prov of providers) {
-    if (prov.key) {
+  const availableProviders = providers.filter((prov) => prov.key);
+  const cursorKey = "gl_ai_provider_cursor";
+  let cursor = 0;
+  try { cursor = Number.parseInt(localStorage.getItem(cursorKey) || "0", 10) || 0; } catch (e) {}
+  const rotatedProviders = availableProviders.length ? availableProviders.map((_, index) => availableProviders[(cursor + index) % availableProviders.length]) : [];
+  for (const prov of rotatedProviders) {
       try {
         const txt = await prov.fn(prov.key);
-        if (txt) return { text: txt, provider: prov.id };
+        if (txt) {
+          try { localStorage.setItem(cursorKey, String((providers.findIndex((item) => item.id === prov.id) + 1) % providers.length)); } catch (e) {}
+          window.lastAIProviderErrors = failures;
+          return { text: txt, provider: prov.id };
+        }
       } catch (err) {
         failures.push(`${prov.id}: ${err.message}`);
         console.warn(`Provider ${prov.id} failed, trying next...`, err);
       }
-    }
   }
   window.lastAIProviderErrors = failures;
   return null;
@@ -244,7 +254,7 @@ window.generateOfflineYearlyHoroscope = (pr, ch, targetDate) => {
   return report;
 };
 
-window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
+window.runVedicRuleEngine = (query, profile, kundli, targetDate, learnedContext = "") => {
   const lQ = query.toLowerCase();
   
   if (lQ.includes("yearly horoscope") || lQ.includes("month-by-month")) {
@@ -267,7 +277,7 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
   }
 
   let domain = "Comprehensive Vedic Life Guidance";
-  let analysis = `**Native:** ${profile?.name || "Native"} | **Target Date:** ${dateFormatted}\n**Core Matrix:** ${kundli.d1.lagna} Lagna, Moon in ${kundli.nak} (Pada ${kundli.pada}).\n**Current Cosmic Rulers:** ${activeMaha} Mahadasha is guiding your overarching karmic trajectory, with day energy governed by ${rulingPlanet}.`;
+  let analysis = `**Native:** ${profile?.name || "Native"} | **Target Date:** ${dateFormatted}\n**Core Matrix:** ${kundli.d1.lagna} Lagna, Moon in ${kundli.nak} (Pada ${kundli.pada}).\n**Current Cosmic Rulers:** ${activeMaha} Mahadasha is guiding your overarching karmic trajectory, with day energy governed by ${rulingPlanet}.${learnedContext ? `\n**Learned conversation context:** ${learnedContext}` : ""}`;
   let roadmap = `1. **Strategic Decisions:** Align high-value tasks with favorable Choghadiya windows visible in your Panchang tab.\n2. **Energy Output:** Maintain balanced output tailored to your 15-day biorhythms (P: ${Math.round(((b.p + 1) / 2) * 100)}%, E: ${Math.round(((b.e + 1) / 2) * 100)}%, I: ${Math.round(((b.i + 1) / 2) * 100)}%).`;
   let muhurtaRemedy = `Recite the Beej Mantra for today's active Hora ruler (${rulingPlanet}): "${window.PLANET_INFO?.[rulingPlanet]?.beej}".`;
 

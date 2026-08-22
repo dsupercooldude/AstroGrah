@@ -70,6 +70,7 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
   const [synced, setSynced] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState(0);
+  const [visibleCycles, setVisibleCycles] = useState({ physical: true, emotional: true, intellectual: true, spiritual: true });
 
   if (!dob || !targetDate) return null;
 
@@ -82,6 +83,7 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
   const pScore = scores.p;
   const eScore = scores.e;
   const iScore = scores.i;
+  const sScore = scores.s;
 
   // Scaled 0-100% Display
   const dp = Math.round(((pScore + 1) / 2) * 100);
@@ -142,9 +144,10 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
           <line x1="0" y1="20" x2="100" y2="20" stroke="#ffffff" strokeOpacity="0.1" strokeWidth="0.5" strokeDasharray="2,2" />
           
           {/* True Mathematical Sine Waves spanning 30 days */}
-          <path d={getWave(23)} fill="none" stroke="#F87171" strokeWidth="2" />
-          <path d={getWave(28)} fill="none" stroke="#60A5FA" strokeWidth="2" strokeDasharray="3,2" />
-          <path d={getWave(33)} fill="none" stroke="#FBBF24" strokeWidth="2" strokeDasharray="6,3" />
+          {visibleCycles.physical && <path d={getWave(23)} fill="none" stroke="#F87171" strokeWidth="2" />}
+          {visibleCycles.emotional && <path d={getWave(28)} fill="none" stroke="#60A5FA" strokeWidth="2" strokeDasharray="3,2" />}
+          {visibleCycles.intellectual && <path d={getWave(33)} fill="none" stroke="#FBBF24" strokeWidth="2" strokeDasharray="6,3" />}
+          {visibleCycles.spiritual && <path d={getWave(38)} fill="none" stroke="#A78BFA" strokeWidth="2" strokeDasharray="2,3" />}
           
           <line x1="50" y1="-10" x2="50" y2="50" stroke="#ffffff" strokeOpacity="0.3" strokeWidth="1" strokeDasharray="2,2" />
           <line x1={`${((selectedDay + 15) / 30) * 100}`} y1="-10" x2={`${((selectedDay + 15) / 30) * 100}`} y2="50" stroke="#ffffff" strokeOpacity="0.8" strokeWidth="1" />
@@ -153,7 +156,12 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
         <div className="absolute bottom-1 left-1 text-[8px] font-bold text-white/30">-15 DAYS</div>
         <div className="absolute bottom-1 right-1 text-[8px] font-bold text-white/30">+15 DAYS</div>
       </div>
-      <div className="mt-3 text-center text-[10px] text-white/60 font-mono">{selectedDay === 0 ? "Today" : `${selectedDay > 0 ? "+" : ""}${selectedDay} days`} · Physical {formatScore(pScore)} · Emotional {formatScore(eScore)} · Intellectual {formatScore(iScore)}</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-[9px] font-mono">
+        {[{ id: "physical", label: "Physical", color: "text-red-300" }, { id: "emotional", label: "Emotional", color: "text-blue-300" }, { id: "intellectual", label: "Intellectual", color: "text-amber-300" }, { id: "spiritual", label: "Spiritual", color: "text-violet-300" }].map((item) => (
+          <label key={item.id} className={`flex items-center gap-1.5 ${item.color}`}><input type="checkbox" checked={visibleCycles[item.id]} onChange={(event) => setVisibleCycles({ ...visibleCycles, [item.id]: event.target.checked })} />{item.label}</label>
+        ))}
+      </div>
+      <div className="mt-3 text-center text-[10px] text-white/60 font-mono">{selectedDay === 0 ? "Today" : `${selectedDay > 0 ? "+" : ""}${selectedDay} days`} · Physical {formatScore(pScore)} · Emotional {formatScore(eScore)} · Intellectual {formatScore(iScore)} · Spiritual {formatScore(sScore)}</div>
     </div>
   );
 };

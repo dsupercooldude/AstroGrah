@@ -58,7 +58,8 @@ window.AskTab = ({ emHash, set, pr, ch, date }) => {
         }
       } catch (err) {}
 
-      const systemContext = `You are the Graha Ledger Jyotish Sage. Provide Vedic astrology guidance for ${pr?.name || "Native"} (Asc: ${ch?.d1?.lagna || "Aries"}, Moon: ${ch?.moonSign || "Aries"}). Target Date: ${date.toDateString()}. Today Hora: ${WEEKDAY[date.getDay()]}. ${globalContext}`;
+      const learnedContext = h.slice(-8).map((item) => `User asked: ${item.q}; prior answer: ${String(item.a || "").slice(0, 500)}`).join(" | ");
+      const systemContext = `You are the Graha Ledger Jyotish Sage. Provide complete, clearly structured Vedic astrology guidance for ${pr?.name || "Native"} (Asc: ${ch?.d1?.lagna || "Aries"}, Moon: ${ch?.moonSign || "Aries"}). Target Date: ${date.toDateString()}. Today Hora: ${WEEKDAY[date.getDay()]}. Use the user's prior conversation context to remain consistent, but do not repeat it unnecessarily. ${learnedContext ? `Prior conversation context: ${learnedContext}` : ""} ${globalContext}`;
 
       if (set?.aiModel !== "offline" && executeMultiProviderAI) {
         const apiRes = await executeMultiProviderAI(q, set, systemContext);
@@ -67,7 +68,7 @@ window.AskTab = ({ emHash, set, pr, ch, date }) => {
 
       if (!ans && runVedicRuleEngine) {
         usedProvider = "offline";
-        ans = runVedicRuleEngine(q, pr, ch, date);
+        ans = runVedicRuleEngine(q, pr, ch, date, learnedContext);
       }
 
       if (!ans) ans = "No AI response was returned. Check the selected provider API key and network access.";

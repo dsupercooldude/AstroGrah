@@ -104,6 +104,12 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, bioScores, onEdit, onPdf 
         )}
       </div>
 
+      <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl space-y-3">
+        <h3 className="font-serif text-lg text-amber-200">Your Lagna and Chalit Chart in Plain Language</h3>
+        <p className="text-xs t85 leading-relaxed font-mono">{deepSynthesis.lagnaMeaning}</p>
+        <p className="text-xs t85 leading-relaxed font-mono">{deepSynthesis.chalitMeaning}</p>
+      </div>
+
       {/* CHART KUNDALI ENGINE */}
       <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl relative overflow-visible">
         <div className="flex justify-between items-center mb-6 relative z-20">
@@ -207,6 +213,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, bioScores, onEdit, onPdf 
               )
             })}
           </div>
+          <p className="text-xs t60 font-mono leading-relaxed mt-4 border-t border-white/10 pt-3">{deepSynthesis.shadbalaMeaning}</p>
         </div>
       </div>
 

@@ -195,6 +195,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           <p className="text-sm text-white/80 leading-relaxed font-mono mb-8 bg-black/30 p-6 rounded-xl border border-white/5">
             This ledger records the precise mathematical coordinates of the celestial bodies at your exact moment of birth. It serves as the foundational data for all astrological predictions and determines the exact sub-rulers (Nakshatras and Padas) that influence your core personality.
           </p>
+          <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-8 bg-amber-950/20 p-5 rounded-xl border border-amber-500/20">{deepSynthesis.advLedger}</p>
           <table className="w-full text-base font-mono text-left border-collapse">
             <thead>
               <tr className="text-white/50 uppercase border-b border-white/10 text-sm">
@@ -235,6 +236,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           <p className="text-sm text-white/80 leading-relaxed font-mono mb-10 bg-black/30 p-6 rounded-xl border border-white/5">
             {deepSynthesis.pdfShadbala}
           </p>
+          <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-6 bg-amber-950/20 p-5 rounded-xl border border-amber-500/20">{deepSynthesis.shadbalaMeaning}</p>
           <div className="grid grid-cols-2 gap-3">
             {Object.entries(ch.shadbala || {}).sort((a,b)=>b[1]-a[1]).map(([planet, score]) => {
               const pInfo = window.PLANET_INFO[planet]; 
@@ -269,6 +271,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           <p className="text-sm text-white/80 leading-relaxed font-mono mb-8 bg-black/30 p-6 rounded-xl border border-white/5">
             In Jaimini Astrology, planets are assigned specific roles (Karakas) based entirely on their mathematical degrees, irrespective of the sign they sit in. Your highest degree planet becomes the Atma Karaka (Soul), governing your overarching life purpose.
           </p>
+          <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-6 bg-amber-950/20 p-5 rounded-xl border border-amber-500/20">For {profile.name}, each role below identifies a life area where the assigned planet expresses a recurring personal lesson. Read the role together with the planet shown, rather than treating it as a fixed prediction.</p>
 
           <div className="space-y-6 pdf-karaka-list">
             {Object.entries(jaimini).map(([karaka, planet]) => (
@@ -299,6 +302,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           <p className="text-sm text-white/80 leading-relaxed font-mono mb-8 bg-black/30 p-6 rounded-xl border border-white/5">
             Just because a planet is placed well does not mean it can deliver results. Baladi Avasthas determine the "age" or "potency" of a planet based on its degrees within a specific sign. A planet in "Youth" is highly potent, while a planet that is "Dead" requires intense conscious remediation.
           </p>
+          <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-6 bg-amber-950/20 p-5 rounded-xl border border-amber-500/20">These maturity labels explain how readily each planet can express its promise in your chart. A younger state usually acts with more immediate energy; an older or dormant state asks for more time, structure, and conscious effort in that planet's life area.</p>
 
           <div className="grid grid-cols-2 gap-3 pdf-avastha-list">
             {Object.entries(avasthas).map(([planet, avastha]) => (
@@ -329,6 +333,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           <p className="text-sm text-white/80 leading-relaxed font-mono mb-10 bg-black/30 p-6 rounded-xl border border-white/5">
             While your birth chart is a fixed static map, Gochara translates the real-time movement of the planets in the sky <strong>today</strong> against that fixed map. These planetary transits dictate your immediate, real-world outcomes and shift constantly as the planets orbit.
           </p>
+          <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-6 bg-amber-950/20 p-5 rounded-xl border border-amber-500/20">{deepSynthesis.gocharaMeaning}</p>
 
           <div className="flex flex-col gap-8">
             {Object.entries(gochara).map(([domain, data]) => (
@@ -363,6 +368,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           <p className="text-sm text-white/80 leading-relaxed font-mono mb-10 bg-black/30 p-6 rounded-xl border border-white/5">
             {deepSynthesis.pdfDasha}
           </p>
+          <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-6 bg-amber-950/20 p-5 rounded-xl border border-amber-500/20">This operating-system metaphor means the active Mahadasha supplies the long-term theme, while the Antardasha describes the shorter-term way that theme is currently experienced in your work, relationships, decisions, and responsibilities.</p>
 
           <div className="grid grid-cols-2 gap-8 font-mono text-sm">
             {displayDashas.map((d, i) => {
@@ -394,6 +400,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       <div className="pdf-page pdf-forecast w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Matrix (Q1)</h3>
+        <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-5 bg-amber-950/20 p-4 rounded-xl border border-amber-500/20">{deepSynthesis.monthlyMeaning}</p>
         <div className="flex flex-col gap-8">
           {yearlyForecast.slice(0, 3).map((m, idx) => (
             <div key={idx} className="p-6 bg-[#121426] rounded-2xl border border-white/10 shadow-lg">
@@ -425,6 +432,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       <div className="pdf-page pdf-forecast w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Matrix (Q2)</h3>
+        <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-5 bg-amber-950/20 p-4 rounded-xl border border-amber-500/20">{deepSynthesis.monthlyMeaning}</p>
         <div className="flex flex-col gap-8">
           {yearlyForecast.slice(3, 6).map((m, idx) => (
             <div key={idx} className="p-6 bg-[#121426] rounded-2xl border border-white/10 shadow-lg">
@@ -456,6 +464,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       <div className="pdf-page pdf-forecast w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Matrix (Q3)</h3>
+        <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-5 bg-amber-950/20 p-4 rounded-xl border border-amber-500/20">{deepSynthesis.monthlyMeaning}</p>
         <div className="flex flex-col gap-8">
           {yearlyForecast.slice(6, 9).map((m, idx) => (
             <div key={idx} className="p-6 bg-[#121426] rounded-2xl border border-white/10 shadow-lg">
@@ -487,6 +496,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       <div className="pdf-page pdf-forecast w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Matrix (Q4)</h3>
+        <p className="text-sm text-amber-100/90 leading-relaxed font-mono mb-5 bg-amber-950/20 p-4 rounded-xl border border-amber-500/20">{deepSynthesis.monthlyMeaning}</p>
         <div className="flex flex-col gap-8">
           {yearlyForecast.slice(9, 12).map((m, idx) => (
             <div key={idx} className="p-6 bg-[#121426] rounded-2xl border border-white/10 shadow-lg">

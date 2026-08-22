@@ -639,6 +639,13 @@ window.bio = (dob, td, utc) => {
   };
 };
 
+window.BIORHYTHM_CYCLES = {
+  physical: { label: "Physical", cycle: 23, color: "#F87171", description: "stamina, activity, and physical recovery" },
+  emotional: { label: "Emotional", cycle: 28, color: "#60A5FA", description: "mood balance, sensitivity, and social ease" },
+  intellectual: { label: "Intellectual", cycle: 33, color: "#FBBF24", description: "concentration, learning, and problem solving" },
+  spiritual: { label: "Spiritual", cycle: 38, color: "#A78BFA", description: "reflection, meaning, and inner steadiness" }
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // 7. DEEP SYNTHESIS, GOCHARA & YEARLY PREDICTIONS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -783,6 +790,11 @@ window.generateDeepSynthesis = (pr, ch, bio, targetDate) => {
 
   const bioP = Math.round(((bio.p + 1) / 2) * 100); const bioE = Math.round(((bio.e + 1) / 2) * 100); const bioI = Math.round(((bio.i + 1) / 2) * 100);
   const chartPositionSummary = Object.entries(ch.d1.signs || {}).map(([planet, sign]) => `${planet} in ${sign}`).join(", ");
+  const lagnaHouseMeaning = `Your ${lagna} Lagna is the starting point of the twelve-house chart. It describes your approach to life, body, identity, and the way other people first experience you. Its ruler is ${lagnaLord}, so qualities of ${window.PLANET_INFO[lagnaLord]?.adhidevata || lagnaLord} become an important way for you to build confidence and direction.`;
+  const chalitMeaning = `Your Chalit-style house view keeps the same ${lagna} Ascendant but reads each planet through the house it occupies: ${Object.entries(ch.d1.placements || {}).map(([planet, house]) => `${planet} in house ${house}`).join(", ")}. In plain language, a house tells you where an influence is experienced: the 1st is self, 2nd resources and speech, 3rd effort, 4th home, 5th learning and creativity, 6th work and health routines, 7th partnership, 8th change, 9th learning and belief, 10th career, 11th gains, and 12th rest and release.`;
+  const shadbalaMeaning = `Your Shadbala scores compare the relative operating strength of the seven classical planets in this chart. ${topPlanet} leads at ${(ch.shadbala?.[topPlanet] / 60 || 0).toFixed(1)} Rupas, making its areas easier to activate; ${weakPlanet} is lowest at ${(ch.shadbala?.[weakPlanet] / 60 || 0).toFixed(1)} Rupas, so its areas need planning, patience, and repetition. This is a relative strength guide, not a promise that one planet controls your entire life.`;
+  const gocharaMeaning = `For ${pr?.name || "you"} on ${tD.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}, current transits are read against your ${lagna} Ascendant and ${moon} Moon. ${Object.entries(ch.transits || {}).map(([planet, sign]) => `${planet} is moving through ${sign}`).join(", ")}. These describe the timing and atmosphere around your natal potential, not a replacement for the birth chart.`;
+  const monthlyMeaning = `This twelve-month matrix is tailored to your ${lagna} Ascendant, ${moon} Moon, active ${activeMaha} Mahadasha, and the strongest influence of ${topPlanet}. Each month translates those chart factors into practical themes for work, money, home, and wellbeing.`;
 
   // Deep Jaimini Meanings
   const karakaMeanings = {
@@ -817,6 +829,11 @@ window.generateDeepSynthesis = (pr, ch, bio, targetDate) => {
     basicDasha: `You are currently experiencing the overarching Mahadasha of ${activeMaha}, which pulls your primary focus toward its natal promises. However, your specific day-to-day reality is currently hijacked by the sub-cycle (Antardasha) of ${activeAntar}, triggering themes of ${antarTraits[activeAntar]}.`,
     basicPower: `Shadbala reveals that ${topPlanet} is your ultimate power center. Conversely, ${weakPlanet} is starved for energy and represents your primary karmic bottleneck requiring conscious remediation.`,
     basicBio: `For ${tD.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}, your physical energy is ${bioP}%, emotional steadiness is ${bioE}%, and intellectual focus is ${bioI}%. Use the strongest score for demanding work and protect the lowest score with rest and simpler commitments.`,
+    lagnaMeaning: lagnaHouseMeaning,
+    chalitMeaning,
+    shadbalaMeaning,
+    gocharaMeaning,
+    monthlyMeaning,
     dynamicPrescription: { gem: window.PLANET_INFO[lagnaLord]?.gem, charity: window.PLANET_INFO[weakPlanet]?.charity, mantra: window.PLANET_INFO[activeAntar]?.beej, deity: window.PLANET_INFO[lagnaLord]?.adhidevata, action: `Fortify your weakest link (${weakPlanet}) by observing its specific discipline, while ruthlessly leveraging your dominant ${topPlanet} for major decisions.` },
     
     // PDF SPECIFIC GENERATORS
