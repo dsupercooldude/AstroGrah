@@ -768,36 +768,61 @@ window.runVedicRuleEngine = (query, profile, kundli, targetDate) => {
   return `[Graha Ledger Vedic Expert Engine — Deterministic Mode]\n═════════════════════════════════════════════════════\n📍 DOMAIN: ${domain}\n\n1. DATA-DRIVEN VEDIC SYNTHESIS:\n${analysis}\n\n2. PRESCRIBED ACTION ROADMAP:\n${roadmap}\n\n3. DIVINE REMEDY & MANTRAS:\n• ${muhurtaRemedy}\n• Daily Action: ${window.PLANET_INFO[rulingPlanet]?.action}`;
 };
 
-window.generateDeepSynthesis = (pr, ch, bio) => {
+window.generateDeepSynthesis = (pr, ch, bio, targetDate) => {
   if (!ch || !ch.d1) return {};
-  const lagna = ch.d1.lagna;
-  const lagnaLord = window.SIGN_LORDS[lagna];
-  const moon = ch.moonSign;
-  const dasha = ch.dasha?.[0]?.lord || "Sun";
+  const lagna = ch.d1.lagna; const lagnaLord = window.SIGN_LORDS[lagna]; const moon = ch.moonSign; 
   const sortedPower = Object.entries(ch.shadbala || {}).sort((a, b) => b[1] - a[1]);
-  const topPlanet = sortedPower[0]?.[0] || lagnaLord;
-  const weakPlanet = sortedPower[sortedPower.length - 1]?.[0] || "Saturn";
-  const tP = ch.transits || {};
-  const dashaTransit = tP[dasha];
-  const bioP = Math.round(((bio.p + 1) / 2) * 100);
-  const bioE = Math.round(((bio.e + 1) / 2) * 100);
-  const bioI = Math.round(((bio.i + 1) / 2) * 100);
+  const topPlanet = sortedPower[0]?.[0] || lagnaLord; const weakPlanet = sortedPower[sortedPower.length - 1]?.[0] || "Saturn";
+  
+  // Calculate specific Mahadasha and Antardasha
+  const tD = targetDate || new Date();
+  const currentDecYear = tD.getFullYear() + (tD.getMonth() / 12) + (tD.getDate() / 365);
+  const mahaObj = ch.dasha?.find((d) => currentDecYear >= d.start && currentDecYear < d.end);
+  const activeMaha = mahaObj ? mahaObj.lord : "Sun";
+  let activeAntar = activeMaha;
+  if (mahaObj && window.getAntardashas) { activeAntar = window.getAntardashas(activeMaha, mahaObj.start, mahaObj.end).find((a) => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha; }
+
+  const bioP = Math.round(((bio.p + 1) / 2) * 100); const bioE = Math.round(((bio.e + 1) / 2) * 100); const bioI = Math.round(((bio.i + 1) / 2) * 100);
+
+  // Deep Jaimini Meanings
+  const karakaMeanings = {
+    "Atma Karaka (AK)": "The 'King' of your chart. It represents your soul's deepest desires, ultimate karmic lessons, and the core purpose of your current incarnation.",
+    "Amatya Karaka (AmK)": "The 'Minister'. It dictates your career trajectory, professional inclinations, and the means through which you acquire wealth and status.",
+    "Bhratru Karaka (BK)": "Represents mentors, gurus, siblings, and those who guide you through adversity.",
+    "Matru Karaka (MK)": "Represents maternal figures, your internal happiness, psychological foundation, and properties.",
+    "Putra Karaka (PK)": "Governs creative intelligence, children, speculative investments, and educational pursuits.",
+    "Gnati Karaka (GK)": "The indicator of obstacles, debts, competitive rivals, and karmic struggles that you must overcome.",
+    "Dara Karaka (DK)": "The indicator of your spouse, long-term romantic partners, and significant business partnerships."
+  };
+
+  // Deep Avastha Meanings
+  const avasthaMeanings = {
+    "Bala (Infant)": "Operating at 25% capacity. Gentle, raw, but lacks the maturity to deliver independent, forceful results.",
+    "Kumara (Adolescent)": "Operating at 50% capacity. Eager and learning, bringing active but sometimes unrefined energy to its domain.",
+    "Yuva (Youth)": "Operating at 100% capacity! The planet is highly potent, commanding, and delivers its promises with absolute certainty.",
+    "Vriddha (Old)": "Operating at 10% capacity. Represents wisdom but lacks the physical stamina to manifest material results efficiently.",
+    "Mrita (Dead)": "Operating at 0% capacity. The planet's energy is entirely dormant, demanding heavy remediation and conscious effort to activate."
+  };
+
+  const antarTraits = {
+    Sun: "authority, visibility, ego, and governmental matters", Moon: "emotional shifts, maternal energy, and public perception",
+    Mars: "raw conflict, physical energy, courage, and real estate", Mercury: "commerce, high-speed communication, and technical analysis",
+    Jupiter: "expansion, financial windfalls, wisdom, and philosophical growth", Venus: "romantic partnerships, luxuries, vehicle acquisitions, and diplomacy",
+    Saturn: "delays, intense structural discipline, heavy workloads, and karmic reckoning", Rahu: "sudden foreign events, intense obsessions, and technological breakthroughs",
+    Ketu: "detachment, spiritual clearing, sudden endings, and mystical insights"
+  };
 
   return {
     basicKundali: `Your cosmic blueprint is anchored by the ${lagna} Ascendant, ruled by ${lagnaLord}. This core geometry makes you naturally ${window.SIGN_TRAITS?.[lagna] || 'driven and distinct'}. With your Moon residing in ${moon}, your internal emotional landscape seeks security through ${window.SIGN_TRAITS?.[moon] || 'structured stability'}.`,
-    basicDasha: `You are currently experiencing the Mahadasha of ${dasha}. This overarching time-cycle actively pulls your focus toward the themes of ${dasha}'s placement in your chart. Because ${dasha} is currently transiting ${dashaTransit || 'the heavens'}, expect its natal promises to manifest actively in your daily routine.`,
-    basicPower: `Shadbala (Six-fold strength) reveals that ${topPlanet} is your ultimate power center, granting you immense natural leverage in areas of ${window.PLANET_INFO[topPlanet]?.action?.toLowerCase() || 'focused action'}. Conversely, ${weakPlanet} is starved for energy and represents your primary karmic bottleneck requiring conscious remediation.`,
-    basicBio: `Your 15-day Biorhythm matrix (Physical: ${bioP}%, Emotional: ${bioE}%, Intellectual: ${bioI}%) maps your immediate pranic bandwidth. Validate this today: if Intellectual is high, you will notice effortless focus; if Physical is low, you will feel the need to preserve stamina rather than push limits.`,
-    dynamicPrescription: {
-      gem: window.PLANET_INFO[lagnaLord]?.gem,
-      charity: window.PLANET_INFO[weakPlanet]?.charity,
-      mantra: window.PLANET_INFO[dasha]?.beej,
-      deity: window.PLANET_INFO[lagnaLord]?.adhidevata,
-      action: `Fortify your weakest link (${weakPlanet}) by observing its specific discipline, while ruthlessly leveraging your dominant ${topPlanet} for major career and life decisions.`
-    },
-    advLedger: `As a ${lagna} rising, the dignity of ${lagnaLord} dictates your overall life trajectory. However, your current operating system is governed by the Dasha of ${dasha}. By cross-referencing your strongest planet (${topPlanet}) with ${dasha}'s current transit in ${dashaTransit}, your immediate focus must shift toward ${window.PLANET_INFO[dasha]?.action?.toLowerCase() || 'focused action'} to unlock material and spiritual yield.`,
+    basicDasha: `You are currently experiencing the overarching Mahadasha of ${activeMaha}, which pulls your primary focus toward its natal promises. However, your specific day-to-day reality is currently hijacked by the sub-cycle (Antardasha) of ${activeAntar}, triggering themes of ${antarTraits[activeAntar]}.`,
+    basicPower: `Shadbala reveals that ${topPlanet} is your ultimate power center. Conversely, ${weakPlanet} is starved for energy and represents your primary karmic bottleneck requiring conscious remediation.`,
+    dynamicPrescription: { gem: window.PLANET_INFO[lagnaLord]?.gem, charity: window.PLANET_INFO[weakPlanet]?.charity, mantra: window.PLANET_INFO[activeAntar]?.beej, deity: window.PLANET_INFO[lagnaLord]?.adhidevata, action: `Fortify your weakest link (${weakPlanet}) by observing its specific discipline, while ruthlessly leveraging your dominant ${topPlanet} for major decisions.` },
+    
+    // PDF SPECIFIC GENERATORS
     pdfShadbala: `Shadbala calculates the exact mathematical "weight" of each planet in your chart. Your highest scoring planet is ${topPlanet}. You have a natural advantage in areas governed by it. Conversely, your lowest scoring planet is ${weakPlanet}, indicating your primary karmic bottleneck where you must apply conscious effort.`,
     pdfBiorhythm: `Biorhythms mathematically map your 30-day internal energy fluctuations. Today, your Physical stamina is ${bioP}%, Emotional stability is ${bioE}%, and Intellectual focus is ${bioI}%. Execute heavy analytical tasks when Intellectual peaks, and prioritize rest when Physical dips.`,
-    pdfDasha: `Vimshottari Dasha is the Vedic timeline of your life's chapters. You are currently in the major cycle (Mahadasha) of ${dasha}. For the duration of this cycle, the universe is actively prioritizing the themes of ${dasha}. The sub-cycles (Antardashas) listed below show the secondary, shorter-term influences blending with ${dasha}.`
+    pdfDasha: `Vimshottari Dasha is the Vedic timeline of your life. While your main cycle is ${activeMaha}, your current sub-cycle (Antardasha) is ruled by ${activeAntar}. This means the immediate focus of your life is drawn toward ${antarTraits[activeAntar]}. To make the absolute best use of this phase, lean entirely into the behavioral traits of ${activeAntar} rather than fighting its natural current.`,
+    karakaMeanings,
+    avasthaMeanings
   };
 };
