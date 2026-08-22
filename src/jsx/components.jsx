@@ -67,22 +67,37 @@ window.SageLogo = ({ size = 32 }) => (
 window.Icon = ({ name, size = 18, className = "" }) => ( <i className={`ph ph-${name} ${className}`} style={{ fontSize: size }} /> );
 
 window.BiocycleWidget = ({ bioScores }) => {
-  const p = bioScores?.p || 0; const e = bioScores?.e || 0; const i = bioScores?.i || 0;
+  const p = bioScores?.p || 0; 
+  const e = bioScores?.e || 0; 
+  const i = bioScores?.i || 0;
+
+  // Format to true 0-100% scale safely
+  const dp = Math.round(((p + 1) / 2) * 100);
+  const de = Math.round(((e + 1) / 2) * 100);
+  const di = Math.round(((i + 1) / 2) * 100);
+
   return (
     <div className="font-mono">
       <div className="grid grid-cols-3 gap-4 text-center mb-4 relative z-10">
-        <div className="bg-black/40 p-4 rounded-xl border border-red-500/30 shadow-lg backdrop-blur-sm"><div className="text-[10px] text-red-400 mb-1 tracking-widest">PHYSICAL</div><div className="text-xl text-white font-bold">{Math.round(p * 100)}%</div></div>
-        <div className="bg-black/40 p-4 rounded-xl border border-blue-500/30 shadow-lg backdrop-blur-sm"><div className="text-[10px] text-blue-400 mb-1 tracking-widest">EMOTIONAL</div><div className="text-xl text-white font-bold">{Math.round(e * 100)}%</div></div>
-        <div className="bg-black/40 p-4 rounded-xl border border-amber-500/30 shadow-lg backdrop-blur-sm"><div className="text-[10px] text-amber-400 mb-1 tracking-widest">INTELLECTUAL</div><div className="text-xl text-white font-bold">{Math.round(i * 100)}%</div></div>
+        <div className="bg-black/40 p-4 rounded-xl border border-red-500/30 shadow-lg backdrop-blur-sm"><div className="text-[10px] text-red-400 mb-1 tracking-widest">PHYSICAL</div><div className="text-xl text-white font-bold">{dp}%</div></div>
+        <div className="bg-black/40 p-4 rounded-xl border border-blue-500/30 shadow-lg backdrop-blur-sm"><div className="text-[10px] text-blue-400 mb-1 tracking-widest">EMOTIONAL</div><div className="text-xl text-white font-bold">{de}%</div></div>
+        <div className="bg-black/40 p-4 rounded-xl border border-amber-500/30 shadow-lg backdrop-blur-sm"><div className="text-[10px] text-amber-400 mb-1 tracking-widest">INTELLECTUAL</div><div className="text-xl text-white font-bold">{di}%</div></div>
       </div>
-      <div className="relative w-full h-24 bg-gradient-to-b from-black/20 to-black/5 rounded-2xl border border-white/5 overflow-hidden">
-        <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="w-full h-full opacity-70">
-          <path d={`M0 ${20 - (p*15)} Q 25 ${20 + (p*15)} 50 ${20 - (p*15)} T 100 ${20 - (p*15)}`} fill="none" stroke="#F87171" strokeWidth="1.5" />
-          <path d={`M0 ${20 - (e*15)} Q 25 ${20 + (e*15)} 50 ${20 - (e*15)} T 100 ${20 - (e*15)}`} fill="none" stroke="#60A5FA" strokeWidth="1.5" strokeDasharray="2,2" />
-          <path d={`M0 ${20 - (i*15)} Q 25 ${20 + (i*15)} 50 ${20 - (i*15)} T 100 ${20 - (i*15)}`} fill="none" stroke="#FBBF24" strokeWidth="1.5" strokeDasharray="4,2" />
-          <line x1="50" y1="0" x2="50" y2="40" stroke="#ffffff" strokeOpacity="0.2" strokeDasharray="1,1" />
+      
+      {/* FIX: Expanded ViewBox boundaries & Overflow Visible so waves never clip */}
+      <div className="relative w-full h-32 bg-gradient-to-b from-black/20 to-black/5 rounded-2xl border border-white/5 mt-2 p-2">
+        <svg viewBox="0 -10 100 60" preserveAspectRatio="none" className="w-full h-full opacity-80 overflow-visible">
+          
+          <line x1="0" y1="20" x2="100" y2="20" stroke="#ffffff" strokeOpacity="0.1" strokeWidth="0.5" strokeDasharray="2,2" />
+          
+          {/* Dynamically calculated Beziers centered at Y=20, with Amplitude=20. ViewBox is -10 to 50, guaranteeing 10 units of safe padding above and below! */}
+          <path d={`M 0 ${20 - (p*20)} C 25 ${20 + (p*25)}, 75 ${20 - (p*25)}, 100 ${20 + (p*20)}`} fill="none" stroke="#F87171" strokeWidth="2" />
+          <path d={`M 0 ${20 - (e*20)} C 30 ${20 + (e*25)}, 70 ${20 - (e*25)}, 100 ${20 + (e*20)}`} fill="none" stroke="#60A5FA" strokeWidth="2" strokeDasharray="3,2" />
+          <path d={`M 0 ${20 - (i*20)} C 35 ${20 + (i*25)}, 65 ${20 - (i*25)}, 100 ${20 + (i*20)}`} fill="none" stroke="#FBBF24" strokeWidth="2" strokeDasharray="6,3" />
+          
+          <line x1="50" y1="-10" x2="50" y2="50" stroke="#ffffff" strokeOpacity="0.3" strokeWidth="1" strokeDasharray="2,2" />
         </svg>
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[8px] text-white/40 mt-1">TODAY</div>
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] font-bold text-white/50 bg-black/40 px-2 py-0.5 rounded-md border border-white/10">TODAY</div>
       </div>
     </div>
   );
