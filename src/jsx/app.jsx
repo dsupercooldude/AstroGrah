@@ -39,55 +39,63 @@ const bootInterval = setInterval(() => {
       const chs = useMemo(() => { const o = {}; if (Array.isArray(prs)) { prs.forEach((p) => { if (p && p.id && window.computeKundli) { o[p.id] = window.computeKundli(p, dt); } }); } return o; }, [prs, dt]);
       const aP = prs.find((p) => p.id === activeProfileId) || (prs.length > 0 ? prs[0] : null);
 
-      // FIX: Added 300ms rendering delay so the DOM can build the tables correctly
-// In src/jsx/app.jsx, locate the useEffect containing handlePdf and replace it with this:
-
+      // FIX: Seamless Off-Screen Multi-Page PDF Capture
       useEffect(() => {
         const handlePdf = async () => {
           const el = document.getElementById('pdf-render-target'); 
           if (!el) return; 
-          el.classList.remove('hidden'); 
-          el.style.left = '0'; 
-          el.style.zIndex = '-50';
           
-          await new Promise(resolve => setTimeout(resolve, 500)); // Ensure DOM is fully painted
+          // Move completely off-screen to avoid layout collisions
+          el.style.position = 'fixed';
+          el.style.top = '0';
+          el.style.left = '-20000px'; 
+          el.style.zIndex = '-9999';
+          el.classList.remove('hidden'); 
+          
+          // Fullscreen Loading Overlay
+          const loader = document.createElement('div');
+          loader.id = 'pdf-loader-overlay';
+          loader.innerHTML = `
+            <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+            <div style="position:fixed;inset:0;z-index:99999;background:rgba(11,13,25,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fbbf24;font-family:monospace;font-size:14px;">
+              <div style="width:50px;height:50px;border:4px solid #fbbf24;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px;"></div>
+              Generating Comprehensive 4-Page Dossier...
+            </div>
+          `;
+          document.body.appendChild(loader);
+
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for SVGs to paint
 
           try {
-            const canvas = await window.html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#0b0d19' });
-            const imgData = canvas.toDataURL('image/jpeg', 1.0); 
             const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
+            const pages = el.querySelectorAll('.pdf-page');
             
-            const pdfWidth = pdf.internal.pageSize.getWidth(); 
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasHeightInPt = (canvas.height * pdfWidth) / canvas.width;
-            
-            let heightLeft = canvasHeightInPt;
-            let position = 0;
-            
-            // Render first page
-            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, canvasHeightInPt);
-            heightLeft -= pdfHeight;
-            
-            // Loop and add new pages for overflow
-            while (heightLeft >= 0) {
-              position = heightLeft - canvasHeightInPt;
-              pdf.addPage();
-              pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, canvasHeightInPt);
-              heightLeft -= pdfHeight;
+            // Loop and capture distinct A4 pages
+            for (let i = 0; i < pages.length; i++) {
+              const canvas = await window.html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#0b0d19' });
+              const imgData = canvas.toDataURL('image/jpeg', 1.0); 
+              
+              if (i > 0) pdf.addPage();
+              
+              const pdfWidth = pdf.internal.pageSize.getWidth(); 
+              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight); 
             }
             
             pdf.save(`${aP?.name?.replace(/\s+/g, '_') || 'Graha_Ledger'}_Astrology_Report.pdf`);
           } catch(e) { 
             alert("PDF Generation Failed."); 
+            console.error(e);
           } finally { 
-            el.style.left = '-9999px'; 
             el.classList.add('hidden'); 
+            const overlay = document.getElementById('pdf-loader-overlay');
+            if (overlay) overlay.remove();
           }
         };
         window.addEventListener('generate-pdf', handlePdf); 
         return () => window.removeEventListener('generate-pdf', handlePdf);
       }, [aP]);
-      
+
       const logoutUser = () => { try { localStorage.removeItem("gl_active_user"); } catch (e) {} setU(null); };
       const handleOpenEdit = (profileObj = {}) => { setFormData({ id: profileObj.id || null, name: profileObj.name || "", dob: profileObj.dob || "2000-01-01", time: profileObj.time || "12:00", place: profileObj.place || "", lat: profileObj.lat || "", lon: profileObj.lon || "", utcOffset: profileObj.utcOffset || "5.5", gotra: profileObj.gotra || "", jaati: profileObj.jaati || "", kulDevta: profileObj.kulDevta || "", gramDevta: profileObj.gramDevta || "", sthanDevta: profileObj.sthanDevta || "" }); setEd(profileObj); };
       const hSave = async (e) => { e.preventDefault(); const pD = { ...formData, lat: parseFloat(formData.lat) || 0, lon: parseFloat(formData.lon) || 0, utcOffset: parseFloat(formData.utcOffset) || 5.5, id: formData.id || Date.now().toString() }; const nP = formData.id ? prs.map((p) => (p.id === pD.id ? pD : p)) : [...prs, pD]; const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`); vaultFile.content.profiles = CryptoUtils.encrypt(nP); vaultFile.content.settings = vaultFile.content.settings || CryptoUtils.encrypt(set); await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha); setU({ ...u, profiles: nP }); setActiveProfileId(pD.id); setEd(null); };
