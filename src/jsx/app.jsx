@@ -62,6 +62,11 @@ const bootInterval = setInterval(() => {
           await new Promise(resolve => setTimeout(resolve, 1000)); 
 
           try {
+            const validation = await window.PDFValidator.validate(el);
+            if (!validation.valid) {
+              alert(`PDF layout validation failed:\n\n${window.PDFValidator.formatIssues(validation)}`);
+              return;
+            }
             const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
             const pages = el.querySelectorAll('.pdf-page');
             
