@@ -1,12 +1,13 @@
 // src/jsx/tab-panchang.jsx
 var React = window.React;
-var { useState } = window.React;
+var { useState, useMemo } = window.React;
 
 window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
   const { Icon, panchang, PLANET_INFO } = window;
   const [liveValidated, setLiveValidated] = useState(false);
   const [validating, setValidating] = useState(false);
 
+  // Core Daily Calculation
   const pan = panchang ? panchang(d, settings?.monthSystem || "amanta", utc) : {};
 
   const fm = (dt) => {
@@ -28,9 +29,38 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
     setValidating(false);
   };
 
+  // LOCAL TIME SERIES GENERATOR: Uses formulas.js to instantly calculate the next 7 days
+  const timeSeries = useMemo(() => {
+    if (!panchang) return [];
+    const series = [];
+    for (let i = 0; i < 7; i++) {
+      const nextDate = new Date(d);
+      nextDate.setDate(nextDate.getDate() + i);
+      const nextPan = panchang(nextDate, settings?.monthSystem || "amanta", utc);
+      series.push({
+        dateObj: nextDate,
+        dateStr: nextDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
+        tithi: nextPan.tithi,
+        paksha: nextPan.paksha,
+        nak: nextPan.nak,
+        yoga: nextPan.yoga,
+        sr: fm(nextPan.sr),
+        ss: fm(nextPan.ss)
+      });
+    }
+    return series;
+  }, [d, settings?.monthSystem, utc, panchang]);
+
   return (
     <div className="space-y-4 pb-12 gl-fadein mt-4">
-      <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-emerald-950/40 via-black/20 to-transparent shadow-xl flex justify-between items-center">
+      <style>{`
+        .beauty-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+        .beauty-scroll::-webkit-scrollbar-track { background: transparent; }
+        .beauty-scroll::-webkit-scrollbar-thumb { background-color: rgba(251, 191, 36, 0.2); border-radius: 10px; }
+      `}</style>
+
+      {/* HEADER */}
+      <div className="rounded-3xl border border-white/10 p-5 bg-gradient-to-br from-emerald-950/40 via-black/20 to-transparent shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-emerald-400">Drik Aligned Ephemeris</span>
           <h2 className="font-serif text-2xl text-emerald-100 mt-0.5">Vedic Panchang & Muhurtas</h2>
@@ -38,25 +68,49 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
             Vikram Samvat {pan.vikram || "—"} · Saka Samvat {pan.saka || "—"} · Masa: {pan.masa || "—"}
           </div>
         </div>
-        <button onClick={validateLivePanchang} disabled={validating} className="px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-mono text-[10px] hover:bg-emerald-500/20 transition flex items-center gap-1.5">
-          <Icon name="broadcast" className={validating ? "animate-pulse" : ""} /> {validating ? "Verifying..." : liveValidated ? "API Synced!" : "Validate Live API"}
-        </button>
+        <div className="flex flex-col items-end gap-3">
+          <button onClick={validateLivePanchang} disabled={validating} className="px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-mono text-[10px] hover:bg-emerald-500/20 transition flex items-center gap-1.5 w-full md:w-auto justify-center">
+            <Icon name="broadcast" className={validating ? "animate-pulse" : ""} /> {validating ? "Verifying..." : liveValidated ? "API Synced!" : "Validate Live API"}
+          </button>
+        </div>
       </div>
 
+      {/* TIME HORIZON CONTROLLER */}
+      <div className="bgcard rounded-3xl border border-white/10 p-4 shadow-xl flex flex-col xl:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3 w-full xl:w-auto">
+          <div className="w-10 h-10 rounded-full border border-amber-400/30 flex items-center justify-center text-amber-400 bg-amber-400/5 shadow-inner shrink-0">
+            <Icon name="calendar" size={20} />
+          </div>
+          <div>
+            <div className="text-[9px] text-amber-400 font-mono tracking-widest uppercase">Target Date</div>
+            <div className="font-serif text-lg text-white font-bold">{d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</div>
+          </div>
+        </div>
+        <div className="flex flex-wrap justify-center items-center gap-2 bg-black/40 p-1.5 rounded-2xl border border-white/5 w-full xl:w-auto">
+          {[{ l: "-1M", d: -30 }, { l: "-1W", d: -7 }, { l: "-1D", d: -1 }, { l: "Today", d: 0 }, { l: "+1D", d: 1 }, { l: "+1W", d: 7 }, { l: "+1M", d: 30 }].map(btn => (
+            <button key={btn.l} onClick={() => { const nd = new Date(d); nd.setDate(nd.getDate() + btn.d); btn.d === 0 ? setDate(new Date()) : setDate(nd); }} className={`px-3 py-1.5 rounded-xl text-[10px] font-bold font-mono transition ${btn.d === 0 ? 'bg-amber-400/20 text-amber-400 border-amber-400/30' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
+              {btn.l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* SUN / MOON GRID */}
       <div className="grid grid-cols-2 gap-2 text-center text-xs font-mono">
-        <div className="p-3.5 border border-white/10 rounded-2xl bgcard">
+        <div className="p-3.5 border border-white/10 rounded-2xl bgcard shadow-xl">
           <div className="text-amber-400 text-2xl mb-1">☀</div>
           <div className="t60 text-[9px] mb-1 uppercase">Surya Udaya — Asta</div>
           <div className="text-sm font-bold">{fm(pan.sr)} — {fm(pan.ss)}</div>
         </div>
-        <div className="p-3.5 border border-white/10 rounded-2xl bgcard">
+        <div className="p-3.5 border border-white/10 rounded-2xl bgcard shadow-xl">
           <div className="text-blue-300 text-2xl mb-1">☽</div>
           <div className="t60 text-[9px] mb-1 uppercase">Chandra Udaya — Asta</div>
           <div className="text-sm font-bold">{fm(pan.mr)} — {fm(pan.msr)}</div>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bgcard p-4 grid grid-cols-2 gap-2.5 text-xs">
+      {/* PRIMARY PANCHANG ELEMENTS */}
+      <div className="rounded-3xl border border-white/10 bgcard p-4 grid grid-cols-2 gap-2.5 text-xs shadow-xl">
         <div className="p-3 bg-black/30 rounded-xl border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">1. Tithi</span><span className="t100 font-bold">{pan.paksha || ""} {pan.tithi || "—"}</span></div>
         <div className="p-3 bg-black/30 rounded-xl border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">2. Vaar (Day)</span><span className="t100 font-bold">{d.toLocaleDateString("en-US", { weekday: "long" })}</span></div>
         <div className="p-3 bg-black/30 rounded-xl border border-white/5"><span className="t50 block font-mono text-[9px] uppercase mb-0.5">3. Nakshatra</span><span className="t100 font-bold">{pan.nak || "—"}</span></div>
@@ -64,7 +118,8 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
         <div className="col-span-2 p-3 bg-black/30 rounded-xl border border-white/5 flex justify-between items-center"><span className="t50 font-mono text-[9px] uppercase">5. Karana</span><span className={pan.karana?.includes("Bhadra") || pan.karana?.includes("Vishti") ? "text-red-400 font-bold" : "t100 font-bold"}>{pan.karana || "—"}</span></div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bgcard p-5 space-y-4">
+      {/* MUHURTAS */}
+      <div className="rounded-3xl border border-white/10 bgcard p-5 space-y-4 shadow-xl">
         <h3 className="font-serif text-sm text-white">Muhurta Windows</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {pan.bhadra && ( 
@@ -82,7 +137,8 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bgcard p-5">
+      {/* CHOGHADIYA (DAY & NIGHT) */}
+      <div className="rounded-3xl border border-white/10 bgcard p-5 shadow-xl">
         <h3 className="font-serif text-sm text-amber-200 mb-4">Day Choghadiya Timings</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(pan.chogDay || []).map((c, i) => ( 
@@ -106,8 +162,9 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bgcard p-5">
-        <h3 className="font-serif text-sm text-blue-200 mb-4">Planetary Hora Tracking (24H)</h3>
+      {/* 24H PLANETARY HORAS */}
+      <div className="rounded-3xl border border-white/10 bgcard p-5 shadow-xl">
+        <h3 className="font-serif text-sm text-amber-200 mb-4">Planetary Hora Tracking (24H)</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {[...(pan.horas || []), ...(pan.nightHoras || [])].map((h, i) => ( 
               <div key={i} className="flex justify-between items-center p-3 bg-black/30 border border-white/5 rounded-xl text-xs hover:bg-white/5 transition">
@@ -121,6 +178,46 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
             ))}
         </div>
       </div>
+
+      {/* NEW: 7-DAY PANCHANG TIME SERIES */}
+      <div className="rounded-3xl border border-white/10 bgcard p-5 shadow-xl">
+        <h3 className="font-serif text-sm text-amber-200 mb-4 flex items-center gap-2">
+          <i className="ph ph-calendar-plus"></i> 7-Day Panchang Progression
+        </h3>
+        <p className="text-xs t50 font-mono mb-4">Calculated locally via Drik Ephemeris Math Engine.</p>
+        <div className="overflow-x-auto beauty-scroll pb-2">
+          <table className="w-full text-left text-xs font-mono whitespace-nowrap border-collapse">
+            <thead>
+              <tr className="border-b border-white/10 t50 uppercase text-[9px]">
+                <th className="pb-3 pr-4">Date</th>
+                <th className="pb-3 pr-4">Tithi / Paksha</th>
+                <th className="pb-3 pr-4">Nakshatra</th>
+                <th className="pb-3 pr-4">Yoga</th>
+                <th className="pb-3">Surya Udaya/Asta</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {timeSeries.map((day, idx) => (
+                <tr 
+                  key={idx} 
+                  className={`cursor-pointer transition ${idx === 0 ? 'bg-amber-400/10 hover:bg-amber-400/20' : 'hover:bg-white/5'}`}
+                  onClick={() => setDate(day.dateObj)}
+                  title="Click to jump to this date"
+                >
+                  <td className={`py-3 pr-4 font-bold ${idx === 0 ? 'text-amber-300' : 'text-white'}`}>
+                    {idx === 0 ? 'Today' : day.dateStr}
+                  </td>
+                  <td className="py-3 pr-4">{day.paksha} {day.tithi}</td>
+                  <td className="py-3 pr-4 font-bold text-amber-100/80">{day.nak}</td>
+                  <td className="py-3 pr-4">{day.yoga}</td>
+                  <td className="py-3 t60">{day.sr} - {day.ss}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   );
 };
