@@ -1,24 +1,32 @@
 // src/jsx/tab-person.jsx
 var React = window.React;
-var { useState } = window.React;
+var { useState, useEffect } = window.React;
 
 window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
   const [chartStyle, setChartStyle] = useState("NORTH");
   const [showStyleMenu, setShowStyleMenu] = useState(false);
-  const [expandedDasha, setExpandedDasha] = useState(0);
+  const [expandedDasha, setExpandedDasha] = useState(null);
   const [isExpert, setIsExpert] = useState(false);
+
+  const currentYear = date.getFullYear() + (date.getMonth() / 12);
+
+  // FIX: Dynamically find and expand the currently ACTIVE Mahadasha
+  useEffect(() => {
+    if (ch && ch.dasha) {
+      const activeIndex = ch.dasha.findIndex(d => currentYear >= d.start && currentYear < d.end);
+      setExpandedDasha(activeIndex !== -1 ? activeIndex : 0);
+    }
+  }, [ch, date]);
 
   if (!ch) return <div className="p-10 text-center t50 text-sm font-mono">Awaiting Astral Data...</div>;
 
   const weekday = window.WEEKDAY[date.getDay()];
   const gochara = window.generateDeepGochara ? window.generateDeepGochara(ch, ch.d1?.lagna || "Aries", date, weekday, bioScores || { p: 0, e: 0, i: 0 }) : {};
-  const currentYear = date.getFullYear() + (date.getMonth() / 12);
   const formattedStyle = chartStyle.charAt(0).toUpperCase() + chartStyle.slice(1).toLowerCase();
 
   const customScrollStyle = { scrollbarWidth: "thin", scrollbarColor: "rgba(251, 191, 36, 0.2) transparent" };
   const sankalp = pr.gotra ? `Om Tat Sat. Native ${pr.name}, of ${pr.gotra} Gotra, seeking blessings of ${pr.kulDevta || 'Kul Devta'} at ${pr.place}.` : null;
 
-  // FETCH DEEP DYNAMIC SYNTHESIS
   const deepSynthesis = window.generateDeepSynthesis ? window.generateDeepSynthesis(pr, ch, bioScores || {p:0,e:0,i:0}) : {};
   const dynamicRx = deepSynthesis.dynamicPrescription || {};
 
