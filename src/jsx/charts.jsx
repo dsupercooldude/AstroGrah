@@ -7,7 +7,7 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
 
   const st = style.toLowerCase();
   
-  // FIX: Maps planets to the correct house index for drawing
+  // Mails planets to the correct house index for drawing
   const getHousePlanets = (h) => {
     return Object.entries(ac.placements || {})
       .filter(([p, houseStr]) => parseInt(houseStr) === parseInt(h))
@@ -27,24 +27,21 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
               <polygon points="50,0 100,50 50,100 0,50" />
             </svg>
             <div className="absolute inset-0 font-mono text-[9px] font-bold text-center">
-              {/* House 1 */} <div className="absolute top-[20%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[1].slice(0,3)}</div>{getHousePlanets(1).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 2 */} <div className="absolute top-[15%] left-[20%] -translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[2].slice(0,3)}</div>{getHousePlanets(2).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 3 */} <div className="absolute top-[20%] left-[15%] -translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[3].slice(0,3)}</div>{getHousePlanets(3).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 4 */} <div className="absolute top-1/2 left-[20%] -translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[4].slice(0,3)}</div>{getHousePlanets(4).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 5 */} <div className="absolute bottom-[20%] left-[15%] -translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[5].slice(0,3)}</div>{getHousePlanets(5).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 6 */} <div className="absolute bottom-[15%] left-[20%] -translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[6].slice(0,3)}</div>{getHousePlanets(6).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 7 */} <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[7].slice(0,3)}</div>{getHousePlanets(7).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 8 */} <div className="absolute bottom-[15%] right-[20%] translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[8].slice(0,3)}</div>{getHousePlanets(8).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 9 */} <div className="absolute bottom-[20%] right-[15%] translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[9].slice(0,3)}</div>{getHousePlanets(9).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 10 */}<div className="absolute top-1/2 right-[20%] translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[10].slice(0,3)}</div>{getHousePlanets(10).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 11 */}<div className="absolute top-[20%] right-[15%] translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[11].slice(0,3)}</div>{getHousePlanets(11).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
-              {/* House 12 */}<div className="absolute top-[15%] right-[20%] translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[12].slice(0,3)}</div>{getHousePlanets(12).map(p=><span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}</div>
+              {/* House 1 */} <div className="absolute top-[20%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[1].slice(0,3)}</div>{getHousePlanets(1).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 2 */} <div className="absolute top-[15%] left-[20%] -translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[2].slice(0,3)}</div>{getHousePlanets(2).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 3 */} <div className="absolute top-[20%] left-[15%] -translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[3].slice(0,3)}</div>{getHousePlanets(3).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 4 */} <div className="absolute top-1/2 left-[20%] -translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[4].slice(0,3)}</div>{getHousePlanets(4).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 5 */} <div className="absolute bottom-[20%] left-[15%] -translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[5].slice(0,3)}</div>{getHousePlanets(5).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 6 */} <div className="absolute bottom-[15%] left-[20%] -translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[6].slice(0,3)}</div>{getHousePlanets(6).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 7 */} <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[7].slice(0,3)}</div>{getHousePlanets(7).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 8 */} <div className="absolute bottom-[15%] right-[20%] translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[8].slice(0,3)}</div>{getHousePlanets(8).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 9 */} <div className="absolute bottom-[20%] right-[15%] translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[9].slice(0,3)}</div>{getHousePlanets(9).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 10 */}<div className="absolute top-1/2 right-[20%] translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[10].slice(0,3)}</div>{getHousePlanets(10).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 11 */}<div className="absolute top-[20%] right-[15%] translate-x-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[11].slice(0,3)}</div>{getHousePlanets(11).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
+              {/* House 12 */}<div className="absolute top-[15%] right-[20%] translate-x-1/2 -translate-y-1/2 w-16 h-16"><div className="t50 mb-1">{ac.houses[12].slice(0,3)}</div>{getHousePlanets(12).map(p=><span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}</div>
             </div>
           </div>
         )}
-// Inside KundaliRenderer in src/jsx/charts.jsx, change the South Indian block condition from:
-// {st === "south" && ( ... )} 
-// TO THIS:
 
         {/* SOUTH INDIAN & KP CHART (GRID) */}
         {(st === "south" || st === "kp") && (
@@ -55,8 +52,8 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
                   <>
                     <div className="text-[8px] font-mono t50 text-center">{ac.houses[h].slice(0,3)} {h===1 ? '(As)' : ''}</div>
                     <div className="flex-1 flex flex-wrap content-center justify-center gap-1 font-mono text-[9px] font-bold mt-1">
-                      {/* For KP, display actual planets in the sub/nakshatra. Since KP uses Placidus, we map the core planets down */}
-                      {getHousePlanets(h).map(p => <span key={p} style={{color:window.PLANET_INFO[p].color}}>{window.PLANET_INFO[p].symbol}</span>)}
+                      {/* For KP/South, display actual planets in the sub/nakshatra */}
+                      {getHousePlanets(h).map(p => <span key={p} style={{color:window.PLANET_INFO[p]?.color}}>{window.PLANET_INFO[p]?.symbol}</span>)}
                     </div>
                   </>
                 )}
@@ -64,9 +61,9 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
             ))}
           </div>
         )}
-        
-        {/* DEFAULT/EAST/KP GRID FALLBACK */}
-        {(st === "east" || st === "kp") && (
+
+        {/* EAST INDIAN FALLBACK */}
+        {st === "east" && (
           <div className="grid grid-cols-4 gap-2 z-10 text-[9px] font-mono text-center w-full">
             {Object.entries(ac.houses || {}).map(([houseNum, sign]) => (
               <div key={houseNum} className="p-2 bg-white/5 border border-white/10 rounded-xl min-h-[70px] flex flex-col items-center shadow-lg relative overflow-hidden">
@@ -82,8 +79,9 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
 
       </div>
 
+      {/* EXPERT KP TABLE */}
       {isExpert && kpTable && (
-        <div className="overflow-x-auto pt-4 gl-fadein">
+        <div className="overflow-x-auto pt-4 gl-fadein w-full">
           <table className="w-full text-[10px] font-mono text-left border-collapse bg-black/40 border border-white/10 rounded-xl shadow-lg">
             <thead>
               <tr className="border-b border-white/10 t50 uppercase"><th className="pb-2 pt-2 pl-3">Planet</th><th className="pb-2 pt-2">Sign</th><th className="pb-2 pt-2">Nakshatra</th><th className="pb-2 pt-2">Sub Lord</th></tr>
@@ -99,5 +97,3 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
     </div>
   );
 };
-
-window.BiorhythmChart = ({ data, scores }) => { /* Existing Biorhythm UI */ return null; };
