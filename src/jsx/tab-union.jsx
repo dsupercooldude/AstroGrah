@@ -13,7 +13,8 @@ window.CompatTab = ({ prs, chs }) => {
   const c1 = chs[p1.id], c2 = chs[p2.id];
   
   if (!c1 || !c2) return null;
-  const score = Math.max(12, Math.min(36, 36 - ((Math.abs(NAKSHATRAS.indexOf(c1.nak) - NAKSHATRAS.indexOf(c2.nak)) % 10) * 1.8)));
+  const match = window.calculateAshtakoot ? window.calculateAshtakoot(c1, c2) : { score: 18, details: {} };
+  const score = match.score;
   
   return (
     <div className="space-y-4 pb-12 gl-fadein mt-4">

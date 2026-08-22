@@ -1,11 +1,11 @@
 // src/jsx/tab-reports.jsx
 var React = window.React;
 
-window.ReportsTab = ({ pr, ch }) => {
+window.ReportsTab = ({ pr, ch, date }) => {
   if (!ch || !ch.planetaryDegrees) return <div className="p-4 text-center text-sm t60">Calculating Astral Data...</div>;
 
   // CORE CALCULATIONS
-  const details = window.calculatePlanetaryDetails ? window.calculatePlanetaryDetails(ch.d1?.placements || {}, ch.planetaryDegrees) : {};
+  const details = window.calculatePlanetaryDetails ? window.calculatePlanetaryDetails(ch.d1?.signs || {}, ch.planetaryDegrees) : {};
   const jaimini = window.calculateJaiminiKarakas ? window.calculateJaiminiKarakas(ch.planetaryDegrees) : {};
   const avasthas = window.calculateBaladiAvastha ? window.calculateBaladiAvastha(ch.planetaryDegrees, ch.d1?.placements || {}) : {};
 
@@ -85,7 +85,7 @@ window.ReportsTab = ({ pr, ch }) => {
         {/* DYNAMIC LEDGER SYNTHESIS - Replaced the copy/paste error with the actual code */}
         <div className="bg-black/40 border border-white/5 rounded-xl p-4 text-xs t85 leading-relaxed shadow-inner font-mono mt-2">
           <strong className="text-amber-400 block mb-2">What this means for your specific chart:</strong> 
-          {window.generateDeepSynthesis ? window.generateDeepSynthesis(pr, ch, {p:0,e:0,i:0}).advLedger : "Think of this as your cosmic DNA tracker."}
+          {window.generateDeepSynthesis ? (window.generateDeepSynthesis(pr, ch, window.bio ? window.bio(pr?.dob, date || new Date(), pr?.utcOffset) : {p:0,e:0,i:0}, date || new Date()).advLedger || "This ledger translates each planet, sign, degree, nakshatra, and motion into plain-language guidance about your strengths, habits, relationships, responsibilities, and areas for patient improvement.") : "This ledger translates each planet, sign, degree, nakshatra, and motion into plain-language guidance about your strengths, habits, relationships, responsibilities, and areas for patient improvement."}
         </div>
       </div>
 

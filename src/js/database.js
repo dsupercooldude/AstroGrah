@@ -9,8 +9,8 @@ window.AppDB = {
     // Split your token in half here to trick GitHub's secret scanners!
     autoUser: "dsupercooldude",
     autoRepo: "AstroGrah",
-    autoTokenPart1: "ghp_9EnZgUlgWhZaeCP13", // Paste the FIRST HALF of your token here (e.g., "ghp_1234567")
-    autoTokenPart2: "ahADcxI5CTfkj2rStph", // Paste the SECOND HALF of your token here (e.g., "890abcdefghijk")
+    autoTokenPart1: "",
+    autoTokenPart2: "",
 
     loadConfig: function() {
         try {

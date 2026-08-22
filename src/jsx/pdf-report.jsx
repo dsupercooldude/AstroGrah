@@ -5,7 +5,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
   if (!profile || !ch) return <div ref={ref} className="hidden"></div>;
 
   const details = window.calculatePlanetaryDetails 
-    ? window.calculatePlanetaryDetails(ch.d1?.placements || {}, ch.planetaryDegrees) 
+    ? window.calculatePlanetaryDetails(ch.d1?.signs || {}, ch.planetaryDegrees)
     : {};
     
   const jaimini = window.calculateJaiminiKarakas 
@@ -28,7 +28,8 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
   const dynamicRx = deepSynthesis.dynamicPrescription || {};
   
   const currentYear = date.getFullYear() + (date.getMonth() / 12);
-  const activeDashaIdx = ch.dasha?.findIndex(d => currentYear >= d.start && currentYear < d.end) || 0;
+  const foundDashaIdx = ch.dasha?.findIndex(d => currentYear >= d.start && currentYear < d.end) ?? -1;
+  const activeDashaIdx = foundDashaIdx >= 0 ? foundDashaIdx : 0;
   const displayDashas = ch.dasha?.slice(activeDashaIdx, activeDashaIdx + 4) || [];
 
   const yearlyForecast = window.getYearlyForecastData 
@@ -54,6 +55,24 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
 
   return (
     <div id="pdf-render-target" ref={ref} className="fixed top-0 -left-[20000px] hidden flex-col gap-10 bg-[#0b0d19] z-[-9999]">
+      <style>{`
+        .pdf-karakas .pdf-karaka-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .pdf-karakas .pdf-karaka-list > div { padding: 14px; gap: 8px; }
+        .pdf-karakas .pdf-karaka-list > div .text-lg { font-size: 12px; }
+        .pdf-karakas .pdf-karaka-list > div .text-2xl { font-size: 16px; }
+        .pdf-karakas .pdf-karaka-list > div .text-sm { font-size: 10px; line-height: 1.35; }
+        .pdf-avasthas .pdf-avastha-list > div { padding: 12px; gap: 6px; }
+        .pdf-avasthas .pdf-avastha-list > div .text-xl { font-size: 15px; }
+        .pdf-avasthas .pdf-avastha-list > div .text-base { font-size: 10px; line-height: 1.35; }
+        .pdf-dasha .grid { gap: 12px; }
+        .pdf-dasha .grid > div { padding: 14px; }
+        .pdf-dasha .grid > div .text-xl { font-size: 15px; }
+        .pdf-dasha .grid > div .text-base { font-size: 10px; }
+        .pdf-forecast > div:last-child { gap: 12px; }
+        .pdf-forecast > div:last-child > div { padding: 14px; }
+        .pdf-forecast > div:last-child > div .text-xl { font-size: 14px; }
+        .pdf-forecast > div:last-child > div .text-sm { font-size: 10px; line-height: 1.3; }
+      `}</style>
       
       {/* ========================================== */}
       {/* PAGE 1: EXECUTIVE SUMMARY                  */}
@@ -109,7 +128,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 2: ASTROLOGICAL CHARTS & BIORHYTHMS   */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page pdf-shadbala w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Astrological Charts & Energy Cycles</h3>
         
@@ -210,19 +229,19 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
           <p className="text-sm text-white/80 leading-relaxed font-mono mb-10 bg-black/30 p-6 rounded-xl border border-white/5">
             {deepSynthesis.pdfShadbala}
           </p>
-          <div className="grid grid-cols-1 gap-8">
+          <div className="grid grid-cols-2 gap-3">
             {Object.entries(ch.shadbala || {}).sort((a,b)=>b[1]-a[1]).map(([planet, score]) => {
               const pInfo = window.PLANET_INFO[planet]; 
               const percentage = Math.min(100, (score / 600) * 100);
               return (
-                <div key={planet} className="relative bg-black/20 p-6 rounded-xl border border-white/5">
-                  <div className="flex justify-between text-base font-mono mb-4">
+                <div key={planet} className="relative bg-black/20 p-3 rounded-xl border border-white/5">
+                  <div className="flex justify-between text-xs font-mono mb-2">
                     <span className="font-bold flex items-center gap-2" style={{ color: pInfo?.color }}>
-                      <span className="text-2xl">{pInfo?.symbol}</span> {planet}
+                      <span className="text-lg">{pInfo?.symbol}</span> {planet}
                     </span>
                     <span className="text-white/80 font-bold">{(score / 60).toFixed(1)} Rupas</span>
                   </div>
-                  <div className="h-[12px] bg-black/50 rounded-full overflow-hidden border border-white/5">
+                  <div className="h-[8px] bg-black/50 rounded-full overflow-hidden border border-white/5">
                     <div className="h-full rounded-full" style={{ width: `${percentage}%`, backgroundColor: pInfo?.color }}></div>
                   </div>
                 </div>
@@ -235,7 +254,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 5: JAIMINI KARAKAS (ISOLATED)         */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page pdf-karakas w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Karmic Blueprint & Life Purpose</h3>
         
@@ -245,7 +264,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
             In Jaimini Astrology, planets are assigned specific roles (Karakas) based entirely on their mathematical degrees, irrespective of the sign they sit in. Your highest degree planet becomes the Atma Karaka (Soul), governing your overarching life purpose.
           </p>
 
-          <div className="space-y-6">
+          <div className="space-y-6 pdf-karaka-list">
             {Object.entries(jaimini).map(([karaka, planet]) => (
               <div key={karaka} className="bg-black/20 p-6 rounded-xl border border-white/5 flex flex-col gap-3 shadow-sm">
                 <div className="flex justify-between items-center border-b border-white/10 pb-3">
@@ -265,7 +284,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 6: BALADI AVASTHAS (ISOLATED)         */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page pdf-avasthas w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Planetary Potency & Maturity</h3>
         
@@ -275,7 +294,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
             Just because a planet is placed well does not mean it can deliver results. Baladi Avasthas determine the "age" or "potency" of a planet based on its degrees within a specific sign. A planet in "Youth" is highly potent, while a planet that is "Dead" requires intense conscious remediation.
           </p>
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-2 gap-3 pdf-avastha-list">
             {Object.entries(avasthas).map(([planet, avastha]) => (
               <div key={planet} className="bg-black/20 p-5 rounded-xl border border-white/5 flex flex-col gap-3 shadow-sm">
                 <div className="flex justify-between items-center border-b border-white/10 pb-2">
@@ -328,7 +347,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 8: VIMSHOTTARI DASHA TIMELINE         */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page pdf-dasha w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Vimshottari Dasha Timeline</h3>
         
@@ -367,7 +386,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 9: 12-MONTH HOROSCOPE (MONTHS 1-3)    */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page pdf-forecast w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Matrix (Q1)</h3>
         <div className="flex flex-col gap-8">
           {yearlyForecast.slice(0, 3).map((m, idx) => (
@@ -398,7 +417,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 10: 12-MONTH HOROSCOPE (MONTHS 4-6)   */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page pdf-forecast w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Matrix (Q2)</h3>
         <div className="flex flex-col gap-8">
           {yearlyForecast.slice(3, 6).map((m, idx) => (
@@ -429,7 +448,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
       {/* ========================================== */}
       {/* PAGE 11: 12-MONTH HOROSCOPE (MONTHS 7-9)   */}
       {/* ========================================== */}
-      <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+      <div className="pdf-page pdf-forecast w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
         <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">12-Month Matrix (Q3)</h3>
         <div className="flex flex-col gap-8">
           {yearlyForecast.slice(6, 9).map((m, idx) => (

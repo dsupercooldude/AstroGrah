@@ -2,17 +2,18 @@
 let bootAttempts = 0;
 const bootInterval = setInterval(() => {
   bootAttempts++;
-  const deps = { React: !!window.React, ErrorBoundary: !!window.ErrorBoundary, KundaliRenderer: !!window.KundaliRenderer, SetupModal: !!window.SetupModal, AuthModal: !!window.AuthModal, SettingsModal: !!window.SettingsModal, GhostPDFReport: !!window.GhostPDFReport, PersonTab: !!window.PersonTab, PanchangTab: !!window.PanchangTab, CompatTab: !!window.CompatTab, AskTab: !!window.AskTab, ReportsTab: !!window.ReportsTab, TabOrchestrator: !!window.TabOrchestrator };
+  const deps = { React: !!window.React, ErrorBoundary: !!window.ErrorBoundary, KundaliRenderer: !!window.KundaliRenderer, SetupModal: !!window.SetupModal, AuthModal: !!window.AuthModal, SettingsModal: !!window.SettingsModal, GhostPDFReport: !!window.GhostPDFReport, PersonTab: !!window.PersonTab, PanchangTab: !!window.PanchangTab, CompatTab: !!window.CompatTab, AskTab: !!window.AskTab, ReportsTab: !!window.ReportsTab, WeekTab: !!window.WeekTab, MonthTab: !!window.MonthTab, TabOrchestrator: !!window.TabOrchestrator };
   if (Object.values(deps).every(v => v)) {
     clearInterval(bootInterval);
     document.getElementById("bootloader").style.display = "none";
 
     const { ErrorBoundary, SetupModal, AuthModal, ForcePasswordChange, AdminAuthModal, AdminConsoleModal, SettingsModal, TabOrchestrator, SageLogo, Icon, AppDB, CryptoUtils, GhostPDFReport } = window;
-    var { useState, useEffect, useMemo, Fragment } = window.React;
+    var { useState, useEffect, useMemo, useRef, Fragment } = window.React;
 
     function AppContent() {
       const [dbC, setDbC] = useState(() => AppDB.loadConfig()); const [u, setU] = useState(null); const [dt, setDt] = useState(new Date()); const [ss, setSs] = useState(false); const [ed, setEd] = useState(null); const [activeProfileId, setActiveProfileId] = useState(null); const [adminAuthOpen, setAdminAuthOpen] = useState(false); const [adminConsoleOpen, setAdminConsoleOpen] = useState(false);
       const [formData, setFormData] = useState({ name: "", dob: "2000-01-01", time: "12:00", place: "", lat: "", lon: "", utcOffset: "5.5", gotra: "", jaati: "", kulDevta: "", gramDevta: "", sthanDevta: "" });
+      const settingsSaveChain = useRef(Promise.resolve());
 
       window.useIdleTimeout(() => { if (u) { try { localStorage.removeItem("gl_active_user"); } catch (e) {} setU(null); alert("Session timed out."); } }, 300000);
 
@@ -23,8 +24,8 @@ const bootInterval = setInterval(() => {
               const sess = localStorage.getItem("gl_active_user");
               if (sess) {
                 const pS = JSON.parse(sess); const vaultFile = await AppDB.getFile(`gl_vault_${pS.emailHash}.json`);
-                let pr = []; try { pr = typeof vaultFile.content.profiles === "string" ? JSON.parse(CryptoUtils.decrypt(vaultFile.content.profiles)) : vaultFile.content.profiles || []; } catch(e){}
-                let se = {}; try { se = typeof vaultFile.content.settings === "string" ? JSON.parse(CryptoUtils.decrypt(vaultFile.content.settings)) : vaultFile.content.settings || {}; } catch(e){}
+                let pr = []; try { const decodedProfiles = typeof vaultFile.content.profiles === "string" ? CryptoUtils.decrypt(vaultFile.content.profiles) : vaultFile.content.profiles; pr = typeof decodedProfiles === "string" ? JSON.parse(decodedProfiles) : decodedProfiles || []; } catch(e){}
+                let se = {}; try { const decodedSettings = typeof vaultFile.content.settings === "string" ? CryptoUtils.decrypt(vaultFile.content.settings) : vaultFile.content.settings; se = typeof decodedSettings === "string" ? JSON.parse(decodedSettings) : decodedSettings || {}; } catch(e){}
                 setU({ email: pS.email, emailHash: pS.emailHash, profiles: pr, settings: se, mfaEnabled: pS.mfaEnabled });
                 if (pr.length) setActiveProfileId(pr[0].id);
               }
@@ -53,7 +54,7 @@ const bootInterval = setInterval(() => {
             <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
             <div style="position:fixed;inset:0;z-index:99999;background:rgba(11,13,25,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fbbf24;font-family:monospace;font-size:14px;">
               <div style="width:50px;height:50px;border:4px solid #fbbf24;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px;"></div>
-              Generating 5-Page Dossier...
+              Generating Personal Dossier...
             </div>
           `;
           document.body.appendChild(loader);
@@ -98,7 +99,8 @@ const bootInterval = setInterval(() => {
       const logoutUser = () => { try { localStorage.removeItem("gl_active_user"); } catch (e) {} setU(null); };
       const handleOpenEdit = (profileObj = {}) => { setFormData({ id: profileObj.id || null, name: profileObj.name || "", dob: profileObj.dob || "2000-01-01", time: profileObj.time || "12:00", place: profileObj.place || "", lat: profileObj.lat || "", lon: profileObj.lon || "", utcOffset: profileObj.utcOffset || "5.5", gotra: profileObj.gotra || "", jaati: profileObj.jaati || "", kulDevta: profileObj.kulDevta || "", gramDevta: profileObj.gramDevta || "", sthanDevta: profileObj.sthanDevta || "" }); setEd(profileObj); };
       const hSave = async (e) => { e.preventDefault(); const pD = { ...formData, lat: parseFloat(formData.lat) || 0, lon: parseFloat(formData.lon) || 0, utcOffset: parseFloat(formData.utcOffset) || 5.5, id: formData.id || Date.now().toString() }; const nP = formData.id ? prs.map((p) => (p.id === pD.id ? pD : p)) : [...prs, pD]; const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`); vaultFile.content.profiles = CryptoUtils.encrypt(nP); vaultFile.content.settings = vaultFile.content.settings || CryptoUtils.encrypt(set); await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha); setU({ ...u, profiles: nP }); setActiveProfileId(pD.id); setEd(null); };
-      const updateSettings = async (ns) => { const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`); vaultFile.content.settings = CryptoUtils.encrypt(ns); await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha); setU({ ...u, settings: ns }); };
+      const deleteProfile = async (profileId) => { const nP = prs.filter((p) => p.id !== profileId); const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`); vaultFile.content.profiles = CryptoUtils.encrypt(nP); await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha); setU({ ...u, profiles: nP }); setActiveProfileId(nP[0]?.id || null); setEd(null); };
+      const updateSettings = async (ns) => { setU((current) => ({ ...current, settings: ns })); settingsSaveChain.current = settingsSaveChain.current.catch(() => {}).then(async () => { const vaultFile = await AppDB.getFile(`gl_vault_${u.emailHash}.json`); vaultFile.content.settings = CryptoUtils.encrypt(ns); await AppDB.saveFile(`gl_vault_${u.emailHash}.json`, vaultFile.content, vaultFile.sha); }); return settingsSaveChain.current; };
 
       if (!dbC) return <SetupModal onConfig={() => setDbC(true)} />;
       if (!u) return <AuthModal onLogin={(d) => { setU(d); if (d?.profiles?.length) setActiveProfileId(d.profiles[0].id); }} />;
@@ -158,7 +160,7 @@ const bootInterval = setInterval(() => {
             {ed && (
               <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={() => setEd(null)}>
                 <form onClick={(e) => e.stopPropagation()} onSubmit={hSave} className="w-full max-w-md bgcard2 rounded-3xl border border-white/10 p-6 space-y-3.5 max-h-[90vh] overflow-y-auto gl-fadein shadow-2xl relative custom-scrollbar">
-                  <div className="flex justify-between items-center border-b border-white/10 pb-3"><h3 className="font-serif text-lg text-white">{formData.id ? "Modify Profile" : "Create Natal Profile"}</h3>{formData.id && ( <button type="button" onClick={() => { if(confirm("Delete?")){ const nP = prs.filter(p=>p.id!==formData.id); setU({...u, profiles: nP}); setEd(null); } }} className="text-[10px] text-red-400 font-mono border border-red-400/30 px-2 py-1 rounded hover:bg-red-400/20">Delete</button> )}</div>
+                  <div className="flex justify-between items-center border-b border-white/10 pb-3"><h3 className="font-serif text-lg text-white">{formData.id ? "Modify Profile" : "Create Natal Profile"}</h3>{formData.id && ( <button type="button" onClick={() => { if(confirm("Delete?")){ deleteProfile(formData.id); } }} className="text-[10px] text-red-400 font-mono border border-red-400/30 px-2 py-1 rounded hover:bg-red-400/20">Delete</button> )}</div>
                   <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Full Name</label><input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" /></div>
                   <div className="grid grid-cols-2 gap-2">
                     <div><label className="text-[9px] t50 uppercase font-mono mb-1 block">Date of Birth</label><input required type="date" value={formData.dob} onChange={(e) => setFormData({ ...formData, dob: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none text-white" /></div>

@@ -70,6 +70,7 @@ window.AskTab = ({ emHash, set, pr, ch, date }) => {
         ans = runVedicRuleEngine(q, pr, ch, date);
       }
 
+      if (!ans) ans = "No AI response was returned. Check the selected provider API key and network access.";
       const newQA = { id: Date.now(), q, a: ans, v: usedProvider };
       const nx = [...h, newQA];
       setH(nx);

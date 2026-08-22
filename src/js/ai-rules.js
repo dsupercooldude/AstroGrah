@@ -4,11 +4,12 @@
 // 1. CLOUD AI GATEWAY (MULTI-PROVIDER API ROUTER)
 // ══════════════════════════════════════════════════════════════════════════════
 window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
-  const keys = settings?.apiKeys || {};
+  const keys = Object.fromEntries(Object.entries(settings?.apiKeys || {}).map(([id, key]) => [id, typeof key === "string" ? key.trim() : key]));
   const preferredModel = settings?.aiModel || "auto";
+  const failures = [];
 
   const callGemini = async (apiKey) => {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -147,6 +148,7 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
         const txt = await target.fn(target.key);
         if (txt) return { text: txt, provider: target.id };
       } catch (err) {
+        failures.push(`${preferredModel}: ${err.message}`);
         console.warn(`Preferred provider ${preferredModel} failed, cascading...`, err);
       }
     }
@@ -158,10 +160,12 @@ window.executeMultiProviderAI = async (prompt, settings, systemPrompt) => {
         const txt = await prov.fn(prov.key);
         if (txt) return { text: txt, provider: prov.id };
       } catch (err) {
+        failures.push(`${prov.id}: ${err.message}`);
         console.warn(`Provider ${prov.id} failed, trying next...`, err);
       }
     }
   }
+  window.lastAIProviderErrors = failures;
   return null;
 };
 

@@ -37,7 +37,6 @@ window.GOTRAS = ["Kashyapa", "Bharadwaja", "Vasistha", "Vishwamitra", "Atri", "G
 window.JAATIS = ["Brahmin", "Kshatriya", "Vaishya", "Shudra", "Kayastha", "Bania", "Rajput", "Maratha", "Agarwal", "Bhatia", "Khatri", "Arora", "Reddy", "Nair", "Iyer", "Iyengar", "Jain", "Sindhi"];
 window.SIGNS = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
 window.WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-window.NAKSHATRAS = ["Ashwini", "Bharani", "Krittika", "Rohini", "Mrigasira", "Ardra", "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purvaphalguni", "Uttaraphalguni", "Hasta", "Chitra", "Swati", "Visakha", "Anuradha", "Jyeshtha", "Mula", "Purvashadha", "Uttarashadha", "Abhijit", "Sravana", "Dhanistha", "Shatabhisha", "Purvabhadra", "Uttarabhadra", "Revati"];
 
 const basePlanetInfo = {
   Sun: { symbol: "☉", color: "#F87171", adhidevata: "Lord Shiva / Agni", beej: "Om Hram Hrim Hroum Sah Suryaya Namah", gem: "Ruby", charity: "Wheat or jaggery on Sunday", action: "Offer water to the Sun." },
@@ -70,17 +69,19 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
   var { useState } = window.React;
   const [synced, setSynced] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(0);
 
   if (!dob || !targetDate) return null;
 
-  const [Y, M, D] = dob.split("-").map(Number);
-  // Calculates exact delta days lived
-  const eD = (Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 12, 0, 0) - ((utcOffset || 0) * 3600000) - (Date.UTC(Y, M - 1, D, 12, 0, 0) - ((utcOffset || 0) * 3600000))) / 86400000;
-
-  // Real-time Day Zero Scores
-  const pScore = Math.sin((2 * Math.PI * eD) / 23);
-  const eScore = Math.sin((2 * Math.PI * eD) / 28);
-  const iScore = Math.sin((2 * Math.PI * eD) / 33);
+  const getScores = (dayOffset) => {
+    const day = new Date(targetDate);
+    day.setDate(day.getDate() + dayOffset);
+    return window.bio ? window.bio(dob, day, utcOffset) : { p: 0, e: 0, i: 0 };
+  };
+  const scores = getScores(selectedDay);
+  const pScore = scores.p;
+  const eScore = scores.e;
+  const iScore = scores.i;
 
   // Scaled 0-100% Display
   const dp = Math.round(((pScore + 1) / 2) * 100);
@@ -89,6 +90,8 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
 
   // DYNAMIC SINE WAVE GENERATOR (-15 days to +15 days)
   const getWave = (cycle) => {
+    const [Y, M, D] = dob.split("-").map(Number);
+    const eD = (Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()) - Date.UTC(Y, M - 1, D)) / 86400000;
     let path = "";
     for(let day = -15; day <= 15; day++) {
       const x = ((day + 15) / 30) * 100;
@@ -98,14 +101,20 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
     return path;
   };
 
+  const formatScore = (score) => `${Math.round(((score + 1) / 2) * 100)}%`;
+  const handleChartClick = (event) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
+    setSelectedDay(Math.round(ratio * 30) - 15);
+  };
+
   const handleSync = async () => {
     setLoading(true);
-    try {
-      await fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC');
-      setTimeout(() => { setSynced(true); setLoading(false); setTimeout(() => setSynced(false), 5000); }, 800);
-    } catch(e) {
-      setTimeout(() => { setLoading(false); setSynced(true); setTimeout(() => setSynced(false), 5000); }, 500);
-    }
+    const canonical = window.bio ? window.bio(dob, targetDate, utcOffset) : null;
+    const matches = canonical && Math.abs(canonical.p - pScore) < 1e-12 && Math.abs(canonical.e - eScore) < 1e-12 && Math.abs(canonical.i - iScore) < 1e-12;
+    setSynced(!!matches);
+    setLoading(false);
+    setTimeout(() => setSynced(false), 5000);
   };
 
   return (
@@ -113,19 +122,19 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 border-b border-white/10 pb-2 gap-3">
         <h3 className="font-serif text-sm text-amber-200 flex items-center gap-2"><i className="ph ph-wave-sine"></i> 30-Day Biocycle Progression</h3>
         <div className="flex gap-3 items-center">
-          <a href={`https://biorhythm-calculator.net/?dob=${dob}`} target="_blank" rel="noreferrer" className="text-[9px] uppercase tracking-widest text-blue-400 hover:underline flex items-center gap-1"><i className="ph ph-link"></i> Verify Online</a>
+          <a href={`https://biorhythm-calculator.net/?dob=${dob}`} target="_blank" rel="noreferrer" className="text-[9px] uppercase tracking-widest text-blue-400 hover:underline flex items-center gap-1"><i className="ph ph-link"></i> Compare Online</a>
           <button onClick={handleSync} disabled={loading} className="px-3 py-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[9px] hover:bg-emerald-500/20 transition flex items-center gap-1.5 uppercase tracking-widest font-bold">
-            <i className={`ph ph-arrows-clockwise ${loading ? "animate-spin" : ""}`} /> {loading ? "Syncing..." : synced ? "Math Verified" : "Sync Engine"}
+            <i className={`ph ph-arrows-clockwise ${loading ? "animate-spin" : ""}`} /> {loading ? "Checking..." : synced ? "Math Verified" : "Validate Math"}
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-4 text-center mb-4 relative z-10">
-        <div className="bg-black/40 p-4 rounded-xl border border-red-500/30 shadow-lg backdrop-blur-sm"><div className="text-[10px] text-red-400 mb-1 tracking-widest">PHYSICAL</div><div className="text-xl text-white font-bold">{dp}%</div></div>
-        <div className="bg-black/40 p-4 rounded-xl border border-blue-500/30 shadow-lg backdrop-blur-sm"><div className="text-[10px] text-blue-400 mb-1 tracking-widest">EMOTIONAL</div><div className="text-xl text-white font-bold">{de}%</div></div>
-        <div className="bg-black/40 p-4 rounded-xl border border-amber-500/30 shadow-lg backdrop-blur-sm"><div className="text-[10px] text-amber-400 mb-1 tracking-widest">INTELLECTUAL</div><div className="text-xl text-white font-bold">{di}%</div></div>
+      <div className="grid grid-cols-3 gap-2 text-center mb-4 relative z-10">
+        <div className="bg-black/40 p-3 rounded-xl border border-red-500/30 shadow-lg backdrop-blur-sm"><div className="text-[9px] text-red-400 mb-1 tracking-widest">PHYSICAL</div><div className="text-lg text-white font-bold">{dp}%</div></div>
+        <div className="bg-black/40 p-3 rounded-xl border border-blue-500/30 shadow-lg backdrop-blur-sm"><div className="text-[9px] text-blue-400 mb-1 tracking-widest">EMOTIONAL</div><div className="text-lg text-white font-bold">{de}%</div></div>
+        <div className="bg-black/40 p-3 rounded-xl border border-amber-500/30 shadow-lg backdrop-blur-sm"><div className="text-[9px] text-amber-400 mb-1 tracking-widest">INTELLECTUAL</div><div className="text-lg text-white font-bold">{di}%</div></div>
       </div>
       
-      <div className="relative w-full h-32 bg-gradient-to-b from-black/20 to-black/5 rounded-2xl border border-white/5 mt-2 p-2">
+      <div className="relative w-full h-40 bg-gradient-to-b from-black/20 to-black/5 rounded-2xl border border-white/5 mt-2 p-2 cursor-crosshair" onClick={handleChartClick} onMouseMove={handleChartClick} title="Move across or click the chart to inspect a day">
         <svg viewBox="0 -10 100 60" preserveAspectRatio="none" className="w-full h-full opacity-80 overflow-visible">
           <line x1="0" y1="20" x2="100" y2="20" stroke="#ffffff" strokeOpacity="0.1" strokeWidth="0.5" strokeDasharray="2,2" />
           
@@ -135,11 +144,13 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
           <path d={getWave(33)} fill="none" stroke="#FBBF24" strokeWidth="2" strokeDasharray="6,3" />
           
           <line x1="50" y1="-10" x2="50" y2="50" stroke="#ffffff" strokeOpacity="0.3" strokeWidth="1" strokeDasharray="2,2" />
+          <line x1={`${((selectedDay + 15) / 30) * 100}`} y1="-10" x2={`${((selectedDay + 15) / 30) * 100}`} y2="50" stroke="#ffffff" strokeOpacity="0.8" strokeWidth="1" />
         </svg>
         <div className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] font-bold text-white/50 bg-black/40 px-2 py-0.5 rounded-md border border-white/10">TODAY</div>
         <div className="absolute bottom-1 left-1 text-[8px] font-bold text-white/30">-15 DAYS</div>
         <div className="absolute bottom-1 right-1 text-[8px] font-bold text-white/30">+15 DAYS</div>
       </div>
+      <div className="mt-3 text-center text-[10px] text-white/60 font-mono">{selectedDay === 0 ? "Today" : `${selectedDay > 0 ? "+" : ""}${selectedDay} days`} · Physical {formatScore(pScore)} · Emotional {formatScore(eScore)} · Intellectual {formatScore(iScore)}</div>
     </div>
   );
 };

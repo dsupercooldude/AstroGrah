@@ -26,7 +26,7 @@ window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs,
       </div>
       
       {tb === "person" && <PersonTab pr={pr} ch={ch} date={date} setDate={setDate} settings={settings} onEdit={onEditProfile} bioScores={window.bio ? window.bio(pr?.dob, date, pr?.utcOffset) : {p:0,e:0,i:0}} />}
-      {tb === "reports" && <ReportsTab pr={pr} ch={ch} />}
+      {tb === "reports" && <ReportsTab pr={pr} ch={ch} date={date} />}
       {tb === "panchang" && <PanchangTab d={date} setDate={setDate} p={pr} utc={pr?.utcOffset || 5.5} settings={settings} />}
       {tb === "union" && <CompatTab prs={prs} chs={chs} settings={settings} date={date} />}
       {tb === "week" && <WeekTab pr={pr} ch={ch} />}

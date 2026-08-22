@@ -359,9 +359,7 @@ window.calculatePlanetaryDetails = (placements, degrees) => {
       totalDeg: totalAbsoluteDeg,
       nakshatra,
       pada: Math.min(4, Math.max(1, pada)),
-      status: (planet === "Sun" || planet === "Moon" || planet === "Rahu" || planet === "Ketu")
-        ? "Direct"
-        : (Math.random() > 0.7 ? "Retrograde (R)" : "Direct")
+      status: "Direct"
     };
   });
   return details;
@@ -497,13 +495,14 @@ window.computeKundli = (profile, dateObj = null) => {
   const genC = (div) => {
     const lg = getDiv(ascL, div);
     const idx = window.SIGNS.indexOf(lg);
-    const hs = {}, pl = {};
+    const hs = {}, pl = {}, signs = {};
     for (let i = 1; i <= 12; i++) { hs[i] = window.SIGNS[(idx + i - 1) % 12]; }
     Object.entries(sid).forEach(([p, l]) => {
       const pSign = getDiv(l, div);
+      signs[p] = pSign;
       pl[p] = ((window.SIGNS.indexOf(pSign) - idx + 12) % 12) + 1;
     });
-    return { lagna: lg, houses: hs, placements: pl, lagnaLord: window.SIGN_LORDS[lg] };
+    return { lagna: lg, houses: hs, placements: pl, signs, lagnaLord: window.SIGN_LORDS[lg] };
   };
 
   const kpPlanets = {};
@@ -631,7 +630,7 @@ window.panchang = (dObj, ms = "amanta", utc = 5.5) => {
 
 window.bio = (dob, td, utc) => {
   const [Y, M, D] = (dob || "2026-01-01").split("-").map(Number);
-  const eD = (Date.UTC(td.getFullYear(), td.getMonth(), td.getDate(), 12, 0, 0) - ((utc || 0) * 3600000) - (Date.UTC(Y, M - 1, D, 12, 0, 0) - ((utc || 0) * 3600000))) / 86400000;
+  const eD = (Date.UTC(td.getFullYear(), td.getMonth(), td.getDate()) - Date.UTC(Y, M - 1, D)) / 86400000;
   return {
     p: Math.sin((2 * Math.PI * eD) / 23),
     e: Math.sin((2 * Math.PI * eD) / 28),
@@ -816,12 +815,14 @@ window.generateDeepSynthesis = (pr, ch, bio, targetDate) => {
     basicKundali: `Your cosmic blueprint is anchored by the ${lagna} Ascendant, ruled by ${lagnaLord}. This core geometry makes you naturally ${window.SIGN_TRAITS?.[lagna] || 'driven and distinct'}. With your Moon residing in ${moon}, your internal emotional landscape seeks security through ${window.SIGN_TRAITS?.[moon] || 'structured stability'}.`,
     basicDasha: `You are currently experiencing the overarching Mahadasha of ${activeMaha}, which pulls your primary focus toward its natal promises. However, your specific day-to-day reality is currently hijacked by the sub-cycle (Antardasha) of ${activeAntar}, triggering themes of ${antarTraits[activeAntar]}.`,
     basicPower: `Shadbala reveals that ${topPlanet} is your ultimate power center. Conversely, ${weakPlanet} is starved for energy and represents your primary karmic bottleneck requiring conscious remediation.`,
+    basicBio: `For ${tD.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}, your physical energy is ${bioP}%, emotional steadiness is ${bioE}%, and intellectual focus is ${bioI}%. Use the strongest score for demanding work and protect the lowest score with rest and simpler commitments.`,
     dynamicPrescription: { gem: window.PLANET_INFO[lagnaLord]?.gem, charity: window.PLANET_INFO[weakPlanet]?.charity, mantra: window.PLANET_INFO[activeAntar]?.beej, deity: window.PLANET_INFO[lagnaLord]?.adhidevata, action: `Fortify your weakest link (${weakPlanet}) by observing its specific discipline, while ruthlessly leveraging your dominant ${topPlanet} for major decisions.` },
     
     // PDF SPECIFIC GENERATORS
     pdfShadbala: `Shadbala calculates the exact mathematical "weight" of each planet in your chart. Your highest scoring planet is ${topPlanet}. You have a natural advantage in areas governed by it. Conversely, your lowest scoring planet is ${weakPlanet}, indicating your primary karmic bottleneck where you must apply conscious effort.`,
     pdfBiorhythm: `Biorhythms mathematically map your 30-day internal energy fluctuations. Today, your Physical stamina is ${bioP}%, Emotional stability is ${bioE}%, and Intellectual focus is ${bioI}%. Execute heavy analytical tasks when Intellectual peaks, and prioritize rest when Physical dips.`,
     pdfDasha: `Vimshottari Dasha is the Vedic timeline of your life. While your main cycle is ${activeMaha}, your current sub-cycle (Antardasha) is ruled by ${activeAntar}. This means the immediate focus of your life is drawn toward ${antarTraits[activeAntar]}. To make the absolute best use of this phase, lean entirely into the behavioral traits of ${activeAntar} rather than fighting its natural current.`,
+    advLedger: `This table is your chart's factual foundation. Each planet represents a life function: the Sun relates to confidence and authority, the Moon to emotions and habits, Mars to courage and action, Mercury to learning and communication, Jupiter to wisdom and growth, Venus to relationships and comforts, Saturn to responsibility and delays, Rahu to intense worldly ambition, and Ketu to detachment and spiritual insight. The sign tells you the style in which that function operates, the degree shows its exact position, the nakshatra adds a finer psychological pattern, and the motion indicates whether the planet is moving forward or retrograde. Read the strongest planets as easier channels to develop and the weaker planets as areas that need patience and deliberate practice.` ,
     karakaMeanings,
     avasthaMeanings
   };

@@ -2,13 +2,17 @@
 var React = window.React;
 var { useState, useEffect } = window.React;
 
-window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
-  const [chartStyle, setChartStyle] = useState("NORTH");
+window.PersonTab = ({ pr, ch, date, setDate, settings, bioScores, onEdit, onPdf }) => {
+  const [chartStyle, setChartStyle] = useState(() => (settings?.kundaliStyle || "north").toUpperCase());
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [expandedDasha, setExpandedDasha] = useState(null);
   const [isExpert, setIsExpert] = useState(false);
 
   const currentYear = date.getFullYear() + (date.getMonth() / 12);
+
+  useEffect(() => {
+    setChartStyle((settings?.kundaliStyle || "north").toUpperCase());
+  }, [settings?.kundaliStyle]);
 
   useEffect(() => {
     if (ch && ch.dasha) {
@@ -26,7 +30,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
   const customScrollStyle = { scrollbarWidth: "thin", scrollbarColor: "rgba(251, 191, 36, 0.2) transparent" };
   const sankalp = pr.gotra ? `Om Tat Sat. Native ${pr.name}, of ${pr.gotra} Gotra, seeking blessings of ${pr.kulDevta || 'Kul Devta'} at ${pr.place}.` : null;
 
-  const deepSynthesis = window.generateDeepSynthesis ? window.generateDeepSynthesis(pr, ch, bioScores || {p:0,e:0,i:0}) : {};
+  const deepSynthesis = window.generateDeepSynthesis ? window.generateDeepSynthesis(pr, ch, bioScores || {p:0,e:0,i:0}, date) : {};
   const dynamicRx = deepSynthesis.dynamicPrescription || {};
 
   return (
@@ -89,7 +93,7 @@ window.PersonTab = ({ pr, ch, date, setDate, bioScores, onEdit, onPdf }) => {
             <p><strong>The Core Self:</strong> {deepSynthesis.basicKundali}</p>
             <p><strong>Time & Cycles:</strong> {deepSynthesis.basicDasha}</p>
             <p><strong>Energy & Power:</strong> {deepSynthesis.basicPower}</p>
-            <p><strong>Daily Synchronization:</strong> {deepSynthesis.basicBio}</p>
+            <p><strong className="text-amber-100 block mb-1">Daily Synchronization</strong><span>{deepSynthesis.basicBio || "Your daily physical, emotional, and intellectual cycles are calculated below from your birth date and selected prediction date."}</span></p>
           </div>
         ) : (
           <p className="text-sm t85 leading-relaxed font-mono whitespace-pre-wrap">
