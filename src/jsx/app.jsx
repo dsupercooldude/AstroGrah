@@ -71,7 +71,9 @@ const bootInterval = setInterval(() => {
             const pages = el.querySelectorAll('.pdf-page');
             
             for (let i = 0; i < pages.length; i++) {
-              const canvas = await window.html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#0b0d19', logging: false });
+              const captureWidth = Math.max(pages[i].clientWidth, pages[i].scrollWidth);
+              const captureHeight = Math.max(pages[i].clientHeight, pages[i].scrollHeight);
+              const canvas = await window.html2canvas(pages[i], { scale: 2, width: captureWidth, height: captureHeight, windowWidth: captureWidth, windowHeight: captureHeight, useCORS: true, backgroundColor: '#0b0d19', logging: false });
               const imgData = canvas.toDataURL('image/jpeg', 1.0); 
               
               if (i > 0) pdf.addPage();
@@ -84,7 +86,10 @@ const bootInterval = setInterval(() => {
               pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
 
               const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight); 
+              const fitScale = Math.min(1, pdfHeight / imgHeight);
+              const drawWidth = pdfWidth * fitScale;
+              const drawHeight = imgHeight * fitScale;
+              pdf.addImage(imgData, 'JPEG', (pdfWidth - drawWidth) / 2, 0, drawWidth, drawHeight); 
             }
             
             pdf.save(`${aP?.name?.replace(/\s+/g, '_') || 'Graha_Ledger'}_Astrology_Report.pdf`);

@@ -10,7 +10,7 @@ window.PDFValidator = {
   },
 
   inspect: function (root) {
-    const result = { valid: true, pages: 0, issues: [] };
+    const result = { valid: true, pages: 0, issues: [], scaledPages: [] };
     if (!root) return { valid: false, pages: 0, issues: ["PDF render target is missing."] };
 
     const pages = Array.from(root.querySelectorAll(":scope > .pdf-page"));
@@ -31,9 +31,10 @@ window.PDFValidator = {
       if (page.scrollWidth > page.clientWidth + this.tolerance) {
         result.issues.push(`Page ${pageNumber} has horizontal overflow.`);
       }
-      if (page.scrollHeight > page.clientHeight + this.tolerance) {
+      if (page.scrollHeight > page.clientHeight + this.tolerance && page.dataset.pdfFit !== "scale") {
         result.issues.push(`Page ${pageNumber} has vertical overflow and may be clipped.`);
       }
+      if (page.dataset.pdfFit === "scale") result.scaledPages.push(pageNumber);
       if (!hasContent) result.issues.push(`Page ${pageNumber} is empty.`);
     });
 
@@ -48,7 +49,7 @@ window.PDFValidator = {
       style = document.createElement("style");
       style.id = "pdf-auto-fit-styles";
       style.textContent = `
-        .pdf-auto-fit { padding: 24px !important; }
+        .pdf-auto-fit { padding: 24px !important; overflow: visible !important; }
         .pdf-auto-fit > div { padding: 14px !important; margin-bottom: 12px !important; gap: 12px !important; }
         .pdf-auto-fit .grid { gap: 10px !important; }
         .pdf-auto-fit .space-y-6 > * + * { margin-top: 10px !important; }
@@ -70,6 +71,11 @@ window.PDFValidator = {
       if (!overflowing.length) return;
       overflowing.forEach((page) => page.classList.add("pdf-auto-fit"));
     }
+
+    const pages = Array.from(root.querySelectorAll(":scope > .pdf-page"));
+    pages.forEach((page) => {
+      if (page.scrollWidth > page.clientWidth + this.tolerance || page.scrollHeight > page.clientHeight + this.tolerance) page.dataset.pdfFit = "scale";
+    });
   },
 
   validate: async function (root) {

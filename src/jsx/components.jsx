@@ -110,7 +110,9 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
 
   const handleSync = async () => {
     setLoading(true);
-    const canonical = window.bio ? window.bio(dob, targetDate, utcOffset) : null;
+    const validationDate = new Date(targetDate);
+    validationDate.setDate(validationDate.getDate() + selectedDay);
+    const canonical = window.bio ? window.bio(dob, validationDate, utcOffset) : null;
     const matches = canonical && Math.abs(canonical.p - pScore) < 1e-12 && Math.abs(canonical.e - eScore) < 1e-12 && Math.abs(canonical.i - iScore) < 1e-12;
     setSynced(!!matches);
     setLoading(false);
@@ -133,6 +135,7 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
         <div className="bg-black/40 p-3 rounded-xl border border-blue-500/30 shadow-lg backdrop-blur-sm"><div className="text-[9px] text-blue-400 mb-1 tracking-widest">EMOTIONAL</div><div className="text-lg text-white font-bold">{de}%</div></div>
         <div className="bg-black/40 p-3 rounded-xl border border-amber-500/30 shadow-lg backdrop-blur-sm"><div className="text-[9px] text-amber-400 mb-1 tracking-widest">INTELLECTUAL</div><div className="text-lg text-white font-bold">{di}%</div></div>
       </div>
+      <div className="text-[10px] leading-relaxed text-white/60 font-sans mb-3">These three lines show your calculated physical energy, emotional balance, and mental focus for each day. The center marker is today; move across the chart or click it to inspect another date. This is a mathematical planning aid, not a medical diagnosis.</div>
       
       <div className="relative w-full h-40 bg-gradient-to-b from-black/20 to-black/5 rounded-2xl border border-white/5 mt-2 p-2 cursor-crosshair" onClick={handleChartClick} onMouseMove={handleChartClick} title="Move across or click the chart to inspect a day">
         <svg viewBox="0 -10 100 60" preserveAspectRatio="none" className="w-full h-full opacity-80 overflow-visible">
