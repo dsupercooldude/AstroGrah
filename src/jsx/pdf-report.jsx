@@ -16,11 +16,9 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
   const activeDashaIdx = ch.dasha?.findIndex(d => currentYear >= d.start && currentYear < d.end) || 0;
   const displayDashas = ch.dasha?.slice(activeDashaIdx, activeDashaIdx + 4) || [];
 
-  // Parse 12-Month Horoscope string into an array of lines
   const rawYearly = window.generateOfflineYearlyHoroscope ? window.generateOfflineYearlyHoroscope(profile, ch, date) : "";
   const yearlyMonths = rawYearly.split('\n\n').filter(line => line.trim().startsWith('•')).map(line => line.replace('•', '').trim());
 
-  // Biorhythm Math
   const formatBio = (val) => Math.round(((val + 1) / 2) * 100);
   const [Y, M, D] = profile.dob.split("-").map(Number);
   const eD = (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0) - ((profile.utcOffset || 0) * 3600000) - (Date.UTC(Y, M - 1, D, 12, 0, 0) - ((profile.utcOffset || 0) * 3600000))) / 86400000;
@@ -35,32 +33,30 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
     return path;
   };
 
-  // Personalization Extraction
   const akPlanet = jaimini["Atma Karaka (AK)"] || "Sun";
   const amkPlanet = jaimini["Amatya Karaka (AmK)"] || "Moon";
   const peakPlanets = Object.entries(avasthas).filter(([p, a]) => a.includes("Yuva") || a.includes("Kumara")).map(([p]) => p);
   const weakPlanets = Object.entries(avasthas).filter(([p, a]) => a.includes("Mrita") || a.includes("Vriddha")).map(([p]) => p);
 
   return (
-    <div id="pdf-render-target" ref={ref} className="absolute hidden">
+    <div id="pdf-render-target" ref={ref} className="absolute hidden flex flex-col gap-10 bg-[#0b0d19]">
       
       {/* ========================================== */}
       {/* PAGE 1: EXECUTIVE SUMMARY & SYNTHESIS      */}
       {/* ========================================== */}
       <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
-        
         <div className="border-b border-amber-400/30 pb-6 mb-8 text-center">
           <h1 className="font-serif text-4xl text-amber-400 mb-2">Vedic Astrological Dossier</h1>
           <h2 className="text-2xl font-bold tracking-widest uppercase">{profile.name}</h2>
           <p className="text-sm t60 font-mono mt-2 bg-white/5 inline-block px-4 py-2 rounded-lg border border-white/10">
             DOB: {profile.dob} | Time: {profile.time} | Location: {profile.place} <br/> 
-            Generated: {date.toDateString()}
+            Generated: {date.toLocaleDateString()}
           </p>
         </div>
 
         <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8">
           <h3 className="font-serif text-2xl text-amber-200 mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
-            <i className="ph ph-sparkle text-amber-400"></i> The Jyotish Core Synthesis
+            The Jyotish Core Synthesis
           </h3>
           <div className="space-y-4 text-sm t85 leading-relaxed font-mono">
             <p><strong>The Core Self:</strong> {deepSynthesis.basicKundali}</p>
@@ -90,7 +86,6 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
             <div className="mt-3 text-[10px] text-amber-400 bg-black/30 p-2 rounded">Mantra: {dynamicRx.mantra}</div>
           </div>
         </div>
-
       </div>
 
       {/* ========================================== */}
@@ -212,7 +207,6 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
             ))}
           </div>
         </div>
-
       </div>
 
       {/* ========================================== */}
@@ -231,7 +225,7 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
                   <div className={`font-bold mb-2 ${isActive ? 'text-amber-400 text-sm' : 'text-white'}`}>
                     {d.lord} Mahadasha ({Math.floor(d.start)} - {Math.floor(d.end)})
                   </div>
-                  <div className="space-y-2 pl-2 border-l border-white/20">
+                  <div className="space-y-2 pl-2 border-l border-white/20 mt-2">
                     {window.getAntardashas && window.getAntardashas(d.lord, d.start, d.end).slice(0, 5).map((a, j) => (
                       <div key={j} className="flex justify-between t80"><span>{a.lord} Antar</span><span>{Math.floor(a.start)}</span></div>
                     ))}
