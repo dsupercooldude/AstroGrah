@@ -147,4 +147,4 @@ window.AppDB = {
         const res = await this.callApi('PUT', filename, body);
         return res.content.sha;
     }
-};s
+};
