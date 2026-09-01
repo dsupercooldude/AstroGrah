@@ -30,23 +30,36 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
     return () => { ignore = true; };
   }, [d, p?.lat, p?.lon]);
 
-  const pan = panchang ? panchang(d, settings?.monthSystem || "amanta", utc, { lat: p?.lat || 19.076, lon: p?.lon || 72.8777 }) : {};
-  const effectiveSunrise = liveSunTimes?.sunrise ? new Date(`${liveSunTimes.dateStr}T${liveSunTimes.sunrise}`) : (pan.sr || new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6, 0, 0));
-  const effectiveSunset = liveSunTimes?.sunset ? new Date(`${liveSunTimes.dateStr}T${liveSunTimes.sunset}`) : (pan.ss || new Date(d.getFullYear(), d.getMonth(), d.getDate(), 18, 0, 0));
+  const profileLat = Number(p?.lat) || 19.076;
+  const profileLon = Number(p?.lon) || 72.8777;
+  const pan = panchang ? panchang(d, settings?.monthSystem || "amanta", utc, { lat: profileLat, lon: profileLon }) : {};
+  
+  // Use live API data if available, otherwise use calculated times
+  const effectiveSunrise = liveSunTimes?.sunrise ? new Date(`${liveSunTimes.dateStr}T${liveSunTimes.sunrise}`) : (pan.sr && pan.sr instanceof Date ? pan.sr : new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6, 0, 0));
+  const effectiveSunset = liveSunTimes?.sunset ? new Date(`${liveSunTimes.dateStr}T${liveSunTimes.sunset}`) : (pan.ss && pan.ss instanceof Date ? pan.ss : new Date(d.getFullYear(), d.getMonth(), d.getDate(), 18, 0, 0));
+  
   const selectedMoment = new Date(d.getFullYear(), d.getMonth(), d.getDate(), new Date().getHours(), new Date().getMinutes(), 0, 0);
   const isDayTime = selectedMoment >= effectiveSunrise && selectedMoment <= effectiveSunset;
-  const chogWindows = isDayTime ? (pan.chogDay || []) : (pan.chogNight || []);
-  const currentChoghadiya = chogWindows.find((item) => {
+  
+  // Get all choghadiya windows (both day and night) and track which type each is
+  const allChogWindows = [...(pan.chogDay || []), ...(pan.chogNight || [])].map(w => ({ ...w, type: (pan.chogDay || []).includes(w) ? 'day' : 'night' }));
+  
+  // Find currently active choghadiya (only ONE)
+  const currentChoghadiya = allChogWindows.find((item) => {
     if (!item?.s || !item?.e) return false;
     const start = new Date(item.s), end = new Date(item.e);
     return selectedMoment >= start && selectedMoment <= end;
-  }) || chogWindows[0] || null;
-  const horaWindows = isDayTime ? (pan.horas || []) : (pan.nightHoras || []);
-  const currentHora = horaWindows.find((item) => {
+  }) || null;
+  
+  // Get all hora windows (both day and night)
+  const allHoraWindows = [(pan.horas || []), (pan.nightHoras || [])].flat();
+  
+  // Find currently active hora (only ONE)
+  const currentHora = allHoraWindows.find((item) => {
     if (!item?.s || !item?.e) return false;
     const start = new Date(item.s), end = new Date(item.e);
     return selectedMoment >= start && selectedMoment <= end;
-  }) || horaWindows[0] || null;
+  }) || null;
 
   const fm = (dt) => {
     if (!dt) return "—";
@@ -81,10 +94,12 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
   const timeSeries = useMemo(() => {
     if (!panchang) return [];
     const series = [];
+    const profileLat = Number(p?.lat) || 19.076;
+    const profileLon = Number(p?.lon) || 72.8777;
     for (let i = 0; i < 7; i++) {
       const nextDate = new Date(d);
       nextDate.setDate(nextDate.getDate() + i);
-      const nextPan = panchang(nextDate, settings?.monthSystem || "amanta", utc);
+      const nextPan = panchang(nextDate, settings?.monthSystem || "amanta", utc, { lat: profileLat, lon: profileLon });
       series.push({
         dateObj: nextDate,
         dateStr: nextDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
@@ -97,7 +112,7 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
       });
     }
     return series;
-  }, [d, settings?.monthSystem, utc, panchang]);
+  }, [d, settings?.monthSystem, utc, panchang, p?.lat, p?.lon]);
 
   return (
     <div className="space-y-4 pb-12 gl-fadein mt-4">
@@ -190,39 +205,50 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
 
       {/* CHOGHADIYA (DAY & NIGHT) */}
       <div className="rounded-3xl border border-white/10 bgcard p-5 shadow-xl">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-serif text-sm text-amber-200">Current Choghadiya Window</h3>
-          <span className="text-[9px] font-mono uppercase text-amber-300">{isDayTime ? 'Day' : 'Night'} · {currentChoghadiya?.n || '—'}</span>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-serif text-sm text-amber-200">Choghadiya Windows (Day & Night)</h3>
+          <span className="text-[10px] font-mono uppercase text-amber-300 bg-amber-400/10 px-2 py-1 rounded border border-amber-400/30">{isDayTime ? '☀️ Daytime' : '🌙 Nighttime'}</span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {(isDayTime ? (pan.chogDay || []) : (pan.chogNight || [])).map((c, i) => {
-              const isActive = currentChoghadiya && c.n === currentChoghadiya.n && currentChoghadiya.d === c.d;
-              return (
-                <div key={i} className={`p-3 border rounded-xl text-[10px] flex flex-col justify-center shadow-inner ${isActive ? 'bg-amber-400/10 border-amber-400/50' : 'bg-black/40 border-white/5'}`}>
-                  <span style={{ color: c.c }} className="font-bold text-xs block mb-0.5">{c.n}</span>
-                  <span className="t50 text-[8px] font-mono uppercase">{c.d}</span>
-                  <div className="font-mono t85 text-[10px] mt-2 bg-white/5 py-1 px-2 rounded">{fm(c.s)} - {fm(c.e)}</div>
-                </div>
-              );
-            })}
+        <div className="grid grid-cols-4 gap-2 mb-4">
+          {allChogWindows.map((c, i) => {
+            const isActive = currentChoghadiya === c;
+            return (
+              <div key={i} className={`p-3 border rounded-lg text-[10px] text-center transition transform hover:scale-105 ${isActive ? 'bg-emerald-500/20 border-emerald-400/60 shadow-lg shadow-emerald-400/10' : 'bg-black/40 border-white/10'}`}>
+                <span style={{ color: c.c }} className="font-bold text-xs block mb-1">{c.n}</span>
+                <span className="t50 text-[8px] font-mono uppercase block mb-1.5">{c.d}</span>
+                <div className="font-mono t85 text-[9px] bg-black/30 py-1 px-1.5 rounded">{fm(c.s).split(':')[0]}:{fm(c.s).split(':')[1]}-{fm(c.e).split(':')[0]}:{fm(c.e).split(':')[1]}</div>
+                {isActive && <div className="text-emerald-400 text-[8px] font-bold mt-1">✓ ACTIVE</div>}
+              </div>
+            );
+          })}
         </div>
+        {currentChoghadiya && (
+          <div className="p-4 rounded-xl bg-emerald-900/30 border border-emerald-500/30">
+            <div className="text-xs text-emerald-300 font-mono uppercase mb-1">Currently Active</div>
+            <div className="text-sm font-bold text-emerald-200 mb-2">{currentChoghadiya.n}</div>
+            <div className="text-xs text-emerald-200/80 font-mono">{fm(currentChoghadiya.s)} – {fm(currentChoghadiya.e)} ({currentChoghadiya.d})</div>
+          </div>
+        )}
       </div>
 
       {/* 24H PLANETARY HORAS */}
       <div className="rounded-3xl border border-white/10 bgcard p-5 shadow-xl">
-        <h3 className="font-serif text-sm text-amber-200 mb-4">Planetary Hora Tracking (24H)</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[...(pan.horas || []), ...(pan.nightHoras || [])].map((h, i) => {
-              const isActive = currentHora && h.p === currentHora.p && h.s && currentHora.s && new Date(h.s).getTime() === new Date(currentHora.s).getTime();
-              return (
-                <div key={i} className={`flex justify-between items-center p-3 rounded-xl text-xs transition ${isActive ? 'bg-amber-400/10 border border-amber-400/50' : 'bg-black/30 border border-white/5 hover:bg-white/5'}`}>
-                  <div className="flex items-center gap-2">
-                    <span className="t50 font-mono text-[9px] mr-1">{i + 1}.</span>
-                    <span className="text-lg opacity-80" style={{ color: PLANET_INFO[h.p]?.color }}>{PLANET_INFO[h.p]?.symbol}</span>
-                    <span style={{ color: PLANET_INFO[h.p]?.color }} className="font-bold tracking-wide">{h.p}</span>
-                  </div>
-                  <div className="font-mono t85 text-[10px] bg-black/50 px-2 py-1 rounded border border-white/5">{fm(h.s)} - {fm(h.e)}</div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-serif text-sm text-amber-200">Planetary Hora Tracking (24H)</h3>
+          <span className="text-[10px] font-mono text-white/60">{allHoraWindows.length} hours</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {allHoraWindows.map((h, i) => {
+            const isActive = currentHora === h;
+            return (
+              <div key={i} className={`p-3 rounded-lg border transition text-center ${isActive ? 'bg-amber-400/15 border-amber-400/50 shadow-lg shadow-amber-400/10' : 'bg-black/30 border-white/10'}`}>
+                <div className="text-[9px] text-white/60 font-mono mb-1">Hour {i + 1}</div>
+                <div className={`font-bold text-xs mb-2 flex items-center justify-center gap-1 ${isActive ? 'text-amber-200' : 't85'}`}>
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>}
+                  <span style={{ color: PLANET_INFO[h.p]?.color }}>{h.p}</span>
                 </div>
+                <div className="text-[9px] font-mono text-white/60">{fm(h.s)} – {fm(h.e)}</div>
+              </div>
               );
             })}
         </div>

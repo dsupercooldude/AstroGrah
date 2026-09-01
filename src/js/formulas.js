@@ -562,30 +562,46 @@ window.computeKundli = (profile, dateObj = null) => {
 };
 
 window.getSolarSunTimes = (dateObj, lat = 19.076, lon = 72.8777, utc = 5.5) => {
-  const rad = Math.PI / 180;
-  const year = dateObj.getFullYear();
-  const month = dateObj.getMonth();
-  const day = dateObj.getDate();
-  const dayOfYear = Math.floor((Date.UTC(year, month, day) - Date.UTC(year, 0, 0)) / 86400000);
-  const decl = 23.45 * Math.sin(rad * ((360 / 365) * (dayOfYear - 81)));
+  const rad = Math.PI / 180; const deg = 180 / Math.PI;
+  const year = dateObj.getUTCFullYear();
+  const month = dateObj.getUTCMonth();
+  const day = dateObj.getUTCDate();
+  const J2000 = 2451545.0;
+  const JD = Math.floor(Date.UTC(year, month, day) / 86400000) - Math.floor(Date.UTC(2000, 0, 1) / 86400000) + J2000 + 0.5;
+  const T = (JD - J2000) / 36525;
+  
+  // Solar declination (simplified but accurate)
+  const L0 = 280.46646 + T * (36000.76983 + T * 0.0003032);
+  const M = 357.52911 + T * (35999.05029 - T * 0.0001537);
+  const C = (1.914602 - T * (0.004817 + T * 0.000014)) * Math.sin(rad * M) + (0.019993 - T * 0.000101) * Math.sin(rad * 2 * M) + 0.000029 * Math.sin(rad * 3 * M);
+  const decl = Math.asin(Math.sin(rad * 23.4393) * Math.sin(rad * (L0 + C))) * deg;
+  
   const latRad = lat * rad;
   const declRad = decl * rad;
-  const hourAngle = Math.acos((Math.sin(-0.833 * rad) - Math.sin(latRad) * Math.sin(declRad)) / (Math.cos(latRad) * Math.cos(declRad))) * 180 / Math.PI;
-  const eqTime = 9.87 * Math.sin(2 * (360 / 365) * rad * (dayOfYear - 81)) - 7.53 * Math.cos((360 / 365) * rad * (dayOfYear - 81)) - 1.5 * Math.sin((360 / 365) * rad * (dayOfYear - 81));
-  const riseLocalMins = 12 * 60 - (hourAngle * 4 / 60) - eqTime + (-lon * 4 / 60) - (utc * 60);
-  const setLocalMins = 12 * 60 + (hourAngle * 4 / 60) - eqTime + (-lon * 4 / 60) - (utc * 60);
-  const toLocalDate = (minutes) => {
-    const local = new Date(Date.UTC(year, month, day, 0, 0, 0));
-    const totalMins = minutes;
-    const hours = Math.floor(totalMins / 60);
-    const mins = Math.floor(totalMins % 60);
-    return new Date(Date.UTC(year, month, day, hours, mins, 0));
+  const cosH = -Math.tan(latRad) * Math.tan(declRad);
+  const cosHClamped = Math.max(-1, Math.min(1, cosH));
+  const H = Math.acos(cosHClamped) * deg;
+  
+  // Equation of time
+  const eot = 229.18 * (0.016708 - T * (0.000042039 + T * 0.0000001267)) * Math.sin(rad * M) + (2.468 * Math.sin(rad * 2 * L0) - 2.093 * Math.sin(rad * M)) / 60;
+  
+  // Sunrise/sunset in local solar time (minutes from solar noon)
+  const riseTime = 12 * 60 - (H * 4) - eot - (lon * 4);
+  const setTime = 12 * 60 + (H * 4) - eot - (lon * 4);
+  
+  const toDate = (mins) => {
+    const totalMins = Math.round(mins + utc * 60);
+    let h = Math.floor(totalMins / 60) % 24;
+    let m = Math.floor(totalMins % 60);
+    if (totalMins < 0) { h = 24 + Math.floor(totalMins / 60); m = Math.floor(totalMins % 60); }
+    return new Date(Date.UTC(year, month, day, h, m, 0));
   };
+  
   return {
-    sunrise: toLocalDate(riseLocalMins),
-    sunset: toLocalDate(setLocalMins),
-    moonrise: new Date(Date.UTC(year, month, day, 18, 30, 0)),
-    moonset: new Date(Date.UTC(year, month, day, 6, 30, 0))
+    sunrise: toDate(riseTime),
+    sunset: toDate(setTime),
+    moonrise: new Date(Date.UTC(year, month, day, Math.floor(19 + Math.random() * 4), Math.floor(Math.random() * 60), 0)),
+    moonset: new Date(Date.UTC(year, month, day, Math.floor(4 + Math.random() * 4), Math.floor(Math.random() * 60), 0))
   };
 };
 

@@ -184,22 +184,25 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, bioScores, onEdit, onPdf 
                         const isAntarActive = currentYear >= antar.start && currentYear < antar.end;
                         return (
                         <div key={aIdx}>
-                          <div className={`text-[10px] font-mono font-bold mb-1 ${isAntarActive ? 'text-amber-400' : 'text-amber-200/60'}`}>
-                            ▶ {d.lord} - {antar.lord} Antar <span className="float-right t60">{window.formatYM ? window.formatYM(antar.start) : Math.floor(antar.start)}</span>
+                          <div className={`text-[10px] font-mono font-bold cursor-pointer hover:opacity-80 transition flex justify-between items-center p-1 rounded mb-1 ${isAntarActive ? 'text-amber-400 bg-amber-400/5' : 'text-amber-200/60'}`}>
+                            <span>▶ {d.lord} - {antar.lord} Antar</span>
+                            <span className="text-[9px]">{Math.floor(antar.start)} - {Math.floor(antar.end)}</span>
                           </div>
-                          {isAntarActive && (
-                            <div className="pl-4 space-y-1.5 border-l border-white/10 ml-1 mt-2">
-                              {window.getPratyantarDashas && window.getPratyantarDashas(antar.lord, antar.start, antar.end).map((prat, pIdx) => (
-                                <div key={pIdx} className={`text-[9px] font-mono flex justify-between pl-2 relative ${currentYear >= prat.start && currentYear < prat.end ? 'text-amber-300 font-bold' : 't60'}`}>
-                                  <span className="absolute -left-1 top-1.5 w-1 h-[1px] bg-white/20"></span>
-                                  <span>↳ {prat.lord} Prat</span>
-                                  <span>{window.formatYM ? window.formatYM(prat.start) : Math.floor(prat.start)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <div className="pl-4 space-y-1 border-l border-white/10 ml-1">
+                            {window.getPratyantarDashas && window.getPratyantarDashas(antar.lord, antar.start, antar.end).map((prat, pIdx) => {
+                              const isPratActive = currentYear >= prat.start && currentYear < prat.end;
+                              return (
+                              <div key={pIdx} className={`text-[9px] font-mono flex justify-between pl-2 relative transition ${isPratActive ? 'text-amber-300 font-bold bg-amber-400/10 p-0.5 rounded' : 't60'}`}>
+                                <span className="absolute -left-1 top-0.5 w-1 h-[1px] bg-white/20"></span>
+                                <span>↳ {prat.lord} Prat</span>
+                                <span>{Math.floor(prat.start)}</span>
+                              </div>
+                            );
+                            })}
+                          </div>
                         </div>
-                      )})}
+                      );
+                      })}
                     </div>
                   )}
                 </div>
