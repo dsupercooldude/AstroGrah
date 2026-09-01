@@ -2,7 +2,7 @@
 let bootAttempts = 0;
 const bootInterval = setInterval(() => {
   bootAttempts++;
-  const deps = { React: !!window.React, ErrorBoundary: !!window.ErrorBoundary, KundaliRenderer: !!window.KundaliRenderer, SetupModal: !!window.SetupModal, AuthModal: !!window.AuthModal, SettingsModal: !!window.SettingsModal, GhostPDFReport: !!window.GhostPDFReport, PersonTab: !!window.PersonTab, PanchangTab: !!window.PanchangTab, CompatTab: !!window.CompatTab, AskTab: !!window.AskTab, ReportsTab: !!window.ReportsTab, WeekTab: !!window.WeekTab, MonthTab: !!window.MonthTab, TabOrchestrator: !!window.TabOrchestrator };
+  const deps = { React: !!window.React, ErrorBoundary: !!window.ErrorBoundary, KundaliRenderer: !!window.KundaliRenderer, SetupModal: !!window.SetupModal, AuthModal: !!window.AuthModal, SettingsModal: !!window.SettingsModal, GhostPDFReport: !!window.GhostPDFReport, PersonTab: !!window.PersonTab, PanchangTab: !!window.PanchangTab, CompatTab: !!window.CompatTab, PalmistryTab: !!window.PalmistryTab, AskTab: !!window.AskTab, ReportsTab: !!window.ReportsTab, WeekTab: !!window.WeekTab, MonthTab: !!window.MonthTab, TabOrchestrator: !!window.TabOrchestrator };
   if (Object.values(deps).every(v => v)) {
     clearInterval(bootInterval);
     document.getElementById("bootloader").style.display = "none";

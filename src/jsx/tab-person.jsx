@@ -7,6 +7,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, bioScores, onEdit, onPdf 
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [expandedDasha, setExpandedDasha] = useState(null);
   const [isExpert, setIsExpert] = useState(false);
+  const [kundaliView, setKundaliView] = useState("birth");
 
   const currentYear = date.getFullYear() + (date.getMonth() / 12);
 
@@ -32,6 +33,8 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, bioScores, onEdit, onPdf 
 
   const deepSynthesis = window.generateDeepSynthesis ? window.generateDeepSynthesis(pr, ch, bioScores || {p:0,e:0,i:0}, date) : {};
   const dynamicRx = deepSynthesis.dynamicPrescription || {};
+  const activeKundali = kundaliView === "chalit" ? (ch.d9 || ch.d1) : ch.d1;
+  const kundaliTitle = kundaliView === "chalit" ? "Chalit Kundali" : "Birth Kundali";
 
   return (
     <div className="space-y-6 pb-12 gl-fadein mt-4">
@@ -112,8 +115,23 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, bioScores, onEdit, onPdf 
 
       {/* CHART KUNDALI ENGINE */}
       <div className="bgcard rounded-3xl border border-white/10 p-5 shadow-xl relative overflow-visible">
-        <div className="flex justify-between items-center mb-6 relative z-20">
-          <div className="text-xs t50 font-mono tracking-widest uppercase">Divisional View: D-1</div>
+        <div className="flex justify-between items-center mb-6 relative z-20 gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="text-xs t50 font-mono tracking-widest uppercase">{kundaliTitle}</div>
+            <div className="flex gap-2 bg-black/30 rounded-full border border-white/10 p-1">
+              {[
+                { id: "birth", label: "Birth Kundali" },
+                { id: "chalit", label: "Chalit Kundali" }
+              ].map((view) => (
+                <button
+                  key={view.id}
+                  onClick={() => setKundaliView(view.id)}
+                  className={`px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-widest transition ${kundaliView === view.id ? 'bg-amber-400 text-black font-bold' : 'text-white/70 hover:bg-white/5'}`}>
+                  {view.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="flex gap-2">
             <button onClick={() => setIsExpert(!isExpert)} className={`px-4 py-1.5 rounded-full border border-white/10 transition text-[10px] font-mono font-bold uppercase tracking-widest ${isExpert ? 'bg-amber-400 text-black' : 'bg-black/40 text-amber-400 hover:border-amber-400/50'}`}>
               {isExpert ? "Expert Mode" : "Basic Mode"}
@@ -137,7 +155,7 @@ window.PersonTab = ({ pr, ch, date, setDate, settings, bioScores, onEdit, onPdf 
           </div>
         </div>
         <div className="flex justify-center items-center min-h-[300px] relative z-10">
-          {window.KundaliRenderer && <window.KundaliRenderer ac={ch.d1} ch={ch} kpTable={ch.kpTable} style={formattedStyle} isExpert={isExpert} />}
+          {window.KundaliRenderer && <window.KundaliRenderer ac={activeKundali} ch={ch} kpTable={ch.kpTable} style={formattedStyle} isExpert={isExpert} titleDesc={kundaliTitle} />}
         </div>
       </div>
 

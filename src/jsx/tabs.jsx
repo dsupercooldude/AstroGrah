@@ -3,7 +3,7 @@ var React = window.React;
 var { useState, Fragment } = window.React;
 
 window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs, chs, u, setU, updateSettings }) => {
-  const { PersonTab, ReportsTab, PanchangTab, CompatTab, AskTab, WeekTab, MonthTab } = window;
+  const { PersonTab, ReportsTab, PanchangTab, CompatTab, AskTab, WeekTab, MonthTab, PalmistryTab } = window;
   const [tb, setTb] = useState("person");
 
   return (
@@ -15,6 +15,7 @@ window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs,
           { id: "reports", l: "Advanced Reports" },
           { id: "panchang", l: "Panchang & Muhurta" },
           { id: "union", l: "Union Milan" },
+          { id: "palmistry", l: "Hand Palmistry" },
           { id: "week", l: "7-Day AI" },
           { id: "month", l: "30-Day Macro" },
           { id: "ask", l: "Vedic AI Sage" }
@@ -29,6 +30,7 @@ window.TabOrchestrator = ({ pr, ch, date, setDate, settings, onEditProfile, prs,
       {tb === "reports" && <ReportsTab pr={pr} ch={ch} date={date} />}
       {tb === "panchang" && <PanchangTab d={date} setDate={setDate} p={pr} utc={pr?.utcOffset || 5.5} settings={settings} />}
       {tb === "union" && <CompatTab prs={prs} chs={chs} settings={settings} date={date} />}
+      {tb === "palmistry" && <PalmistryTab pr={pr} />}
       {tb === "week" && <WeekTab pr={pr} ch={ch} />}
       {tb === "month" && <MonthTab pr={pr} ch={ch} />}
       {tb === "ask" && <AskTab em={u.email} emHash={u.emailHash} set={settings} pr={pr} ch={ch} date={date} />}

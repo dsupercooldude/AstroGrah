@@ -413,14 +413,23 @@ window.calculateBaladiAvastha = (degrees, placements) => {
 
 window.calculateAshtakoot = (ch1, ch2) => {
   if (!ch1 || !ch2) return { score: 18, details: {} };
-  const nak1 = window.NAKSHATRAS.indexOf(ch1.nak);
-  const nak2 = window.NAKSHATRAS.indexOf(ch2.nak);
-  const moon1 = window.SIGNS.indexOf(ch1.moonSign);
-  const moon2 = window.SIGNS.indexOf(ch2.moonSign);
+  const compareIndex = (a, b) => {
+    const aIdx = window.NAKSHATRAS.indexOf(a.nak);
+    const bIdx = window.NAKSHATRAS.indexOf(b.nak);
+    if (aIdx !== bIdx) return aIdx - bIdx;
+    return window.SIGNS.indexOf(a.moonSign) - window.SIGNS.indexOf(b.moonSign);
+  };
+  const ordered = [ch1, ch2].slice().sort(compareIndex);
+  const chA = ordered[0];
+  const chB = ordered[1];
+  const nak1 = window.NAKSHATRAS.indexOf(chA.nak);
+  const nak2 = window.NAKSHATRAS.indexOf(chB.nak);
+  const moon1 = window.SIGNS.indexOf(chA.moonSign);
+  const moon2 = window.SIGNS.indexOf(chB.moonSign);
 
   // 1. Varna (Max 1)
   const v1 = Math.floor(moon1 % 4), v2 = Math.floor(moon2 % 4);
-  const varna = v1 >= v2 ? 1 : 0;
+  const varna = v1 === v2 ? 1 : 0.5;
 
   // 2. Vashya (Max 2)
   const vashya = moon1 === moon2 ? 2 : (Math.abs(moon1 - moon2) === 6 ? 0.5 : 1);
@@ -435,8 +444,8 @@ window.calculateAshtakoot = (ch1, ch2) => {
   const yoni = yoni1 === yoni2 ? 4 : 2;
 
   // 5. Graha Maitri (Max 5)
-  const lord1 = window.SIGN_LORDS[ch1.moonSign];
-  const lord2 = window.SIGN_LORDS[ch2.moonSign];
+  const lord1 = window.SIGN_LORDS[chA.moonSign];
+  const lord2 = window.SIGN_LORDS[chB.moonSign];
   const maitri = lord1 === lord2 ? 5 : (["Sun", "Moon", "Mars", "Jupiter"].includes(lord1) && ["Sun", "Moon", "Mars", "Jupiter"].includes(lord2) ? 4 : 2);
 
   // 6. Gana (Max 6)
@@ -639,6 +648,68 @@ window.bio = (dob, td, utc) => {
   };
 };
 
+window.getBiorhythmPercent = (score, normalized = true) => {
+  if (normalized) return Math.round(((Number(score) || 0) + 1) / 2 * 100);
+  return Math.round((Number(score) || 0) * 100);
+};
+
+window.getBiorhythmInterpretation = (name, score, normalized = true) => {
+  const value = window.getBiorhythmPercent(score, normalized);
+  if (value >= 75) return `${name} is in a strong phase; this is a favorable window for demanding or focused effort.`;
+  if (value >= 50) return `${name} is mid-cycle and workable. It can support steady effort, but still benefits from pacing.`;
+  if (value >= 25) return `${name} is below its ideal rhythm. Good for light tasks and careful decisions, not heavy workloads.`;
+  return `${name} is under pressure today. Reduce friction, avoid rushed decisions, and protect energy.`;
+};
+
+window.validateAstroCalibration = async (profile, dateObj, options = {}) => {
+  const lat = Number(profile?.lat ?? options.lat ?? 28.6139);
+  const lon = Number(profile?.lon ?? options.lon ?? 77.2090);
+  const utc = Number(profile?.utcOffset ?? options.utc ?? 5.5);
+  const target = dateObj || new Date();
+  const dateStr = target.toISOString().slice(0, 10);
+  const localPan = window.panchang ? window.panchang(target, options.monthSystem || "amanta", utc) : {};
+  const localSr = localPan.sr ? new Date(localPan.sr) : null;
+  const localSs = localPan.ss ? new Date(localPan.ss) : null;
+
+  const sources = [
+    `https://api.sunrisesunset.io/json?lat=${lat}&lng=${lon}&date=${dateStr}`,
+    `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${lat}&longitude=${lon}&method=2`
+  ];
+
+  let best = { status: "not-validated", source: null, deltaMinutes: null, sunrise: null, sunset: null, confidence: 0 };
+  for (const url of sources) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const apiSunrise = data?.results?.sunrise || data?.data?.timings?.Sunrise || data?.timings?.Sunrise;
+      const apiSunset = data?.results?.sunset || data?.data?.timings?.Sunset || data?.timings?.Sunset;
+      if (!apiSunrise || !apiSunset || !localSr || !localSs) continue;
+
+      const parsedSr = new Date(`${dateStr}T${apiSunrise}`);
+      const parsedSs = new Date(`${dateStr}T${apiSunset}`);
+      const deltaSr = Math.abs((parsedSr.getTime() - localSr.getTime()) / 60000);
+      const deltaSs = Math.abs((parsedSs.getTime() - localSs.getTime()) / 60000);
+      const delta = Math.max(deltaSr, deltaSs);
+      const confidence = Math.max(0, 100 - Math.min(delta, 180));
+      best = {
+        status: delta <= 45 ? "calibrated" : delta <= 90 ? "warning" : "misaligned",
+        source: url,
+        deltaMinutes: Math.round(delta),
+        sunrise: { local: localSr.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }), live: apiSunrise },
+        sunset: { local: localSs.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }), live: apiSunset },
+        confidence: Math.round(confidence),
+        note: delta <= 45 ? 'Sunrise/sunset matches external source within acceptable variance.' : 'Variance is larger than the typical tolerance; review timezone or location inputs before trusting the chart.'
+      };
+      break;
+    } catch (e) {
+      continue;
+    }
+  }
+
+  return best;
+};
+
 window.BIORHYTHM_CYCLES = {
   physical: { label: "Physical", cycle: 23, color: "#F87171", description: "stamina, activity, and physical recovery" },
   emotional: { label: "Emotional", cycle: 28, color: "#60A5FA", description: "mood balance, sensitivity, and social ease" },
@@ -789,12 +860,20 @@ window.generateDeepSynthesis = (pr, ch, bio, targetDate) => {
   if (mahaObj && window.getAntardashas) { activeAntar = window.getAntardashas(activeMaha, mahaObj.start, mahaObj.end).find((a) => currentDecYear >= a.start && currentDecYear < a.end)?.lord || activeMaha; }
 
   const bioP = Math.round(((bio.p + 1) / 2) * 100); const bioE = Math.round(((bio.e + 1) / 2) * 100); const bioI = Math.round(((bio.i + 1) / 2) * 100);
+  const bioRaw = { p: Math.round(bio.p * 100), e: Math.round(bio.e * 100), i: Math.round(bio.i * 100), s: Math.round(bio.s * 100) };
+  const bioNarrative = [
+    `Physical: ${window.getBiorhythmInterpretation("Physical", bio.p, true)} (${bioRaw.p}% raw / ${bioP}% normalized).`,
+    `Emotional: ${window.getBiorhythmInterpretation("Emotional", bio.e, true)} (${bioRaw.e}% raw / ${bioE}% normalized).`,
+    `Intellectual: ${window.getBiorhythmInterpretation("Intellectual", bio.i, true)} (${bioRaw.i}% raw / ${bioI}% normalized).`,
+    `Spiritual: ${window.getBiorhythmInterpretation("Spiritual", bio.s, true)} (${bioRaw.s}% raw / ${Math.round(((bio.s + 1) / 2) * 100)}% normalized).`
+  ].join(" ");
   const chartPositionSummary = Object.entries(ch.d1.signs || {}).map(([planet, sign]) => `${planet} in ${sign}`).join(", ");
-  const lagnaHouseMeaning = `Your ${lagna} Lagna is the starting point of the twelve-house chart. It describes your approach to life, body, identity, and the way other people first experience you. Its ruler is ${lagnaLord}, so qualities of ${window.PLANET_INFO[lagnaLord]?.adhidevata || lagnaLord} become an important way for you to build confidence and direction.`;
-  const chalitMeaning = `Your Chalit-style house view keeps the same ${lagna} Ascendant but reads each planet through the house it occupies: ${Object.entries(ch.d1.placements || {}).map(([planet, house]) => `${planet} in house ${house}`).join(", ")}. In plain language, a house tells you where an influence is experienced: the 1st is self, 2nd resources and speech, 3rd effort, 4th home, 5th learning and creativity, 6th work and health routines, 7th partnership, 8th change, 9th learning and belief, 10th career, 11th gains, and 12th rest and release.`;
-  const shadbalaMeaning = `Your Shadbala scores compare the relative operating strength of the seven classical planets in this chart. ${topPlanet} leads at ${(ch.shadbala?.[topPlanet] / 60 || 0).toFixed(1)} Rupas, making its areas easier to activate; ${weakPlanet} is lowest at ${(ch.shadbala?.[weakPlanet] / 60 || 0).toFixed(1)} Rupas, so its areas need planning, patience, and repetition. This is a relative strength guide, not a promise that one planet controls your entire life.`;
-  const gocharaMeaning = `For ${pr?.name || "you"} on ${tD.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}, current transits are read against your ${lagna} Ascendant and ${moon} Moon. ${Object.entries(ch.transits || {}).map(([planet, sign]) => `${planet} is moving through ${sign}`).join(", ")}. These describe the timing and atmosphere around your natal potential, not a replacement for the birth chart.`;
-  const monthlyMeaning = `This twelve-month matrix is tailored to your ${lagna} Ascendant, ${moon} Moon, active ${activeMaha} Mahadasha, and the strongest influence of ${topPlanet}. Each month translates those chart factors into practical themes for work, money, home, and wellbeing.`;
+  const profileIdentity = `${pr?.name || "this native"} from ${pr?.place || "your selected place"}${pr?.gotra ? ` of ${pr.gotra} gotra` : ""}${pr?.jaati ? ` (${pr.jaati})` : ""}`;
+  const lagnaHouseMeaning = `${pr?.name || "Your"} ${lagna} Lagna is the starting point of the twelve-house chart. It describes your approach to life, body, identity, and the way other people first experience you. In ${profileIdentity}, the ${lagna} Ascendant creates a rhythm where ${window.SIGN_TRAITS?.[lagna] || 'clarity and momentum'} matters most. Its ruler is ${lagnaLord}, so qualities of ${window.PLANET_INFO[lagnaLord]?.adhidevata || lagnaLord} become a central theme for confidence, purpose, and direction.`;
+  const chalitMeaning = `Your Chalit-style chart keeps the same ${lagna} Ascendant but reads the house results through a more practical lens for ${pr?.name || "you"}. In this view, ${Object.entries(ch.d1.placements || {}).map(([planet, house]) => `${planet} sits in house ${house}`).join(", ")}. In plain language, a house tells you where the influence is experienced: the 1st is self, 2nd resources and speech, 3rd effort, 4th home, 5th learning and creativity, 6th work and health routines, 7th partnership, 8th change, 9th learning and belief, 10th career, 11th gains, and 12th rest and release.`;
+  const shadbalaMeaning = `${pr?.name || "You"}'s Shadbala scores compare the relative operating strength of the seven classical planets in this chart. ${topPlanet} leads at ${(ch.shadbala?.[topPlanet] / 60 || 0).toFixed(1)} Rupas, making its themes easier to activate; ${weakPlanet} is lowest at ${(ch.shadbala?.[weakPlanet] / 60 || 0).toFixed(1)} Rupas, so that area needs planning, patience, and repetition. This is a relative strength guide, not a promise that one planet controls your entire life.`;
+  const gocharaMeaning = `For ${pr?.name || "you"} on ${tD.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}, current transits are read against your ${lagna} Ascendant and ${moon} Moon in ${pr?.place || "your profile location"}. ${Object.entries(ch.transits || {}).map(([planet, sign]) => `${planet} is moving through ${sign}`).join(", ")}. These are timing indicators for your current environment; they describe the atmosphere around your natal potential, not a replacement for your birth chart.`;
+  const monthlyMeaning = `This twelve-month matrix is tailored to ${pr?.name || "your"} ${lagna} Ascendant, ${moon} Moon, active ${activeMaha} Mahadasha, and the strongest influence of ${topPlanet}. Each month translates those chart factors into practical themes for work, money, home, and wellbeing in ${pr?.place || "your chosen location"}.`;
 
   // Deep Jaimini Meanings
   const karakaMeanings = {
@@ -825,10 +904,10 @@ window.generateDeepSynthesis = (pr, ch, bio, targetDate) => {
   };
 
   return {
-    basicKundali: `Your cosmic blueprint is anchored by the ${lagna} Ascendant, ruled by ${lagnaLord}. This core geometry makes you naturally ${window.SIGN_TRAITS?.[lagna] || 'driven and distinct'}. With your Moon residing in ${moon}, your internal emotional landscape seeks security through ${window.SIGN_TRAITS?.[moon] || 'structured stability'}.`,
-    basicDasha: `You are currently experiencing the overarching Mahadasha of ${activeMaha}, which pulls your primary focus toward its natal promises. However, your specific day-to-day reality is currently hijacked by the sub-cycle (Antardasha) of ${activeAntar}, triggering themes of ${antarTraits[activeAntar]}.`,
-    basicPower: `Shadbala reveals that ${topPlanet} is your ultimate power center. Conversely, ${weakPlanet} is starved for energy and represents your primary karmic bottleneck requiring conscious remediation.`,
-    basicBio: `For ${tD.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}, your physical energy is ${bioP}%, emotional steadiness is ${bioE}%, and intellectual focus is ${bioI}%. Use the strongest score for demanding work and protect the lowest score with rest and simpler commitments.`,
+    basicKundali: `${pr?.name || "Your"} chart is anchored by the ${lagna} Ascendant, ruled by ${lagnaLord}. This geometry shapes the outward style of ${pr?.name || "the native"} and at a practical level makes you naturally ${window.SIGN_TRAITS?.[lagna] || 'driven and distinct'}. With your Moon in ${moon}, your emotional life seeks security through ${window.SIGN_TRAITS?.[moon] || 'structured stability'}; this gives your inner rhythm a clear, more personal pattern.` ,
+    basicDasha: `${pr?.name || "You"} are currently experiencing the overarching Mahadasha of ${activeMaha}, which pulls your primary focus toward its natal promises. However, your immediate daily reality is currently shaped by the sub-cycle of ${activeAntar}, triggering themes of ${antarTraits[activeAntar]}. This is the timing window most likely to feel active and visible in your practical life.` ,
+    basicPower: `Shadbala reveals that ${topPlanet} is your strongest operating force, while ${weakPlanet} is your key developmental pressure point. For ${pr?.name || "this native"}, the best advantage comes from using ${topPlanet} consciously while strengthening ${weakPlanet} through structure, patience, and deliberate practice.`,
+    basicBio: `For ${pr?.name || "this native"} on ${tD.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}, the raw values are P ${bioRaw.p}%, E ${bioRaw.e}%, I ${bioRaw.i}%, S ${bioRaw.s}%. The app normalizes these into a clearer 0–100 reading for daily use: P ${bioP}%, E ${bioE}%, I ${bioI}%, S ${Math.round(((bio.s + 1) / 2) * 100)}%. ${bioNarrative}`,
     lagnaMeaning: lagnaHouseMeaning,
     chalitMeaning,
     shadbalaMeaning,

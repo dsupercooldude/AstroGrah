@@ -104,6 +104,7 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
   };
 
   const formatScore = (score) => `${Math.round(((score + 1) / 2) * 100)}%`;
+  const formatRawScore = (score) => `${Math.round(score * 100)}%`;
   const handleChartClick = (event) => {
     const bounds = event.currentTarget.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
@@ -137,7 +138,8 @@ window.BiocycleWidget = ({ dob, targetDate, utcOffset }) => {
         <div className="bg-black/40 p-3 rounded-xl border border-blue-500/30 shadow-lg backdrop-blur-sm"><div className="text-[9px] text-blue-400 mb-1 tracking-widest">EMOTIONAL</div><div className="text-lg text-white font-bold">{de}%</div></div>
         <div className="bg-black/40 p-3 rounded-xl border border-amber-500/30 shadow-lg backdrop-blur-sm"><div className="text-[9px] text-amber-400 mb-1 tracking-widest">INTELLECTUAL</div><div className="text-lg text-white font-bold">{di}%</div></div>
       </div>
-      <div className="text-[10px] leading-relaxed text-white/60 font-sans mb-3">These three lines show your calculated physical energy, emotional balance, and mental focus for each day. The center marker is today; move across the chart or click it to inspect another date. This is a mathematical planning aid, not a medical diagnosis.</div>
+      <div className="text-[10px] leading-relaxed text-white/60 font-sans mb-3">The graph uses the mathematical sine-wave model. Online calculators often show the raw wave values (for example, -82% instead of 9%), while this app converts them into a normalized 0–100 daily strength view for easier reading. The raw values are equivalent, just expressed on different scales.</div>
+      <div className="mb-3 text-[9px] text-white/65 font-mono">Raw today: Physical {formatRawScore(pScore)} · Emotional {formatRawScore(eScore)} · Intellectual {formatRawScore(iScore)} · Spiritual {formatRawScore(sScore)}</div>
       
       <div className="relative w-full h-40 bg-gradient-to-b from-black/20 to-black/5 rounded-2xl border border-white/5 mt-2 p-2 cursor-crosshair" onClick={handleChartClick} onMouseMove={handleChartClick} title="Move across or click the chart to inspect a day">
         <svg viewBox="0 -10 100 60" preserveAspectRatio="none" className="w-full h-full opacity-80 overflow-visible">

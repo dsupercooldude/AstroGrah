@@ -6,9 +6,23 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
   const { Icon, panchang, PLANET_INFO } = window;
   const [liveValidated, setLiveValidated] = useState(false);
   const [validating, setValidating] = useState(false);
+  const [liveApiData, setLiveApiData] = useState(null);
 
   // Core Daily Calculation
   const pan = panchang ? panchang(d, settings?.monthSystem || "amanta", utc) : {};
+  const selectedMoment = new Date(d.getFullYear(), d.getMonth(), d.getDate(), new Date().getHours(), new Date().getMinutes(), 0, 0);
+  const chogWindows = [...(pan.chogDay || []), ...(pan.chogNight || [])];
+  const currentChoghadiya = chogWindows.find((item) => {
+    if (!item?.s || !item?.e) return false;
+    const start = new Date(item.s), end = new Date(item.e);
+    return selectedMoment >= start && selectedMoment <= end;
+  }) || chogWindows[0] || null;
+  const horaWindows = [...(pan.horas || []), ...(pan.nightHoras || [])];
+  const currentHora = horaWindows.find((item) => {
+    if (!item?.s || !item?.e) return false;
+    const start = new Date(item.s), end = new Date(item.e);
+    return selectedMoment >= start && selectedMoment <= end;
+  }) || horaWindows[0] || null;
 
   const fm = (dt) => {
     if (!dt) return "—";
@@ -19,11 +33,21 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
   const validateLivePanchang = async () => {
     setValidating(true);
     try {
-      const res = await fetch(`https://api.sunrisesunset.io/json?lat=${p?.lat || 25.2}&lng=${p?.lon || 55.2}&date=${d.toISOString().slice(0, 10)}`);
+      const lat = Number(p?.lat ?? 25.2);
+      const lon = Number(p?.lon ?? 55.2);
+      const dateStr = d.toISOString().slice(0, 10);
+      const res = await fetch(`https://api.sunrisesunset.io/json?lat=${lat}&lng=${lon}&date=${dateStr}`);
       const data = await res.json();
-      if (data && data.results) { 
-        setLiveValidated(true); 
-        setTimeout(() => setLiveValidated(false), 4000); 
+      if (data && data.results) {
+        setLiveApiData({
+          sr: data.results.sunrise,
+          ss: data.results.sunset,
+          lat,
+          lon,
+          date: dateStr
+        });
+        setLiveValidated(true);
+        setTimeout(() => setLiveValidated(false), 4000);
       }
     } catch (e) {}
     setValidating(false);
@@ -66,6 +90,9 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
           <h2 className="font-serif text-2xl text-emerald-100 mt-0.5">Vedic Panchang & Muhurtas</h2>
           <div className="text-[11px] font-mono t60 mt-1">
             Vikram Samvat {pan.vikram || "—"} · Saka Samvat {pan.saka || "—"} · Masa: {pan.masa || "—"}
+          </div>
+          <div className="text-[10px] font-mono text-emerald-200/80 mt-2">
+            Location: {p?.place || "Selected location"} · {p?.lat || "—"}, {p?.lon || "—"} · UTC {Number(utc || 5.5).toFixed(1)}
           </div>
         </div>
         <div className="flex flex-col items-end gap-3">
@@ -141,24 +168,30 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
       <div className="rounded-3xl border border-white/10 bgcard p-5 shadow-xl">
         <h3 className="font-serif text-sm text-amber-200 mb-4">Day Choghadiya Timings</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {(pan.chogDay || []).map((c, i) => ( 
-              <div key={i} className="p-3 bg-black/40 border border-white/5 rounded-xl text-[10px] flex flex-col justify-center shadow-inner">
-                <span style={{ color: c.c }} className="font-bold text-xs block mb-0.5">{c.n}</span>
-                <span className="t50 text-[8px] font-mono uppercase">{c.d}</span>
-                <div className="font-mono t85 text-[10px] mt-2 bg-white/5 py-1 px-2 rounded">{fm(c.s)} - {fm(c.e)}</div>
-              </div> 
-            ))}
+            {(pan.chogDay || []).map((c, i) => {
+              const isActive = currentChoghadiya && c.n === currentChoghadiya.n && currentChoghadiya.d === c.d;
+              return (
+                <div key={i} className={`p-3 border rounded-xl text-[10px] flex flex-col justify-center shadow-inner ${isActive ? 'bg-amber-400/10 border-amber-400/50' : 'bg-black/40 border-white/5'}`}>
+                  <span style={{ color: c.c }} className="font-bold text-xs block mb-0.5">{c.n}</span>
+                  <span className="t50 text-[8px] font-mono uppercase">{c.d}</span>
+                  <div className="font-mono t85 text-[10px] mt-2 bg-white/5 py-1 px-2 rounded">{fm(c.s)} - {fm(c.e)}</div>
+                </div>
+              );
+            })}
         </div>
         
         <h3 className="font-serif text-sm text-blue-200 mt-6 mb-4">Night Choghadiya Timings</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {(pan.chogNight || []).map((c, i) => ( 
-              <div key={i} className="p-3 bg-black/40 border border-white/5 rounded-xl text-[10px] flex flex-col justify-center shadow-inner opacity-80">
-                <span style={{ color: c.c }} className="font-bold text-xs block mb-0.5">{c.n}</span>
-                <span className="t50 text-[8px] font-mono uppercase">{c.d}</span>
-                <div className="font-mono t85 text-[10px] mt-2 bg-white/5 py-1 px-2 rounded">{fm(c.s)} - {fm(c.e)}</div>
-              </div> 
-            ))}
+            {(pan.chogNight || []).map((c, i) => {
+              const isActive = currentChoghadiya && c.n === currentChoghadiya.n && currentChoghadiya.d === c.d;
+              return (
+                <div key={i} className={`p-3 border rounded-xl text-[10px] flex flex-col justify-center shadow-inner opacity-80 ${isActive ? 'bg-amber-400/10 border-amber-400/50' : 'bg-black/40 border-white/5'}`}>
+                  <span style={{ color: c.c }} className="font-bold text-xs block mb-0.5">{c.n}</span>
+                  <span className="t50 text-[8px] font-mono uppercase">{c.d}</span>
+                  <div className="font-mono t85 text-[10px] mt-2 bg-white/5 py-1 px-2 rounded">{fm(c.s)} - {fm(c.e)}</div>
+                </div>
+              );
+            })}
         </div>
       </div>
 
@@ -166,16 +199,19 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
       <div className="rounded-3xl border border-white/10 bgcard p-5 shadow-xl">
         <h3 className="font-serif text-sm text-amber-200 mb-4">Planetary Hora Tracking (24H)</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[...(pan.horas || []), ...(pan.nightHoras || [])].map((h, i) => ( 
-              <div key={i} className="flex justify-between items-center p-3 bg-black/30 border border-white/5 rounded-xl text-xs hover:bg-white/5 transition">
-                <div className="flex items-center gap-2">
-                  <span className="t50 font-mono text-[9px] mr-1">{i + 1}.</span>
-                  <span className="text-lg opacity-80" style={{ color: PLANET_INFO[h.p]?.color }}>{PLANET_INFO[h.p]?.symbol}</span>
-                  <span style={{ color: PLANET_INFO[h.p]?.color }} className="font-bold tracking-wide">{h.p}</span>
+            {[...(pan.horas || []), ...(pan.nightHoras || [])].map((h, i) => {
+              const isActive = currentHora && h.p === currentHora.p && h.s && currentHora.s && new Date(h.s).getTime() === new Date(currentHora.s).getTime();
+              return (
+                <div key={i} className={`flex justify-between items-center p-3 rounded-xl text-xs transition ${isActive ? 'bg-amber-400/10 border border-amber-400/50' : 'bg-black/30 border border-white/5 hover:bg-white/5'}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="t50 font-mono text-[9px] mr-1">{i + 1}.</span>
+                    <span className="text-lg opacity-80" style={{ color: PLANET_INFO[h.p]?.color }}>{PLANET_INFO[h.p]?.symbol}</span>
+                    <span style={{ color: PLANET_INFO[h.p]?.color }} className="font-bold tracking-wide">{h.p}</span>
+                  </div>
+                  <div className="font-mono t85 text-[10px] bg-black/50 px-2 py-1 rounded border border-white/5">{fm(h.s)} - {fm(h.e)}</div>
                 </div>
-                <div className="font-mono t85 text-[10px] bg-black/50 px-2 py-1 rounded border border-white/5">{fm(h.s)} - {fm(h.e)}</div>
-              </div> 
-            ))}
+              );
+            })}
         </div>
       </div>
 

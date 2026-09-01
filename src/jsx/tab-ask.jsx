@@ -95,43 +95,41 @@ window.AskTab = ({ emHash, set, pr, ch, date }) => {
   // CUSTOM ENTERPRISE AI TEXT FORMATTER (Handles Markdown without external libraries)
   const formatAIResponse = (text) => {
     if (!text) return null;
-    return text.split('\n').map((line, idx) => {
-      // 1. Handle Headers
-      if (line.startsWith('### ')) return <h3 key={idx} className="text-sm font-bold text-amber-300 mt-4 mb-2">{line.replace('### ', '')}</h3>;
-      if (line.startsWith('## ')) return <h2 key={idx} className="text-base font-bold text-amber-400 mt-4 mb-2">{line.replace('## ', '')}</h2>;
-      if (line.startsWith('# ')) return <h1 key={idx} className="text-lg font-bold text-amber-500 mt-4 mb-2 border-b border-white/10 pb-1">{line.replace('# ', '')}</h1>;
-      
-      // 2. Handle Lists
-      const isBulletList = line.trim().startsWith('* ') || line.trim().startsWith('- ');
-      const isNumberedList = /^\d+\.\s/.test(line.trim());
-      let content = line.trim();
-      if (isBulletList) content = content.replace(/^[\*\-]\s/, '');
+    const normalized = String(text).replace(/\r\n/g, '\n').trim();
+    const lines = normalized.split('\n');
 
-      // 3. Handle Bolding (**text**)
-      const parts = content.split(/(\*\*.*?\*\*)/g).map((part, j) => {
+    return lines.map((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) return <div key={idx} className="h-2"></div>;
+      if (trimmed.startsWith('### ')) return <h3 key={idx} className="text-sm font-bold text-amber-300 mt-4 mb-2">{trimmed.replace(/^###\s/, '')}</h3>;
+      if (trimmed.startsWith('## ')) return <h2 key={idx} className="text-base font-bold text-amber-400 mt-4 mb-2">{trimmed.replace(/^##\s/, '')}</h2>;
+      if (trimmed.startsWith('# ')) return <h1 key={idx} className="text-lg font-bold text-amber-500 mt-4 mb-2 border-b border-white/10 pb-1">{trimmed.replace(/^#\s/, '')}</h1>;
+      if (/^\*\s|^-\s/.test(trimmed)) {
+        const content = trimmed.replace(/^[-*]\s/, '');
+        const parts = content.split(/(\*\*.*?\*\*)/g).map((part, j) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={j} className="text-amber-200 font-bold">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+        return <div key={idx} className="flex gap-2 mt-1.5 mb-1.5 pl-2"><span className="text-amber-500 mt-0.5">•</span><span className="text-white/80">{parts}</span></div>;
+      }
+      if (/^\d+\.\s/.test(trimmed)) {
+        const content = trimmed.replace(/^\d+\.\s/, '');
+        const parts = content.split(/(\*\*.*?\*\*)/g).map((part, j) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={j} className="text-amber-200 font-bold">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+        return <div key={idx} className="mt-1.5 mb-1.5 pl-2 text-white/80 font-medium">{parts}</div>;
+      }
+      const parts = trimmed.split(/(\*\*.*?\*\*)/g).map((part, j) => {
         if (part.startsWith('**') && part.endsWith('**')) {
           return <strong key={j} className="text-amber-200 font-bold">{part.slice(2, -2)}</strong>;
         }
         return part;
       });
-
-      // 4. Render Layouts
-      if (isBulletList) {
-        return (
-          <div key={idx} className="flex gap-2 mt-1.5 mb-1.5 pl-2">
-            <span className="text-amber-500 mt-0.5">•</span>
-            <span className="text-white/80">{parts}</span>
-          </div>
-        );
-      }
-      
-      if (isNumberedList) {
-        return <div key={idx} className="mt-1.5 mb-1.5 pl-2 text-white/80 font-medium">{parts}</div>;
-      }
-      
-      if (line.trim() === '') return <div key={idx} className="h-2"></div>;
-
-      // 5. Default Paragraph
       return <div key={idx} className="mb-2 leading-relaxed text-white/80">{parts}</div>;
     });
   };
