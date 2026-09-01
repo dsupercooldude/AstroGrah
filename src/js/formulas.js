@@ -561,23 +561,53 @@ window.computeKundli = (profile, dateObj = null) => {
   };
 };
 
-window.panchang = (dObj, ms = "amanta", utc = 5.5) => {
+window.getSolarSunTimes = (dateObj, lat = 19.076, lon = 72.8777, utc = 5.5) => {
+  const rad = Math.PI / 180;
+  const year = dateObj.getFullYear();
+  const month = dateObj.getMonth();
+  const day = dateObj.getDate();
+  const dayOfYear = Math.floor((Date.UTC(year, month, day) - Date.UTC(year, 0, 0)) / 86400000);
+  const decl = 23.45 * Math.sin(rad * ((360 / 365) * (dayOfYear - 81)));
+  const latRad = lat * rad;
+  const declRad = decl * rad;
+  const hourAngle = Math.acos((Math.sin(-0.833 * rad) - Math.sin(latRad) * Math.sin(declRad)) / (Math.cos(latRad) * Math.cos(declRad))) * 180 / Math.PI;
+  const eqTime = 9.87 * Math.sin(2 * (360 / 365) * rad * (dayOfYear - 81)) - 7.53 * Math.cos((360 / 365) * rad * (dayOfYear - 81)) - 1.5 * Math.sin((360 / 365) * rad * (dayOfYear - 81));
+  const riseLocalMins = 12 * 60 - (hourAngle * 4 / 60) - eqTime + (-lon * 4 / 60) - (utc * 60);
+  const setLocalMins = 12 * 60 + (hourAngle * 4 / 60) - eqTime + (-lon * 4 / 60) - (utc * 60);
+  const toLocalDate = (minutes) => {
+    const local = new Date(Date.UTC(year, month, day, 0, 0, 0));
+    const totalMins = minutes;
+    const hours = Math.floor(totalMins / 60);
+    const mins = Math.floor(totalMins % 60);
+    return new Date(Date.UTC(year, month, day, hours, mins, 0));
+  };
+  return {
+    sunrise: toLocalDate(riseLocalMins),
+    sunset: toLocalDate(setLocalMins),
+    moonrise: new Date(Date.UTC(year, month, day, 18, 30, 0)),
+    moonset: new Date(Date.UTC(year, month, day, 6, 30, 0))
+  };
+};
+
+window.panchang = (dObj, ms = "amanta", utc = 5.5, geo = null) => {
+  const location = geo || { lat: 19.076, lon: 72.8777 };
   const JD = window.julianDay(dObj.toISOString().slice(0, 10), "12:00", utc);
   const T = (JD - 2451545) / 36525;
   const sl = window.sunLon(T).L, ml = window.moonLon(T);
   const diff = window.norm360(ml - sl);
   const tIdx = Math.floor(diff / 12);
   const isS = tIdx < 15;
-  const mIdx = Math.floor(window.norm360(sl) / 30);
-  const masa = ms === "purnimanta" && !isS ? window.LUNAR_MASAS[(mIdx + 1) % 12] : window.LUNAR_MASAS[mIdx];
+  const solarIdx = Math.floor(window.norm360(sl) / 30);
+  const lunarMonthIndex = Math.floor((window.norm360(ml) / 30) + solarIdx) % 12;
+  const masa = ms === "purnimanta" && !isS ? window.LUNAR_MASAS[(solarIdx + 1) % 12] : window.LUNAR_MASAS[(lunarMonthIndex + 9) % 12];
 
-  const d = new Date(dObj.getTime());
-  d.setHours(6, 0, 0, 0); const sr = new Date(d.getTime());
-  d.setHours(18, 0, 0, 0); const ss = new Date(d.getTime());
-  d.setHours(18, 30, 0, 0); const mr = new Date(d.getTime());
-  d.setHours(6, 30, 0, 0); const msr = new Date(d.getTime());
-  const dMs = ss - sr;
-  const nMs = (sr.getTime() + 86400000) - ss.getTime();
+  const solarTimes = window.getSolarSunTimes(dObj, Number(location.lat || 19.076), Number(location.lon || 72.8777), Number(utc || 5.5));
+  const sr = solarTimes.sunrise;
+  const ss = solarTimes.sunset;
+  const mr = solarTimes.moonrise;
+  const msr = solarTimes.moonset;
+  const dMs = ss.getTime() - sr.getTime();
+  const nMs = (new Date(sr.getTime() + 86400000).getTime()) - ss.getTime();
 
   const getS = (s, dur) => ({ s: new Date(s), e: new Date(s + dur) });
   const dow = dObj.getDay();

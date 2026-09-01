@@ -4,7 +4,20 @@ var { useState } = window.React;
 
 window.CompatTab = ({ prs, chs }) => {
   const { NAKSHATRAS } = window;
-  const [pairIds, setPairIds] = useState(prs.length >= 2 ? [prs[0].id, prs[1].id] : [prs[0]?.id, prs[0]?.id]);
+  const storageKey = 'astrograh_union_pair';
+  const initialPair = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (Array.isArray(saved) && saved.length === 2 && prs.some(p => p.id === saved[0]) && prs.some(p => p.id === saved[1])) return saved;
+    } catch (e) {}
+    return prs.length >= 2 ? [prs[0].id, prs[1].id] : [prs[0]?.id, prs[0]?.id];
+  };
+  const [pairIds, setPairIds] = useState(initialPair);
+
+  const persistPair = (nextPair) => {
+    setPairIds(nextPair);
+    try { localStorage.setItem(storageKey, JSON.stringify(nextPair)); } catch (e) {}
+  };
 
   if (prs.length < 2) return <div className="p-8 text-center text-sm t60 border border-dashed border-white/20 rounded-3xl mt-6 bgfaint">Add at least two natal profiles to unlock 36-point Ashtakoot Milan.</div>;
 
@@ -33,11 +46,11 @@ window.CompatTab = ({ prs, chs }) => {
         <div>
           <div className="font-mono text-[9px] uppercase tracking-[0.25em] text-pink-300 mb-1">Union & Kundali Milan</div>
           <div className="flex items-center gap-2">
-            <select value={pairIds[0]} onChange={(e) => setPairIds([e.target.value, pairIds[1]])} className="bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 font-serif text-base text-white outline-none">
+            <select value={pairIds[0]} onChange={(e) => persistPair([e.target.value, pairIds[1]])} className="bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 font-serif text-base text-white outline-none">
               {prs.map((p) => (<option key={p.id} value={p.id}>{p.name.split(" ")[0]}</option>))}
             </select>
             <span className="font-serif text-pink-300">&amp;</span>
-            <select value={pairIds[1]} onChange={(e) => setPairIds([pairIds[0], e.target.value])} className="bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 font-serif text-base text-white outline-none">
+            <select value={pairIds[1]} onChange={(e) => persistPair([pairIds[0], e.target.value])} className="bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5 font-serif text-base text-white outline-none">
               {prs.map((p) => (<option key={p.id} value={p.id}>{p.name.split(" ")[0]}</option>))}
             </select>
           </div>

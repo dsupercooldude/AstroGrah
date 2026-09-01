@@ -523,6 +523,57 @@ window.GhostPDFReport = React.forwardRef(({ profile, ch, bioScores, date }, ref)
         </div>
       </div>
 
-    </div>
-  );
-});
+      {/* ========================================== */}
+      {/* PAGE 13: UNION MILAN (IF SELECTED)         */}
+      {/* ========================================== */}
+      {(() => {
+        try {
+          const savedPair = JSON.parse(localStorage.getItem('astrograh_union_pair') || '[]');
+          if (Array.isArray(savedPair) && savedPair.length === 2) {
+            const ashtakoot = window.calculateAshtakoot ? window.calculateAshtakoot(savedPair[0], savedPair[1]) : null;
+            if (ashtakoot) {
+              return (
+                <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+                  <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Ashtakoot Milan (Compatibility)</h3>
+                  <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-6">
+                    <p className="text-sm text-white/80 mb-4 font-mono">The 36-point Ashtakoot compatibility system measures harmony across 8 dimensions of life partnership.</p>
+                    <div className="text-lg font-bold text-amber-300 mb-2">Total Score: {Math.round(ashtakoot.totalScore)}/36</div>
+                    <div className="h-2 bg-black/50 rounded-full overflow-hidden border border-white/5 mb-4">
+                      <div className="h-full bg-gradient-to-r from-amber-600 to-emerald-400" style={{ width: `${Math.min(100, (ashtakoot.totalScore / 36) * 100)}%` }}></div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(ashtakoot).filter(([k]) => k !== 'totalScore').map(([param, points]) => (
+                      <div key={param} className=\"bg-black/30 p-4 rounded-xl border border-white/5\">
+                        <div className=\"text-xs text-white/60 uppercase font-mono mb-1 tracking-widest\">{param}</div>
+                        <div className=\"font-bold text-amber-200 text-lg\">{points}/3</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+          }
+        } catch (e) {}
+        return null;
+      })()}
+
+      {/* ========================================== */}
+      {/* PAGE 14: PALMISTRY HISTORY (IF AVAILABLE)  */}
+      {/* ========================================== */}
+      {(() => {
+        try {
+          const storageKey = `astrograh_palmistry_history_${profile?.id || 'guest'}`;
+          const raw = localStorage.getItem(storageKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const valid = parsed.filter((item) => Date.now() - new Date(item.ts).getTime() <= 30 * 24 * 60 * 60 * 1000);
+            if (valid.length > 0) {
+              const latest = valid[valid.length - 1];
+              return (
+                <div className="pdf-page w-[794px] h-[1123px] bg-[#0b0d19] text-[#F2EFE6] p-10 font-sans relative overflow-hidden box-border">
+                  <h3 className="font-serif text-3xl text-amber-400 mb-6 border-b border-amber-400/30 pb-2">Hand Palmistry Analysis</h3>
+                  <div className="bg-[#121426] p-6 rounded-2xl border border-white/10 mb-8">
+                    <div className=\"flex justify-between items-center mb-4\">
+                      <div className=\"font-bold text-amber-300 text-xl\">Hand Style</div>\n                      <div className=\"text-white/80 font-mono text-sm\">{new Date(latest.ts).toLocaleDateString()}</div>\n                    </div>
+                    <div className=\"text-lg font-bold text-amber-200 mb-4\">{latest.style}</div>\n                    <div className=\"text-white/80 font-mono text-sm leading-relaxed bg-black/30 p-4 rounded-lg border border-white/5\">\n                      {latest.analysis}\n                    </div>\n                  </div>\n                  <div className=\"mt-8 text-xs text-white/50 font-mono uppercase tracking-widest\">\n                    Palmistry readings from the last 30 days: {valid.length} capture(s)\n                  </div>\n                </div>\n              );\n            }\n          }\n        } catch (e) {}\n        return null;\n      })()}\n\n    </div>\n  );\n});\n

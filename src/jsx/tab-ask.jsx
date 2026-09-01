@@ -45,34 +45,31 @@ window.AskTab = ({ emHash, set, pr, ch, date }) => {
   async function ask(e) {
     if (e) e.preventDefault();
     if (!q.trim() || l) return;
+    const userPrompt = q.trim();
     setL(true);
     let ans = "";
     let usedProvider = set?.aiModel || "offline";
     try {
-      let globalContext = "";
-      try {
-        const gDB = await AppDB.getGlobalAI();
-        if (gDB.history.length > 0) {
-          const last = CryptoUtils.decrypt(gDB.history[gDB.history.length - 1]);
-          globalContext = `[Global Trend: Previous user asked "${last.q}"]`;
-        }
-      } catch (err) {}
-
-      const learnedContext = h.slice(-8).map((item) => `User asked: ${item.q}; prior answer: ${String(item.a || "").slice(0, 500)}`).join(" | ");
-      const systemContext = `You are the Graha Ledger Jyotish Sage. Provide complete, clearly structured Vedic astrology guidance for ${pr?.name || "Native"} (Asc: ${ch?.d1?.lagna || "Aries"}, Moon: ${ch?.moonSign || "Aries"}). Target Date: ${date.toDateString()}. Today Hora: ${WEEKDAY[date.getDay()]}. Use the user's prior conversation context to remain consistent, but do not repeat it unnecessarily. ${learnedContext ? `Prior conversation context: ${learnedContext}` : ""} ${globalContext}`;
+      const relevantContext = h.slice(-8).map((item) => `Question: ${item.q}; Answer: ${String(item.a || "").slice(0, 400)}`).join(" | ");
+      const normalizedPrompt = String(userPrompt).replace(/\s+/g, " ").trim();
+      const containsProfileData = /profile|person|my name|my dob|my birth|kundali|chart|marriage|career|health|love|male|female|wife|husband|child|home|finance|work/i.test(normalizedPrompt);
+      const filteredPrompt = containsProfileData
+        ? normalizedPrompt
+        : `Please answer in the context of ${pr?.name || "this native"}'s natal chart, current date, and the user's profile-specific question. User question: ${normalizedPrompt}`;
+      const systemContext = `You are the Graha Ledger Jyotish Sage. Use only the profile-specific context provided by the user and the current chart context. Never mix another profile's data into the answer. If critical birth, time, place, or gender context is missing, request it before providing a final answer. For ${pr?.name || "Native"} (Asc: ${ch?.d1?.lagna || "Aries"}, Moon: ${ch?.moonSign || "Aries"}, Gender: ${pr?.gender || "not provided"}). Target Date: ${date.toDateString()}. Today Hora: ${WEEKDAY[date.getDay()]}. Prior requested context: ${relevantContext || "none"}.`;
 
       if (set?.aiModel !== "offline" && executeMultiProviderAI) {
-        const apiRes = await executeMultiProviderAI(q, set, systemContext);
+        const apiRes = await executeMultiProviderAI(filteredPrompt, set, systemContext);
         if (apiRes && apiRes.text) { ans = apiRes.text; usedProvider = apiRes.provider; }
       }
 
       if (!ans && runVedicRuleEngine) {
         usedProvider = "offline";
-        ans = runVedicRuleEngine(q, pr, ch, date, learnedContext);
+        ans = runVedicRuleEngine(filteredPrompt, pr, ch, date, relevantContext);
       }
 
       if (!ans) ans = "No AI response was returned. Check the selected provider API key and network access.";
-      const newQA = { id: Date.now(), q, a: ans, v: usedProvider };
+      const newQA = { id: Date.now(), q: userPrompt, a: ans, v: usedProvider };
       const nx = [...h, newQA];
       setH(nx);
       setQ("");
@@ -85,7 +82,7 @@ window.AskTab = ({ emHash, set, pr, ch, date }) => {
       } catch (er) {}
     } catch (err) {
       ans = `System Error: ${err.message}.`;
-      setH([...h, { id: Date.now(), q, a: ans, v: "error" }]);
+      setH([...h, { id: Date.now(), q: userPrompt, a: ans, v: "error" }]);
       setQ("");
     } finally {
       setL(false);
@@ -177,7 +174,10 @@ window.AskTab = ({ emHash, set, pr, ch, date }) => {
                 {formatAIResponse(x.a)}
               </div>
 
-              <div className="flex justify-end mt-6 pt-3 border-t border-white/5">
+              <div className="flex justify-end mt-6 pt-3 border-t border-white/5 gap-2">
+                <button type="button" onClick={() => navigator.clipboard?.writeText(`${x.q}\n\n${x.a}`)} className="text-[9px] text-emerald-300 font-mono uppercase bg-emerald-900/20 px-2.5 py-1 rounded border border-emerald-500/20 flex items-center gap-1">
+                  <Icon name="copy" /> Copy
+                </button>
                 <span className="text-[9px] text-blue-400 font-mono uppercase bg-blue-900/20 px-2.5 py-1 rounded border border-blue-500/20 flex items-center gap-1">
                   <Icon name="cpu" /> Engine: {x.v}
                 </span>

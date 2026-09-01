@@ -1,6 +1,6 @@
 // src/jsx/tab-person.jsx
 var React = window.React;
-var { useState, useEffect } = window.React;
+var { useState, useEffect, useRef } = window.React;
 
 window.PersonTab = ({ pr, ch, date, setDate, settings, bioScores, onEdit, onPdf }) => {
   const [chartStyle, setChartStyle] = useState(() => (settings?.kundaliStyle || "north").toUpperCase());

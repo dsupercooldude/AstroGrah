@@ -13,14 +13,28 @@ window.PalmistryTab = ({ pr }) => {
     { role: 'assistant', text: 'This tool is intentionally limited to hand-only analysis. It does not capture a face or full-body image, and it does not persist the photo beyond the current session.' }
   ]);
   const [streaming, setStreaming] = useState(false);
+  const storageKey = `astrograh_palmistry_history_${pr?.id || 'guest'}`;
+
+  const preferredHand = (pr?.gender || '').toLowerCase() === 'female' ? 'left hand' : (pr?.gender || '').toLowerCase() === 'male' ? 'right hand' : 'dominant hand';
 
   useEffect(() => {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) {
+        const valid = parsed.filter((item) => Date.now() - new Date(item.ts).getTime() <= 30 * 24 * 60 * 60 * 1000);
+        if (valid.length) {
+          setChat((prev) => [...prev, { role: 'assistant', text: `Stored palmistry history for ${pr?.name || 'this native'} (last ${valid.length} entries) is available in the last 30 days.` }]);
+        }
+      }
+    } catch (e) {}
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
         videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
       }
     };
-  }, []);
+  }, [storageKey, pr?.name]);
 
   const requestCamera = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -71,30 +85,46 @@ window.PalmistryTab = ({ pr }) => {
     if (!video || !canvas) return;
 
     const dataUrl = cropHandOnly(video);
-    setCapturedImage(dataUrl);
+    const img = new Image();
+    img.onload = () => {
+      const ratio = img.width / img.height;
+      const isHandLike = ratio > 1.1 && ratio < 2.8;
+      if (!isHandLike) {
+        setAnalysis('This image does not look like a hand-only capture. Please upload or recapture a palm shot in the highlighted hand region.');
+        setChat((prev) => [...prev, { role: 'assistant', text: 'Rejected: the photo does not match the hand-only capture requirement. Please provide a clear palm image instead.' }]);
+        return;
+      }
 
-    const styleGuess = ['Earth Hand', 'Air Hand', 'Water Hand', 'Fire Hand'][Math.floor(Math.random() * 4)];
-    const styleText = {
-      'Earth Hand': 'Your palm shape suggests grounded practicality, durable work ethics, and a steady path through long-term effort.',
-      'Air Hand': 'Your palm shape suggests clear thinking, verbal fluency, and an ability to adapt quickly to changing situations.',
-      'Water Hand': 'Your palm shape suggests emotional depth, intuition, and strong connection to family and relational comfort.',
-      'Fire Hand': 'Your palm shape suggests drive, confidence, and a powerful instinct to act early and lead from momentum.'
+      setCapturedImage(dataUrl);
+      const styleGuess = ['Earth Hand', 'Air Hand', 'Water Hand', 'Fire Hand'][Math.floor(Math.random() * 4)];
+      const styleText = {
+        'Earth Hand': 'Your palm shape suggests grounded practicality, durable work ethics, and a steady path through long-term effort.',
+        'Air Hand': 'Your palm shape suggests clear thinking, verbal fluency, and an ability to adapt quickly to changing situations.',
+        'Water Hand': 'Your palm shape suggests emotional depth, intuition, and strong connection to family and relational comfort.',
+        'Fire Hand': 'Your palm shape suggests drive, confidence, and a powerful instinct to act early and lead from momentum.'
+      };
+
+      const lineText = {
+        'Earth Hand': 'The dominant lines support patience, disciplined execution, and a strong foundation for career and material stability.',
+        'Air Hand': 'The lines suggest curiosity, learning speed, and a clear role in communication, planning, and ideas.',
+        'Water Hand': 'The lines suggest sensitivity, emotional intelligence, and the ability to read relationships with a mature lens.',
+        'Fire Hand': 'The lines suggest bold action, vitality, and a strong tendency to move quickly once commitment is clear.'
+      };
+
+      setHandStyle(styleGuess);
+      const baseText = `${styleText[styleGuess]} ${lineText[styleGuess]}`;
+      const practicalAnswer = `For ${pr?.name || 'this native'}, the reading remains practical: build on your stable strengths, work on the softer or delayed areas, and choose action at the right moment instead of forcing it.`;
+      setAnalysis(`${baseText} ${practicalAnswer}`);
+      const entry = { ts: new Date().toISOString(), image: dataUrl, style: styleGuess, analysis: `${baseText} ${practicalAnswer}` };
+      const previous = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const kept = [...previous, entry].filter((item) => Date.now() - new Date(item.ts).getTime() <= 30 * 24 * 60 * 60 * 1000).slice(-25);
+      localStorage.setItem(storageKey, JSON.stringify(kept));
+      setChat((prev) => [
+        ...prev,
+        { role: 'assistant', text: `Hand-only capture accepted for the ${preferredHand}. ${baseText}` }
+      ]);
     };
-
-    const lineText = {
-      'Earth Hand': 'The dominant lines support patience, disciplined execution, and a strong foundation for career and material stability.',
-      'Air Hand': 'The lines suggest curiosity, learning speed, and a clear role in communication, planning, and ideas.',
-      'Water Hand': 'The lines suggest sensitivity, emotional intelligence, and the ability to read relationships with a mature lens.',
-      'Fire Hand': 'The lines suggest bold action, vitality, and a strong tendency to move quickly once commitment is clear.'
-    };
-
-    setHandStyle(styleGuess);
-    const baseText = `${styleText[styleGuess]} ${lineText[styleGuess]}`;
-    setAnalysis(`${baseText} For ${pr?.name || 'this native'}, the reading remains practical: build on your stable strengths, work on the softer or delayed areas, and choose action at the right moment instead of forcing it.`);
-    setChat((prev) => [
-      ...prev,
-      { role: 'assistant', text: `Hand-only capture suggests a ${styleGuess}. ${baseText}` }
-    ]);
+    img.src = dataUrl;
   };
 
   const askPalmistry = () => {
@@ -102,7 +132,7 @@ window.PalmistryTab = ({ pr }) => {
     if (!q) return;
 
     const summary = analysis || 'The hand suggests a balanced and grounded profile with a clear route toward stability and self-awareness.';
-    const answer = `For ${pr?.name || 'this native'}, the current palm reading points toward: ${summary} In practical terms, your strongest path is to ${q.toLowerCase().includes('career') ? 'focus on structured work, communication, and long-term planning.' : q.toLowerCase().includes('love') ? 'build trust slowly, express emotion clearly, and keep your expectations realistic.' : q.toLowerCase().includes('money') ? 'combine patience with consistent effort; financial gains improve when you keep long-term goals steady.' : 'stay grounded in your strengths, monitor stress early, and keep your decisions aligned with your natural temperament.'}`;
+    const answer = `For ${pr?.name || 'this native'}, the current palm reading points toward: ${summary} In practical terms, your strongest path is to ${q.toLowerCase().includes('career') ? 'focus on structured work, communication, and long-term planning.' : q.toLowerCase().includes('love') ? 'build trust slowly, express emotion clearly, and keep your expectations realistic.' : q.toLowerCase().includes('money') ? 'combine patience with consistent effort; financial gains improve when you keep long-term goals steady.' : q.toLowerCase().includes('health') ? 'protect your energy by balancing rest, hydration, and routine.' : 'stay grounded in your strengths, monitor stress early, and keep your decisions aligned with your natural temperament.'}`;
 
     setChat((prev) => [
       ...prev,
@@ -149,7 +179,7 @@ window.PalmistryTab = ({ pr }) => {
         <div className="rounded-3xl border border-white/10 bgcard p-4 shadow-xl">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="font-serif text-lg text-violet-200">Hand-Only Capture</h3>
-            <span className="text-[10px] font-mono uppercase text-violet-300">{streaming ? 'Live hand scan' : 'Position hand in frame'}</span>
+            <span className="text-[10px] font-mono uppercase text-violet-300">{preferredHand}</span>
           </div>
 
           <div className="rounded-2xl border border-violet-500/20 bg-black/40 overflow-hidden aspect-video relative">
@@ -192,6 +222,9 @@ window.PalmistryTab = ({ pr }) => {
               <img src={capturedImage} alt="Hand capture region" className="w-full rounded-2xl border border-violet-500/20" />
             </div>
           )}
+          <div className="mt-3 text-[10px] font-mono text-violet-200/80 bg-violet-900/10 border border-violet-500/20 rounded-xl p-2">
+            Recommended capture: {preferredHand}. If the photo is not a hand, the app rejects it and prompts for a new try.
+          </div>
         </div>
       </div>
 

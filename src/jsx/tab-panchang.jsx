@@ -1,23 +1,47 @@
 // src/jsx/tab-panchang.jsx
 var React = window.React;
-var { useState, useMemo } = window.React;
+var { useState, useMemo, useEffect } = window.React;
 
 window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
   const { Icon, panchang, PLANET_INFO } = window;
   const [liveValidated, setLiveValidated] = useState(false);
   const [validating, setValidating] = useState(false);
   const [liveApiData, setLiveApiData] = useState(null);
+  const [liveSunTimes, setLiveSunTimes] = useState(null);
 
-  // Core Daily Calculation
-  const pan = panchang ? panchang(d, settings?.monthSystem || "amanta", utc) : {};
+  useEffect(() => {
+    let ignore = false;
+    const runLiveSync = async () => {
+      const lat = Number(p?.lat ?? 19.076);
+      const lon = Number(p?.lon ?? 72.8777);
+      if (!lat || !lon) return;
+      try {
+        const dateStr = d.toISOString().slice(0, 10);
+        const res = await fetch(`https://api.sunrisesunset.io/json?lat=${lat}&lng=${lon}&date=${dateStr}`);
+        const data = await res.json();
+        if (!ignore && data?.results) {
+          setLiveSunTimes({ sunrise: data.results.sunrise, sunset: data.results.sunset, lat, lon, dateStr });
+        }
+      } catch (err) {
+        if (!ignore) setLiveSunTimes(null);
+      }
+    };
+    runLiveSync();
+    return () => { ignore = true; };
+  }, [d, p?.lat, p?.lon]);
+
+  const pan = panchang ? panchang(d, settings?.monthSystem || "amanta", utc, { lat: p?.lat || 19.076, lon: p?.lon || 72.8777 }) : {};
+  const effectiveSunrise = liveSunTimes?.sunrise ? new Date(`${liveSunTimes.dateStr}T${liveSunTimes.sunrise}`) : (pan.sr || new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6, 0, 0));
+  const effectiveSunset = liveSunTimes?.sunset ? new Date(`${liveSunTimes.dateStr}T${liveSunTimes.sunset}`) : (pan.ss || new Date(d.getFullYear(), d.getMonth(), d.getDate(), 18, 0, 0));
   const selectedMoment = new Date(d.getFullYear(), d.getMonth(), d.getDate(), new Date().getHours(), new Date().getMinutes(), 0, 0);
-  const chogWindows = [...(pan.chogDay || []), ...(pan.chogNight || [])];
+  const isDayTime = selectedMoment >= effectiveSunrise && selectedMoment <= effectiveSunset;
+  const chogWindows = isDayTime ? (pan.chogDay || []) : (pan.chogNight || []);
   const currentChoghadiya = chogWindows.find((item) => {
     if (!item?.s || !item?.e) return false;
     const start = new Date(item.s), end = new Date(item.e);
     return selectedMoment >= start && selectedMoment <= end;
   }) || chogWindows[0] || null;
-  const horaWindows = [...(pan.horas || []), ...(pan.nightHoras || [])];
+  const horaWindows = isDayTime ? (pan.horas || []) : (pan.nightHoras || []);
   const currentHora = horaWindows.find((item) => {
     if (!item?.s || !item?.e) return false;
     const start = new Date(item.s), end = new Date(item.e);
@@ -127,7 +151,7 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
         <div className="p-3.5 border border-white/10 rounded-2xl bgcard shadow-xl">
           <div className="text-amber-400 text-2xl mb-1">☀</div>
           <div className="t60 text-[9px] mb-1 uppercase">Surya Udaya — Asta</div>
-          <div className="text-sm font-bold">{fm(pan.sr)} — {fm(pan.ss)}</div>
+          <div className="text-sm font-bold">{fm(effectiveSunrise)} — {fm(effectiveSunset)}</div>
         </div>
         <div className="p-3.5 border border-white/10 rounded-2xl bgcard shadow-xl">
           <div className="text-blue-300 text-2xl mb-1">☽</div>
@@ -166,26 +190,15 @@ window.PanchangTab = ({ d, setDate, p, utc, settings }) => {
 
       {/* CHOGHADIYA (DAY & NIGHT) */}
       <div className="rounded-3xl border border-white/10 bgcard p-5 shadow-xl">
-        <h3 className="font-serif text-sm text-amber-200 mb-4">Day Choghadiya Timings</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-serif text-sm text-amber-200">Current Choghadiya Window</h3>
+          <span className="text-[9px] font-mono uppercase text-amber-300">{isDayTime ? 'Day' : 'Night'} · {currentChoghadiya?.n || '—'}</span>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {(pan.chogDay || []).map((c, i) => {
+            {(isDayTime ? (pan.chogDay || []) : (pan.chogNight || [])).map((c, i) => {
               const isActive = currentChoghadiya && c.n === currentChoghadiya.n && currentChoghadiya.d === c.d;
               return (
                 <div key={i} className={`p-3 border rounded-xl text-[10px] flex flex-col justify-center shadow-inner ${isActive ? 'bg-amber-400/10 border-amber-400/50' : 'bg-black/40 border-white/5'}`}>
-                  <span style={{ color: c.c }} className="font-bold text-xs block mb-0.5">{c.n}</span>
-                  <span className="t50 text-[8px] font-mono uppercase">{c.d}</span>
-                  <div className="font-mono t85 text-[10px] mt-2 bg-white/5 py-1 px-2 rounded">{fm(c.s)} - {fm(c.e)}</div>
-                </div>
-              );
-            })}
-        </div>
-        
-        <h3 className="font-serif text-sm text-blue-200 mt-6 mb-4">Night Choghadiya Timings</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {(pan.chogNight || []).map((c, i) => {
-              const isActive = currentChoghadiya && c.n === currentChoghadiya.n && currentChoghadiya.d === c.d;
-              return (
-                <div key={i} className={`p-3 border rounded-xl text-[10px] flex flex-col justify-center shadow-inner opacity-80 ${isActive ? 'bg-amber-400/10 border-amber-400/50' : 'bg-black/40 border-white/5'}`}>
                   <span style={{ color: c.c }} className="font-bold text-xs block mb-0.5">{c.n}</span>
                   <span className="t50 text-[8px] font-mono uppercase">{c.d}</span>
                   <div className="font-mono t85 text-[10px] mt-2 bg-white/5 py-1 px-2 rounded">{fm(c.s)} - {fm(c.e)}</div>

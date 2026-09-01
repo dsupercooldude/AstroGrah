@@ -6,6 +6,7 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
   if (!ac) return <div className="p-4 text-center text-xs t60">No Chart Data Available</div>;
 
   const st = style.toLowerCase();
+  const [hoveredHouse, setHoveredHouse] = React.useState(null);
   
   // Maps planets to the correct house index for drawing
   const getHousePlanets = (h) => {
@@ -21,6 +22,22 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
     </span>
   );
 
+  // House meanings for tooltip context
+  const houseMeanings = {
+    1: "Self & Personality",
+    2: "Wealth & Family",
+    3: "Courage & Siblings",
+    4: "Home & Mother",
+    5: "Children & Creativity",
+    6: "Health & Enemies",
+    7: "Marriage & Partnerships",
+    8: "Longevity & Inheritance",
+    9: "Fortune & Guru",
+    10: "Career & Public Image",
+    11: "Gains & Friendships",
+    12: "Losses & Spirituality"
+  };
+
   return (
     <div className="space-y-4 w-full max-w-lg mx-auto">
       <div className="flex flex-col items-center justify-center p-6 bg-black/30 rounded-2xl border border-white/5 shadow-inner">
@@ -33,38 +50,69 @@ window.KundaliRenderer = ({ ac, ch, kpTable, style, titleDesc, isExpert }) => {
               <line x1="0" y1="0" x2="100" y2="100" /><line x1="100" y1="0" x2="0" y2="100" />
               <polygon points="50,0 100,50 50,100 0,50" />
             </svg>
-            <div className="absolute inset-0 font-mono text-[9px] font-bold text-center">
-              {/* House 1 */} <div className="absolute top-[20%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[1].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(1).map(renderPlanet)}</div></div>
-              {/* House 2 */} <div className="absolute top-[15%] left-[20%] -translate-x-1/2 -translate-y-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[2].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(2).map(renderPlanet)}</div></div>
-              {/* House 3 */} <div className="absolute top-[20%] left-[15%] -translate-x-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[3].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(3).map(renderPlanet)}</div></div>
-              {/* House 4 */} <div className="absolute top-1/2 left-[20%] -translate-x-1/2 -translate-y-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[4].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(4).map(renderPlanet)}</div></div>
-              {/* House 5 */} <div className="absolute bottom-[20%] left-[15%] -translate-x-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[5].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(5).map(renderPlanet)}</div></div>
-              {/* House 6 */} <div className="absolute bottom-[15%] left-[20%] -translate-x-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[6].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(6).map(renderPlanet)}</div></div>
-              {/* House 7 */} <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[7].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(7).map(renderPlanet)}</div></div>
-              {/* House 8 */} <div className="absolute bottom-[15%] right-[20%] translate-x-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[8].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(8).map(renderPlanet)}</div></div>
-              {/* House 9 */} <div className="absolute bottom-[20%] right-[15%] translate-x-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[9].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(9).map(renderPlanet)}</div></div>
-              {/* House 10 */}<div className="absolute top-1/2 right-[20%] translate-x-1/2 -translate-y-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[10].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(10).map(renderPlanet)}</div></div>
-              {/* House 11 */}<div className="absolute top-[20%] right-[15%] translate-x-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[11].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(11).map(renderPlanet)}</div></div>
-              {/* House 12 */}<div className="absolute top-[15%] right-[20%] translate-x-1/2 -translate-y-1/2 w-16 h-16 flex flex-col items-center justify-center"><div className="t50 mb-0.5">{ac.houses[12].slice(0,3)}</div><div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(12).map(renderPlanet)}</div></div>
+            <div className="absolute inset-0 font-mono text-[9px] font-bold text-center" onMouseLeave={() => setHoveredHouse(null)}>
+              {[1,2,3,4,5,6,7,8,9,10,11,12].map(h => {
+                const positions = {
+                  1: { top: '20%', left: '50%', dx: '-50%', dy: '-50%' },
+                  2: { top: '15%', left: '20%', dx: '-50%', dy: '-50%' },
+                  3: { top: '20%', left: '15%', dx: '-50%', dy: '0%' },
+                  4: { top: '50%', left: '20%', dx: '-50%', dy: '-50%' },
+                  5: { top: '80%', left: '15%', dx: '-50%', dy: '0%' },
+                  6: { top: '85%', left: '20%', dx: '-50%', dy: '0%' },
+                  7: { top: '80%', left: '50%', dx: '-50%', dy: '0%' },
+                  8: { top: '85%', right: '20%', dx: '50%', dy: '0%' },
+                  9: { top: '80%', right: '15%', dx: '50%', dy: '0%' },
+                  10: { top: '50%', right: '20%', dx: '50%', dy: '-50%' },
+                  11: { top: '20%', right: '15%', dx: '50%', dy: '0%' },
+                  12: { top: '15%', right: '20%', dx: '50%', dy: '-50%' }
+                };
+                const pos = positions[h];
+                const isHovered = hoveredHouse === h;
+                return (
+                  <div key={h} className="absolute w-16 h-16 flex flex-col items-center justify-center cursor-pointer transition-all" 
+                    style={{
+                      top: pos.top,
+                      left: pos.left,
+                      right: pos.right,
+                      transform: `translate(${pos.dx}, ${pos.dy})`,
+                      opacity: isHovered ? 1 : 0.8,
+                      filter: isHovered ? 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.5))' : 'none'
+                    }}
+                    onMouseEnter={() => setHoveredHouse(h)}
+                  >
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded border border-amber-400/50">{h}</div>
+                    <div className="t50 mb-0.5 text-[7px]">{ac.houses[h].slice(0,3)}</div>
+                    <div className="flex flex-wrap justify-center gap-1.5 leading-tight">{getHousePlanets(h).map(renderPlanet)}</div>
+                    {isHovered && <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[7px] px-2 py-1 rounded whitespace-nowrap border border-white/20">{houseMeanings[h]}</div>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* SOUTH INDIAN & KP CHART (GRID) */}
         {(st === "south" || st === "kp") && (
-          <div className="grid grid-cols-4 grid-rows-4 w-full max-w-[320px] aspect-square border-2 border-amber-400/50 bg-black/60 rounded">
-            {[12,1,2,3, 11,null,null,4, 10,null,null,5, 9,8,7,6].map((h, i) => (
-              <div key={i} className={`border border-amber-400/30 p-1 flex flex-col ${h ? '' : 'bg-transparent border-none'}`}>
-                {h && (
-                  <>
-                    <div className="text-[8px] font-mono t50 text-center">{ac.houses[h].slice(0,3)} {h===1 ? '(As)' : ''}</div>
-                    <div className="flex-1 flex flex-wrap content-center justify-center gap-1.5 font-mono text-[9px] font-bold mt-1">
-                      {getHousePlanets(h).map(renderPlanet)}
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
+          <div className="grid grid-cols-4 grid-rows-4 w-full max-w-[320px] aspect-square border-2 border-amber-400/50 bg-black/60 rounded" onMouseLeave={() => setHoveredHouse(null)}>
+            {[12,1,2,3, 11,null,null,4, 10,null,null,5, 9,8,7,6].map((h, i) => {
+              const isHovered = hoveredHouse === h;
+              return (
+                <div key={i} className={`border border-amber-400/30 p-1 flex flex-col transition-all ${h ? 'cursor-pointer' : 'bg-transparent border-none'} ${isHovered ? 'bg-amber-400/10 border-amber-400/50' : ''}`}
+                  onMouseEnter={() => h && setHoveredHouse(h)}
+                >
+                  {h && (
+                    <>
+                      <div className="text-[9px] font-mono font-bold text-center text-amber-300 bg-black/40 px-1 py-0.5 rounded mb-1">{h} {h===1 ? '(As)' : ''}</div>
+                      <div className="text-[7px] font-mono t50 text-center mb-1">{ac.houses[h].slice(0,3)}</div>
+                      <div className="flex-1 flex flex-wrap content-center justify-center gap-1.5 font-mono text-[9px] font-bold mt-1">
+                        {getHousePlanets(h).map(renderPlanet)}
+                      </div>
+                      {isHovered && <div className="text-[7px] text-amber-300 mt-1 bg-black/60 px-1 py-0.5 rounded text-center border border-white/10">{houseMeanings[h]}</div>}
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
