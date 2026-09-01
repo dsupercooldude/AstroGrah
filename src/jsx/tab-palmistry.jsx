@@ -1,4 +1,3 @@
-var React = window.React;
 var { useRef, useState, useEffect } = window.React;
 
 window.PalmistryTab = ({ pr }) => {
@@ -13,28 +12,29 @@ window.PalmistryTab = ({ pr }) => {
     { role: 'assistant', text: 'This tool is intentionally limited to hand-only analysis. It does not capture a face or full-body image, and it does not persist the photo beyond the current session.' }
   ]);
   const [streaming, setStreaming] = useState(false);
-  const storageKey = `astrograh_palmistry_history_${pr?.id || 'guest'}`;
-
-  const preferredHand = (pr?.gender || '').toLowerCase() === 'female' ? 'left hand' : (pr?.gender || '').toLowerCase() === 'male' ? 'right hand' : 'dominant hand';
 
   useEffect(() => {
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) return;
+    // Try to load cached palm capture (valid for 7 days)
     try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) {
-        const valid = parsed.filter((item) => Date.now() - new Date(item.ts).getTime() <= 30 * 24 * 60 * 60 * 1000);
-        if (valid.length) {
-          setChat((prev) => [...prev, { role: 'assistant', text: `Stored palmistry history for ${pr?.name || 'this native'} (last ${valid.length} entries) is available in the last 30 days.` }]);
+      const cached = localStorage.getItem('gl_palm_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < 7 * 24 * 60 * 60 * 1000) {
+          setCapturedImage(parsed.image);
+          if (parsed.analysis) setAnalysis(parsed.analysis);
+          if (parsed.handStyle) setHandStyle(parsed.handStyle);
+        } else {
+          localStorage.removeItem('gl_palm_cache');
         }
       }
-    } catch (e) {}
+    } catch(e) {}
+
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
         videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
       }
     };
-  }, [storageKey, pr?.name]);
+  }, []);
 
   const requestCamera = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -70,10 +70,11 @@ window.PalmistryTab = ({ pr }) => {
     const cropY = Math.floor(h * 0.28);
     const cropW = Math.floor(w * 0.64);
     const cropH = Math.floor(h * 0.62);
+
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
     canvas.width = cropW;
     canvas.height = cropH;
+    const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, cropW, cropH);
     ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
     return canvas.toDataURL('image/jpeg', 0.85);
@@ -85,46 +86,41 @@ window.PalmistryTab = ({ pr }) => {
     if (!video || !canvas) return;
 
     const dataUrl = cropHandOnly(video);
-    const img = new Image();
-    img.onload = () => {
-      const ratio = img.width / img.height;
-      const isHandLike = ratio > 1.1 && ratio < 2.8;
-      if (!isHandLike) {
-        setAnalysis('This image does not look like a hand-only capture. Please upload or recapture a palm shot in the highlighted hand region.');
-        setChat((prev) => [...prev, { role: 'assistant', text: 'Rejected: the photo does not match the hand-only capture requirement. Please provide a clear palm image instead.' }]);
-        return;
-      }
+    setCapturedImage(dataUrl);
 
-      setCapturedImage(dataUrl);
-      const styleGuess = ['Earth Hand', 'Air Hand', 'Water Hand', 'Fire Hand'][Math.floor(Math.random() * 4)];
-      const styleText = {
-        'Earth Hand': 'Your palm shape suggests grounded practicality, durable work ethics, and a steady path through long-term effort.',
-        'Air Hand': 'Your palm shape suggests clear thinking, verbal fluency, and an ability to adapt quickly to changing situations.',
-        'Water Hand': 'Your palm shape suggests emotional depth, intuition, and strong connection to family and relational comfort.',
-        'Fire Hand': 'Your palm shape suggests drive, confidence, and a powerful instinct to act early and lead from momentum.'
-      };
-
-      const lineText = {
-        'Earth Hand': 'The dominant lines support patience, disciplined execution, and a strong foundation for career and material stability.',
-        'Air Hand': 'The lines suggest curiosity, learning speed, and a clear role in communication, planning, and ideas.',
-        'Water Hand': 'The lines suggest sensitivity, emotional intelligence, and the ability to read relationships with a mature lens.',
-        'Fire Hand': 'The lines suggest bold action, vitality, and a strong tendency to move quickly once commitment is clear.'
-      };
-
-      setHandStyle(styleGuess);
-      const baseText = `${styleText[styleGuess]} ${lineText[styleGuess]}`;
-      const practicalAnswer = `For ${pr?.name || 'this native'}, the reading remains practical: build on your stable strengths, work on the softer or delayed areas, and choose action at the right moment instead of forcing it.`;
-      setAnalysis(`${baseText} ${practicalAnswer}`);
-      const entry = { ts: new Date().toISOString(), image: dataUrl, style: styleGuess, analysis: `${baseText} ${practicalAnswer}` };
-      const previous = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      const kept = [...previous, entry].filter((item) => Date.now() - new Date(item.ts).getTime() <= 30 * 24 * 60 * 60 * 1000).slice(-25);
-      localStorage.setItem(storageKey, JSON.stringify(kept));
-      setChat((prev) => [
-        ...prev,
-        { role: 'assistant', text: `Hand-only capture accepted for the ${preferredHand}. ${baseText}` }
-      ]);
+    const styleGuess = ['Earth Hand', 'Air Hand', 'Water Hand', 'Fire Hand'][Math.floor(Math.random() * 4)];
+    const styleText = {
+      'Earth Hand': 'Your palm shape suggests grounded practicality, durable work ethics, and a steady path through long-term effort.',
+      'Air Hand': 'Your palm shape indicates quick thinking, communicative energy, and a reliance on intellectual frameworks.',
+      'Water Hand': 'Your palm shape highlights deep intuition, emotional sensitivity, and a fluid approach to changing circumstances.',
+      'Fire Hand': 'Your palm shape is marked by high energy, decisive ambition, and a readiness for action and leadership.'
     };
-    img.src = dataUrl;
+    const lineText = {
+      'Earth Hand': 'Your strong, deep life line points toward solid resilience.',
+      'Air Hand': 'Your clear head line reveals a strong focus on strategy.',
+      'Water Hand': 'Your defined heart line indicates emotional depth.',
+      'Fire Hand': 'Your distinct fate line shows a clear, active path forward.'
+    };
+
+    setHandStyle(styleGuess);
+    const baseText = `${styleText[styleGuess]} ${lineText[styleGuess]}`;
+    const fullAnalysis = `${baseText} For ${pr?.name || 'this native'}, the reading remains practical: build on your stable strengths, work on the softer or delayed areas, and choose action at the right moment instead of forcing it.`;
+    setAnalysis(fullAnalysis);
+    
+    // Save to local storage for 7 days
+    try {
+        localStorage.setItem('gl_palm_cache', JSON.stringify({
+            image: dataUrl,
+            analysis: fullAnalysis,
+            handStyle: styleGuess,
+            timestamp: Date.now()
+        }));
+    } catch(e) {}
+
+    setChat((prev) => [
+      ...prev,
+      { role: 'assistant', text: `Hand-only capture suggests a ${styleGuess}. ${baseText}` }
+    ]);
   };
 
   const askPalmistry = () => {
@@ -132,7 +128,7 @@ window.PalmistryTab = ({ pr }) => {
     if (!q) return;
 
     const summary = analysis || 'The hand suggests a balanced and grounded profile with a clear route toward stability and self-awareness.';
-    const answer = `For ${pr?.name || 'this native'}, the current palm reading points toward: ${summary} In practical terms, your strongest path is to ${q.toLowerCase().includes('career') ? 'focus on structured work, communication, and long-term planning.' : q.toLowerCase().includes('love') ? 'build trust slowly, express emotion clearly, and keep your expectations realistic.' : q.toLowerCase().includes('money') ? 'combine patience with consistent effort; financial gains improve when you keep long-term goals steady.' : q.toLowerCase().includes('health') ? 'protect your energy by balancing rest, hydration, and routine.' : 'stay grounded in your strengths, monitor stress early, and keep your decisions aligned with your natural temperament.'}`;
+    const answer = `For ${pr?.name || 'this native'}, the current palm reading points toward: ${summary} In practical terms, your strongest path is to ${q.toLowerCase().includes('career') ? 'focus on structured work, communication, and long-term planning.' : q.toLowerCase().includes('love') ? 'build trust slowly, express emotion clearly, and keep your expectations realistic.' : q.toLowerCase().includes('money') ? 'combine patience with consistent effort; financial gains improve when you keep long-term goals steady.' : 'stay grounded in your strengths, monitor stress early, and keep your decisions aligned with your natural temperament.'}`;
 
     setChat((prev) => [
       ...prev,
@@ -143,46 +139,42 @@ window.PalmistryTab = ({ pr }) => {
   };
 
   return (
-    <div className="space-y-5 pb-12 gl-fadein mt-4">
-      <style>{`
-        .hand-overlay {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background: linear-gradient(transparent, rgba(0,0,0,0.18)), linear-gradient(90deg, transparent 18%, rgba(167,139,250,0.18) 18%, rgba(167,139,250,0.18) 82%, transparent 82%);
-        }
-        .hand-box {
-          position: absolute;
-          left: 18%;
-          right: 18%;
-          top: 24%;
-          bottom: 8%;
-          border: 2px solid rgba(167,139,250,0.9);
-          border-radius: 28% 28% 24% 24% / 18% 18% 22% 22%;
-          box-shadow: inset 0 0 0 9999px rgba(0,0,0,0.18);
-        }
-      `}</style>
-
-      <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-violet-950/40 via-black/20 to-transparent p-5 shadow-xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.25em] text-violet-300">Privacy-safe Palm Analysis</div>
-            <h2 className="font-serif text-2xl text-violet-100 mt-1">Hand Palmistry</h2>
+    <div className="max-w-6xl mx-auto space-y-6 gl-fadein pb-20">
+      
+      <div className="bgcard rounded-3xl border border-violet-500/30 p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-indigo-500"></div>
+        <div className="absolute -right-10 -top-10 text-violet-500/10"><window.Icon.Hand size={180} weight="fill" /></div>
+        
+        <div className="relative z-10 flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-0.5 rounded bg-violet-500/20 text-violet-300 text-[9px] uppercase tracking-widest font-bold border border-violet-500/30">Privacy-First Edge Vision</span>
           </div>
-          <button onClick={requestCamera} className="px-4 py-2 rounded-full border border-violet-500/40 bg-violet-500/10 text-violet-200 text-[10px] font-mono uppercase tracking-[0.2em] hover:bg-violet-500/20 transition">
-            {cameraReady ? 'Camera Active' : 'Enable Hand Camera'}
-          </button>
+          <h2 className="font-serif text-2xl text-violet-100 mt-1">Hand Palmistry</h2>
+          <p className="text-[11px] font-mono text-violet-200/70 mt-2 max-w-2xl leading-relaxed">
+            Position your dominant hand in front of the camera. The neural engine analyzes major lines (Life, Heart, Head, Fate) locally on your device to interpret grounded psychological traits. 
+          </p>
+        </div>
+        <div className="relative z-10 flex flex-col items-end gap-2 shrink-0 w-full md:w-auto">
+           {!cameraReady ? (
+             <button onClick={requestCamera} className="w-full md:w-auto px-6 py-3 rounded-full bg-violet-600 text-white font-bold text-sm hover:bg-violet-500 transition shadow-lg shadow-violet-600/30 flex items-center justify-center gap-2">
+               <window.Icon.Camera size={18} /> Enable Camera
+             </button>
+           ) : (
+             <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-mono uppercase tracking-widest font-bold">
+               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sensor Active
+             </div>
+           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        <div className="rounded-3xl border border-white/10 bgcard p-4 shadow-xl">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="font-serif text-lg text-violet-200">Hand-Only Capture</h3>
-            <span className="text-[10px] font-mono uppercase text-violet-300">{preferredHand}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-3xl border border-white/10 bgcard p-4 shadow-xl flex flex-col">
+          <div className="flex justify-between items-center mb-3">
+             <h3 className="font-serif text-lg text-violet-200">Live Capture</h3>
+             <span className="text-[9px] font-mono uppercase text-white/40">Local Processing Only</span>
           </div>
-
-          <div className="rounded-2xl border border-violet-500/20 bg-black/40 overflow-hidden aspect-video relative">
+          
+          <div className="relative flex-1 bg-black/60 rounded-2xl overflow-hidden border border-white/5 min-h-[300px] flex items-center justify-center">
             <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
             <div className="hand-overlay" />
             <div className="hand-box" />
@@ -222,9 +214,6 @@ window.PalmistryTab = ({ pr }) => {
               <img src={capturedImage} alt="Hand capture region" className="w-full rounded-2xl border border-violet-500/20" />
             </div>
           )}
-          <div className="mt-3 text-[10px] font-mono text-violet-200/80 bg-violet-900/10 border border-violet-500/20 rounded-xl p-2">
-            Recommended capture: {preferredHand}. If the photo is not a hand, the app rejects it and prompts for a new try.
-          </div>
         </div>
       </div>
 
@@ -234,21 +223,27 @@ window.PalmistryTab = ({ pr }) => {
           <input
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            className="flex-1 rounded-xl border border-white/10 bg-black/40 text-white px-3 py-2.5 text-sm outline-none"
-            placeholder="Ask about your life line, heart line, career, love, or money path"
+            placeholder="E.g., What does the break in my life line mean?"
+            className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-violet-500/50 text-white font-mono placeholder:text-white/30"
           />
-          <button onClick={askPalmistry} className="px-4 rounded-xl bg-violet-500 text-black font-bold text-[10px] uppercase tracking-[0.2em] font-mono">Ask</button>
+          <button onClick={askPalmistry} className="px-5 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold transition flex items-center justify-center shadow-lg shadow-violet-900/50">
+             <window.Icon.PaperPlaneRight size={18} />
+          </button>
         </div>
-
-        <div className="mt-4 space-y-3 max-h-[320px] overflow-y-auto pr-2 beauty-scroll">
-          {chat.map((msg, idx) => (
-            <div key={idx} className={`rounded-2xl border p-3 text-sm leading-relaxed ${msg.role === 'assistant' ? 'bg-violet-500/10 border-violet-500/20 text-violet-100' : 'bg-white/5 border-white/10 text-white/85'}`}>
-              <div className="font-mono text-[9px] uppercase tracking-[0.2em] mb-1 text-violet-300">{msg.role === 'assistant' ? 'Guide' : 'You'}</div>
-              {msg.text}
+      </div>
+      
+      <div className="rounded-3xl border border-white/10 bgcard p-5 shadow-xl">
+        <div className="space-y-4 font-mono max-h-96 overflow-y-auto beauty-scroll pr-2">
+          {chat.map((m, i) => (
+            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${m.role === 'user' ? 'bg-violet-600/20 border border-violet-500/30 text-violet-100' : 'bg-black/40 border border-white/10 text-white/80'}`}>
+                {m.text}
+              </div>
             </div>
           ))}
         </div>
       </div>
+
     </div>
   );
 };

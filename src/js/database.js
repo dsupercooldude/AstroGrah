@@ -1,7 +1,5 @@
-// src/js/database.js
 window.AppDB = {
     config: null,
-    useLocal: false,
 
     // ==========================================
     // 🔒 AUTO-CONNECT CLOUD VAULT SECRETS
@@ -12,19 +10,31 @@ window.AppDB = {
     autoTokenPart1: "",
     autoTokenPart2: "",
 
-    loadConfig: function() {
+    loadConfig: async function() {
         try {
             // 1. Try to load from browser memory first (Fastest)
             const stored = localStorage.getItem('gl_db_config');
             if (stored) {
                 let decoded;
-                try { decoded = JSON.parse(stored); } catch (e) { decoded = window.CryptoUtils.decrypt(stored); }
-                this.config = typeof decoded === 'string' ? JSON.parse(decoded) : decoded;
-                if (this.config?.owner && this.config?.repo && this.config?.token) localStorage.setItem('gl_db_config', window.CryptoUtils.encrypt(this.config));
+                try {
+                    decoded = window.CryptoUtils.decrypt(stored);
+                } catch(e) {
+                    decoded = JSON.parse(stored);
+                }
+                if (decoded && decoded.owner && decoded.repo && decoded.token) {
+                    this.config = decoded;
+                    return true;
+                }
+            }
+            
+            // 2. Check for completely offline mode (or default to it to bypass setup wall)
+            if (localStorage.getItem('gl_use_local') === 'true' || (!this.autoTokenPart1 && !this.autoTokenPart2)) {
+                this.config = { mode: "local" };
+                localStorage.setItem('gl_use_local', 'true'); // Auto-set if bypassing
                 return true;
             }
             
-            // 2. If memory is empty (new device), secretly inject the split token
+            // 3. If memory is empty (new device), secretly inject the split token
             if (this.autoTokenPart1 && this.autoTokenPart2) {
                 this.config = {
                     owner: this.autoUser,
@@ -35,48 +45,57 @@ window.AppDB = {
                 localStorage.setItem('gl_db_config', window.CryptoUtils.encrypt(this.config));
                 return true;
             }
-            
-            // 3. Check for completely offline mode
-            if (localStorage.getItem('gl_use_local') === 'true') {
-                this.useLocal = true;
-                return true;
-            }
-        } catch(e) {}
-        return false;
-    },
 
-    setConfig: function(owner, repo, token) {
-        this.config = { owner, repo, token };
-        this.useLocal = false;
+            return false;
+        } catch (e) {
+            return false;
+        }
+    },
+    
+    setConfig: function(o, r, t) {
+        this.config = { owner: o, repo: r, token: t };
         localStorage.setItem('gl_db_config', window.CryptoUtils.encrypt(this.config));
-        localStorage.removeItem('gl_use_local');
+        localStorage.removeItem('gl_use_local'); // Clear local override
     },
 
     clearConfig: function() {
         this.config = null;
-        this.useLocal = false;
         localStorage.removeItem('gl_db_config');
         localStorage.removeItem('gl_use_local');
     },
 
     enableLocal: function() {
-        this.useLocal = true;
-        this.config = null;
+        this.config = { mode: "local" };
         localStorage.setItem('gl_use_local', 'true');
-        localStorage.removeItem('gl_db_config');
     },
 
-    callApi: async function(method, path, body = null) {
-        if (!this.config) throw new Error("Database not configured");
-        const url = path ? `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${path}` : `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents`;
+    callApi: async function(method, endpoint, body = null) {
+        if (!this.config) throw new Error("DB not configured");
+        
+        // INTERCEPT LOCAL STORAGE MODE
+        if (this.config.mode === "local") {
+            const localKey = `gl_local_${endpoint.split('/').pop()}`;
+            if (method === 'GET') {
+                const data = localStorage.getItem(localKey);
+                if (!data) throw new Error("404");
+                return { content: data, sha: 'local-sha' };
+            }
+            if (method === 'PUT') {
+                localStorage.setItem(localKey, body.content);
+                return { commit: { sha: 'local-commit' }, content: { sha: 'local-sha' } };
+            }
+        }
+
+        const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${endpoint}`;
         const headers = {
-            'Authorization': `token ${this.config.token}`,
-            'Accept': 'application/vnd.github.v3+json'
+            "Authorization": `token ${this.config.token}`,
+            "Accept": "application/vnd.github.v3+json",
+            "X-GitHub-Api-Version": "2022-11-28"
         };
-        if (body) headers['Content-Type'] = 'application/json';
+        const req = { method, headers };
+        if (body) req.body = JSON.stringify(body);
         
-        const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
-        
+        const res = await fetch(url, req);
         if (!res.ok) {
             if (res.status === 404) throw new Error("404");
             throw new Error(`GitHub API Error: ${res.status}`);
@@ -84,54 +103,48 @@ window.AppDB = {
         return await res.json();
     },
 
+    hashKey: async function(email) {
+        const msgBuffer = new TextEncoder().encode(email.toLowerCase().trim());
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    },
+
     getFile: async function(filename) {
-        if (this.useLocal) {
-            try { return { sha: null, content: JSON.parse(localStorage.getItem(filename) || '{}') }; }
-            catch (e) { return { sha: null, content: {} }; }
-        }
         try {
             const data = await this.callApi('GET', filename);
-            if (!data) return { sha: null, content: {} };
-            return { sha: data.sha, content: JSON.parse(window.CryptoUtils.b64D(data.content.replace(/\n/g, ''))) };
+            const rawContent = data.content ? atob(data.content) : "{}";
+            
+            let parsed;
+            try {
+                parsed = JSON.parse(rawContent);
+            } catch (jsonErr) {
+                // If it fails to parse as JSON, it might be raw encrypted string
+                parsed = rawContent;
+            }
+            
+            return {
+                content: parsed,
+                sha: data.sha
+            };
         } catch (e) {
-            return { sha: null, content: {} }; // If file doesn't exist yet, return empty object gracefully
+            if (e.message === "404") return { content: {}, sha: null };
+            throw e;
         }
     },
 
     saveFile: async function(filename, contentObj, sha = null) {
-        if (this.useLocal) {
-            localStorage.setItem(filename, JSON.stringify(contentObj));
-            return true;
-        }
-        const contentB64 = window.CryptoUtils.b64E(JSON.stringify(contentObj));
-        const body = { message: `Auto-Sync: ${filename}`, content: contentB64 };
+        const message = `Auto-update ${filename} [${new Date().toISOString()}]`;
+        const strContent = typeof contentObj === 'string' ? contentObj : JSON.stringify(contentObj, null, 2);
+        
+        // IMPORTANT: We must use a safe base64 encoding that handles UTF-8 characters properly
+        // btoa() fails on characters outside Latin1 (like hindi chars, emojis, or encrypted bytes)
+        const utf8Bytes = new TextEncoder().encode(strContent);
+        const b64Content = btoa(String.fromCharCode(...utf8Bytes));
+        
+        const body = { message, content: b64Content };
         if (sha) body.sha = sha;
-        await this.callApi('PUT', filename, body);
-        return true;
-    },
-
-    hashKey: async function(str) {
-        return window.CryptoUtils.hashPassword(str);
-    },
-
-    getGlobalAI: async function() {
-        const file = await this.getFile('gl_global_ai.json');
-        return file.content.history ? file.content : { history: [] };
-    },
-
-    appendGlobalAI: async function(qaObj) {
-        if (this.useLocal) return; // Skip global AI sync if user is in offline mode
-        try {
-            const file = await this.getFile('gl_global_ai.json');
-            if (!file.content.history) file.content.history = [];
-            
-            // Double encrypt global AI payloads
-            const encryptedQA = window.CryptoUtils.encrypt(qaObj);
-            file.content.history.push(encryptedQA);
-            
-            // Keep memory lean (last 100 queries) to prevent UI lag
-            if (file.content.history.length > 100) file.content.history.shift();
-            await this.saveFile('gl_global_ai.json', file.content, file.sha);
-        } catch (e) {}
+        const res = await this.callApi('PUT', filename, body);
+        return res.content.sha;
     }
-};
+};s
